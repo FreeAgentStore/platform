@@ -1,0 +1,23 @@
+{
+  "agents": [
+    {
+      "id": "tts",
+      "name": "Text to Speech",
+      "description": "Convert text to natural-sounding speech using Kokoro TTS. 30+ voices, 8 languages. Runs entirely in your browser.",
+      "task": "text-to-speech",
+      "category": "audio",
+      "icon": "🔊",
+      "iconBg": "#7c3aed",
+      "model": "Kokoro 82M",
+      "modelSize": "160MB",
+      "agentUrl": "https://tts.freeagentstore.online",
+      "repo": "FreeAgentStore/tts",
+      "developer": "FreeAgentStore",
+      "creatorGithub": "FreeAgentStore",
+      "desktopOnly": true,
+      "offlineCapable": true,
+      "requiresWebGPU": false,
+      "backends": ["webgpu", "wasm"]
+    }
+  ]
+}
