@@ -34,8 +34,7 @@ export function useWorkerInference<T = unknown>(options: UseWorkerInferenceOptio
     }
 
     return () => bridge.stop();
-    // biome-ignore lint/correctness/useExhaustiveDependencies: onProgress is stable
-  }, [options.workerUrl]);
+  }, [options.workerUrl, options.onProgress]);
 
   const run = useCallback(
     async (type: string, data?: Record<string, unknown>): Promise<T | null> => {

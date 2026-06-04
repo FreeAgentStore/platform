@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { evaluateHeuristic, buildEvolvePrompt, extractCode } from './heuristic.js';
-import type { HeuristicSpec, HeuristicExample } from './heuristic.js';
+import { describe, expect, it } from 'vitest';
+import type { HeuristicExample, HeuristicSpec } from './heuristic.js';
+import { buildEvolvePrompt, evaluateHeuristic, extractCode } from './heuristic.js';
 
 describe('evaluateHeuristic', () => {
   it('scores perfect code as 1.0', () => {
@@ -123,7 +123,16 @@ describe('buildEvolvePrompt', () => {
       outputType: '"positive" | "negative" | "neutral"',
       examples: [{ input: 'great product', expectedOutput: 'positive' }],
       currentCode: 'return "neutral"',
-      history: [{ version: 1, code: 'return "neutral"', score: 0.3, passCount: 3, totalCount: 10, timestamp: Date.now() }],
+      history: [
+        {
+          version: 1,
+          code: 'return "neutral"',
+          score: 0.3,
+          passCount: 3,
+          totalCount: 10,
+          timestamp: Date.now(),
+        },
+      ],
     };
     const evalResult = {
       score: 0.3,

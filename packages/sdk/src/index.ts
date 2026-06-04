@@ -4,6 +4,9 @@ export type { FreeAgentStore } from './agent.js';
 export { initAgent } from './agent.js';
 // Core primitives (vendored from FAS pattern)
 export { Auth } from './auth.js';
+export type { EvalResult, HeuristicExample, HeuristicSpec, HeuristicVersion } from './heuristic.js';
+// Heuristic agents — living code that evolves without runtime LLM
+export { buildEvolvePrompt, evaluateHeuristic, extractCode } from './heuristic.js';
 export { Kv } from './kv.js';
 // Agent-specific
 export { ModelLoader } from './model.js';
@@ -20,6 +23,3 @@ export type {
   OllamaStatus,
 } from './types.js';
 export { WorkerBridge } from './worker-bridge.js';
-// Heuristic agents — living code that evolves without runtime LLM
-export { evaluateHeuristic, buildEvolvePrompt, extractCode } from './heuristic.js';
-export type { HeuristicSpec, HeuristicExample, HeuristicVersion, EvalResult } from './heuristic.js';

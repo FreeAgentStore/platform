@@ -65,7 +65,11 @@ export interface EvalResult {
  * Evaluate heuristic code against examples.
  * Runs the code in a sandboxed Function constructor (no eval).
  */
-export function evaluateHeuristic(code: string, examples: HeuristicExample[], scoreFn?: string): EvalResult {
+export function evaluateHeuristic(
+  code: string,
+  examples: HeuristicExample[],
+  scoreFn?: string,
+): EvalResult {
   const failures: EvalResult['failures'] = [];
   let passed = 0;
 
@@ -158,7 +162,9 @@ export function buildEvolvePrompt(spec: HeuristicSpec, evalResult?: EvalResult):
   parts.push(`## Examples (${spec.examples.length} total)\n`);
   const showExamples = spec.examples.slice(0, 20); // Cap at 20 for prompt size
   for (const ex of showExamples) {
-    parts.push(`- Input: ${JSON.stringify(ex.input)} → Expected: ${JSON.stringify(ex.expectedOutput)}`);
+    parts.push(
+      `- Input: ${JSON.stringify(ex.input)} → Expected: ${JSON.stringify(ex.expectedOutput)}`,
+    );
   }
   if (spec.examples.length > 20) {
     parts.push(`... and ${spec.examples.length - 20} more examples`);
@@ -171,7 +177,9 @@ export function buildEvolvePrompt(spec: HeuristicSpec, evalResult?: EvalResult):
 
   // Show eval results if available
   if (evalResult) {
-    parts.push(`\n## Current Score: ${(evalResult.score * 100).toFixed(1)}% (${evalResult.passed}/${evalResult.total} passed)\n`);
+    parts.push(
+      `\n## Current Score: ${(evalResult.score * 100).toFixed(1)}% (${evalResult.passed}/${evalResult.total} passed)\n`,
+    );
     if (evalResult.failures.length > 0) {
       parts.push(`## Failures (fix these):`);
       for (const f of evalResult.failures.slice(0, 10)) {
@@ -186,16 +194,22 @@ export function buildEvolvePrompt(spec: HeuristicSpec, evalResult?: EvalResult):
   if (spec.history.length > 0) {
     parts.push(`\n## Version History (${spec.history.length} versions)`);
     for (const v of spec.history.slice(-5)) {
-      parts.push(`- v${v.version}: ${(v.score * 100).toFixed(1)}% (${v.passCount}/${v.totalCount})${v.changelog ? ` — ${v.changelog}` : ''}`);
+      parts.push(
+        `- v${v.version}: ${(v.score * 100).toFixed(1)}% (${v.passCount}/${v.totalCount})${v.changelog ? ` — ${v.changelog}` : ''}`,
+      );
     }
   }
 
   parts.push(`\n## Instructions`);
-  parts.push(`Write a JavaScript function body that takes \`input\` as parameter and returns the result.`);
+  parts.push(
+    `Write a JavaScript function body that takes \`input\` as parameter and returns the result.`,
+  );
   parts.push(`The code must be DETERMINISTIC — same input always produces same output.`);
   parts.push(`Do NOT use any external libraries, APIs, or models.`);
   parts.push(`Use only: if/else, switch, loops, Math, String, Array, Object, RegExp, Map, Set.`);
-  parts.push(`The code should be the function BODY only (no function declaration, just the code that goes inside).`);
+  parts.push(
+    `The code should be the function BODY only (no function declaration, just the code that goes inside).`,
+  );
   parts.push(`\nRespond with ONLY the JavaScript code, no explanation.`);
 
   return parts.join('\n');
