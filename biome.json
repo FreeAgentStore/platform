@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.0.0/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.4.16/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -25,10 +25,13 @@
       },
       "suspicious": {
         "noExplicitAny": "warn"
+      },
+      "correctness": {
+        "useExhaustiveDependencies": "warn"
       }
     }
   },
   "files": {
-    "ignore": ["dist/", "node_modules/", ".wrangler/"]
+    "includes": ["packages/*/src/**"]
   }
 }

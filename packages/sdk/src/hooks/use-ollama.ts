@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { OllamaClient } from '../ollama.js';
 import type { OllamaStatus } from '../types.js';
 
@@ -27,19 +27,13 @@ export function useOllama(endpoint?: string) {
     clientRef.current.detect().then(setStatus);
   }, []);
 
-  const chat = useCallback(
-    (model: string, messages: { role: string; content: string }[]) => {
-      return clientRef.current.chat(model, messages);
-    },
-    [],
-  );
+  const chat = useCallback((model: string, messages: { role: string; content: string }[]) => {
+    return clientRef.current.chat(model, messages);
+  }, []);
 
-  const generate = useCallback(
-    (model: string, prompt: string) => {
-      return clientRef.current.generate(model, prompt);
-    },
-    [],
-  );
+  const generate = useCallback((model: string, prompt: string) => {
+    return clientRef.current.generate(model, prompt);
+  }, []);
 
   const refresh = useCallback(async () => {
     const s = await clientRef.current.detect();

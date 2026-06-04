@@ -1,25 +1,22 @@
 // @freeagentstore/sdk — main entry
 
-export { initAgent } from './agent.js';
 export type { FreeAgentStore } from './agent.js';
-export type { AgentConfig } from './types.js';
-
+export { initAgent } from './agent.js';
 // Core primitives (vendored from FAS pattern)
 export { Auth } from './auth.js';
 export { Kv } from './kv.js';
-export { Rooms } from './rooms.js';
-
 // Agent-specific
 export { ModelLoader } from './model.js';
-export { WorkerBridge } from './worker-bridge.js';
+export { ModelCache } from './model-cache.js';
 export { OllamaClient } from './ollama.js';
 export { ResultStore } from './result-store.js';
-export { ModelCache } from './model-cache.js';
-
+export { Rooms } from './rooms.js';
 export type {
+  AgentConfig,
+  InferenceResult,
   ModelConfig,
   ModelStatus,
-  InferenceResult,
-  OllamaStatus,
   OllamaModel,
+  OllamaStatus,
 } from './types.js';
+export { WorkerBridge } from './worker-bridge.js';

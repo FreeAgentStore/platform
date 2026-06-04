@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { ModelLoader } from './model.js';
 
 describe('ModelLoader', () => {
@@ -70,6 +70,10 @@ describe('ModelLoader', () => {
     const fn = vi.fn();
     loader.onStatusChange(fn);
     loader.updateFromWorker({ type: 'download-progress', progress: 50, totalBytes: 200_000_000 });
-    expect(fn).toHaveBeenCalledWith({ state: 'downloading', progress: 50, totalBytes: 200_000_000 });
+    expect(fn).toHaveBeenCalledWith({
+      state: 'downloading',
+      progress: 50,
+      totalBytes: 200_000_000,
+    });
   });
 });

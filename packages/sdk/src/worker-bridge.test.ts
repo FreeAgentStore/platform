@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { WorkerBridge } from './worker-bridge.js';
 
 // Mock Worker
@@ -16,8 +16,12 @@ class MockWorker {
     }, 1);
   }
 
-  addEventListener(_: string, fn: any) { this.handlers.push(fn); }
-  removeEventListener(_: string, fn: any) { this.handlers = this.handlers.filter(h => h !== fn); }
+  addEventListener(_: string, fn: any) {
+    this.handlers.push(fn);
+  }
+  removeEventListener(_: string, fn: any) {
+    this.handlers = this.handlers.filter((h) => h !== fn);
+  }
   terminate() {}
 }
 

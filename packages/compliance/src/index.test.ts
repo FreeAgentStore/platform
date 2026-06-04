@@ -1,8 +1,8 @@
-import { describe, it, expect } from 'vitest';
-import { runChecks } from './index.js';
 import fs from 'node:fs';
-import path from 'node:path';
 import os from 'node:os';
+import path from 'node:path';
+import { describe, expect, it } from 'vitest';
+import { runChecks } from './index.js';
 
 function tmpDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'fags-compliance-'));
@@ -20,7 +20,7 @@ describe('compliance checks', () => {
   it('license-mit fails when no LICENSE', async () => {
     const dir = tmpDir();
     const results = await runChecks(dir);
-    const license = results.find(r => r.name === 'license-mit');
+    const license = results.find((r) => r.name === 'license-mit');
     expect(license?.status).toBe('fail');
   });
 
@@ -28,7 +28,7 @@ describe('compliance checks', () => {
     const dir = tmpDir();
     writeFiles(dir, { LICENSE: 'MIT License\n\nCopyright 2026 Test' });
     const results = await runChecks(dir);
-    const license = results.find(r => r.name === 'license-mit');
+    const license = results.find((r) => r.name === 'license-mit');
     expect(license?.status).toBe('pass');
   });
 
@@ -36,7 +36,7 @@ describe('compliance checks', () => {
     const dir = tmpDir();
     writeFiles(dir, { LICENSE: 'MIT License' });
     const results = await runChecks(dir);
-    const manifest = results.find(r => r.name === 'agent-manifest');
+    const manifest = results.find((r) => r.name === 'agent-manifest');
     expect(manifest?.status).toBe('fail');
   });
 
@@ -54,7 +54,7 @@ describe('compliance checks', () => {
       }),
     });
     const results = await runChecks(dir);
-    const manifest = results.find(r => r.name === 'agent-manifest');
+    const manifest = results.find((r) => r.name === 'agent-manifest');
     expect(manifest?.status).toBe('pass');
   });
 
@@ -65,7 +65,7 @@ describe('compliance checks', () => {
       'agent.json': JSON.stringify({ name: 'Test' }),
     });
     const results = await runChecks(dir);
-    const manifest = results.find(r => r.name === 'agent-manifest');
+    const manifest = results.find((r) => r.name === 'agent-manifest');
     expect(manifest?.status).toBe('fail');
     expect(manifest?.message).toContain('Missing fields');
   });
@@ -78,7 +78,7 @@ describe('compliance checks', () => {
       'web/src/app.ts': 'const url = "https://api.openai.com/v1/chat/completions";',
     });
     const results = await runChecks(dir);
-    const cloud = results.find(r => r.name === 'no-cloud-inference');
+    const cloud = results.find((r) => r.name === 'no-cloud-inference');
     expect(cloud?.status).toBe('fail');
     expect(cloud?.message).toContain('api.openai.com');
   });
@@ -91,7 +91,7 @@ describe('compliance checks', () => {
       'web/src/app.ts': 'const model = await pipeline("text-generation");',
     });
     const results = await runChecks(dir);
-    const cloud = results.find(r => r.name === 'no-cloud-inference');
+    const cloud = results.find((r) => r.name === 'no-cloud-inference');
     expect(cloud?.status).toBe('pass');
   });
 
@@ -103,7 +103,7 @@ describe('compliance checks', () => {
       'web/src/index.html': '<script src="https://www.googletagmanager.com/gtag/js"></script>',
     });
     const results = await runChecks(dir);
-    const tracking = results.find(r => r.name === 'no-tracking');
+    const tracking = results.find((r) => r.name === 'no-tracking');
     expect(tracking?.status).toBe('fail');
   });
 
@@ -115,7 +115,7 @@ describe('compliance checks', () => {
       'web/src/App.tsx': 'export default function App() { return <div>Hello</div> }',
     });
     const results = await runChecks(dir);
-    const tracking = results.find(r => r.name === 'no-tracking');
+    const tracking = results.find((r) => r.name === 'no-tracking');
     expect(tracking?.status).toBe('pass');
   });
 
@@ -123,7 +123,7 @@ describe('compliance checks', () => {
     const dir = tmpDir();
     writeFiles(dir, { LICENSE: 'MIT License', 'agent.json': '{}' });
     const results = await runChecks(dir);
-    const size = results.find(r => r.name === 'bundle-size');
+    const size = results.find((r) => r.name === 'bundle-size');
     expect(size?.status).toBe('warn');
   });
 

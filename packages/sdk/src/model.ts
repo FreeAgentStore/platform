@@ -65,7 +65,7 @@ export class ModelLoader {
    * This method just ensures the model files are available.
    */
   async load(config: ModelConfig): Promise<void> {
-    const device = await ModelLoader.resolveDevice(config.device);
+    await ModelLoader.resolveDevice(config.device);
     const cached = await this.isCached(config.repo);
 
     if (cached) {

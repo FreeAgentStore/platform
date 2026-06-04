@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
-import type { ModelConfig, ModelStatus } from '../types.js';
+import { useEffect, useRef, useState } from 'react';
 import { ModelLoader } from '../model.js';
+import type { ModelConfig, ModelStatus } from '../types.js';
 
 /**
  * React hook for loading an AI model with progress tracking.

@@ -1,4 +1,4 @@
-export async function publish(opts: { name?: string; category?: string }) {
+export async function publish(_opts: { name?: string; category?: string }) {
   console.log('Publishing agent to FreeAgentStore...');
   console.log('');
   console.log('Publish flow will be implemented when infrastructure is deployed.');

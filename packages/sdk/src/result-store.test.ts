@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ResultStore } from './result-store.js';
 
 // Mock IndexedDB
@@ -9,7 +9,11 @@ const mockObjectStore = {
     return { onsuccess: null, onerror: null };
   }),
   get: vi.fn((id: string) => {
-    const req = { result: mockStore[id] ?? undefined, onsuccess: null as any, onerror: null as any };
+    const req = {
+      result: mockStore[id] ?? undefined,
+      onsuccess: null as any,
+      onerror: null as any,
+    };
     setTimeout(() => req.onsuccess?.(), 0);
     return req;
   }),
@@ -44,7 +48,12 @@ const mockDb = {
 
 vi.stubGlobal('indexedDB', {
   open: vi.fn(() => {
-    const req = { result: mockDb, onsuccess: null as any, onerror: null as any, onupgradeneeded: null as any };
+    const req = {
+      result: mockDb,
+      onsuccess: null as any,
+      onerror: null as any,
+      onupgradeneeded: null as any,
+    };
     setTimeout(() => req.onsuccess?.(), 0);
     return req;
   }),

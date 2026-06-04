@@ -69,7 +69,11 @@ async function agentManifest(dir: string): Promise<CheckResult> {
 async function bundleSize(dir: string): Promise<CheckResult> {
   const distDir = path.join(dir, 'web', 'dist');
   if (!fs.existsSync(distDir)) {
-    return { name: 'bundle-size', status: 'warn', message: 'No dist/ directory found (not built?)' };
+    return {
+      name: 'bundle-size',
+      status: 'warn',
+      message: 'No dist/ directory found (not built?)',
+    };
   }
   let totalSize = 0;
   const walk = (d: string) => {

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { Auth } from './auth.js';
 
 describe('Auth', () => {
@@ -21,10 +21,13 @@ describe('Auth', () => {
 
   it('me() returns user on success', async () => {
     const user = { id: '123', name: 'Test', avatar: 'https://avatar.url' };
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ user }),
-    }));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ user }),
+      }),
+    );
     const auth = new Auth('https://api.test.com', 'test-agent');
     const result = await auth.me();
     expect(result).toEqual(user);
@@ -33,10 +36,13 @@ describe('Auth', () => {
 
   it('onAuthChange fires when user changes', async () => {
     const user = { id: '123', name: 'Test', avatar: '' };
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ user }),
-    }));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ user }),
+      }),
+    );
     const auth = new Auth('https://api.test.com', 'test-agent');
     const fn = vi.fn();
     auth.onAuthChange(fn);
@@ -45,10 +51,13 @@ describe('Auth', () => {
   });
 
   it('onAuthChange returns unsubscribe function', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ user: { id: '1', name: 'T', avatar: '' } }),
-    }));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ user: { id: '1', name: 'T', avatar: '' } }),
+      }),
+    );
     const auth = new Auth('https://api.test.com', 'test-agent');
     const fn = vi.fn();
     const unsub = auth.onAuthChange(fn);
@@ -58,9 +67,18 @@ describe('Auth', () => {
   });
 
   it('signOut clears user', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
+    const user = { id: '1', name: 'T', avatar: '' };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ user }),
+      }),
+    );
     const auth = new Auth('https://api.test.com', 'test-agent');
-    (auth as any)._user = { id: '1', name: 'T', avatar: '' };
+    await auth.me(); // sets user
+    expect(auth.user).toEqual(user);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
     await auth.signOut();
     expect(auth.user).toBeNull();
   });

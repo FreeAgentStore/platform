@@ -1,4 +1,4 @@
-import type { OllamaStatus, OllamaModel } from './types.js';
+import type { OllamaModel, OllamaStatus } from './types.js';
 
 const DEFAULT_ENDPOINT = 'http://localhost:11434';
 const DETECT_TIMEOUT = 2000;

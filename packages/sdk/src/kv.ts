@@ -36,10 +36,9 @@ export class Kv {
   }
 
   async list(): Promise<string[]> {
-    const res = await fetch(
-      `${this.apiBase}/v1/kv/keys?app=${this.agentId}`,
-      { credentials: 'include' },
-    );
+    const res = await fetch(`${this.apiBase}/v1/kv/keys?app=${this.agentId}`, {
+      credentials: 'include',
+    });
     if (!res.ok) return [];
     return (await res.json()).keys;
   }

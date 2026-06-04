@@ -50,8 +50,7 @@ export class ResultStore {
     return new Promise((resolve, reject) => {
       const tx = db.transaction('results', 'readonly');
       const req = tx.objectStore('results').getAll();
-      req.onsuccess = () =>
-        resolve(req.result.map((r: any) => ({ id: r.id, savedAt: r.savedAt })));
+      req.onsuccess = () => resolve(req.result.map((r: any) => ({ id: r.id, savedAt: r.savedAt })));
       req.onerror = () => reject(req.error);
     });
   }

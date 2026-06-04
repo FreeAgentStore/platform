@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { WorkerBridge } from '../worker-bridge.js';
 
 interface UseWorkerInferenceOptions {
@@ -34,6 +34,7 @@ export function useWorkerInference<T = unknown>(options: UseWorkerInferenceOptio
     }
 
     return () => bridge.stop();
+    // biome-ignore lint/correctness/useExhaustiveDependencies: onProgress is stable
   }, [options.workerUrl]);
 
   const run = useCallback(
