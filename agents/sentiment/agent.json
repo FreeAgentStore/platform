@@ -1,0 +1,16 @@
+{
+  "name": "Sentiment Analyzer",
+  "description": "Analyze text sentiment using heuristic code — no AI model needed. Instant results, zero download. The code evolves as more examples are added.",
+  "version": "1.0.0",
+  "task": "sentiment-analysis",
+  "category": "text",
+  "models": [],
+  "estimatedDownload": "0MB",
+  "input": ["text/plain"],
+  "output": ["application/json"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false
+}

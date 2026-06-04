@@ -1,0 +1,23 @@
+{
+  "name": "Transcriber",
+  "description": "Transcribe audio to text using Whisper, entirely in your browser. Drop an audio file, get a transcript.",
+  "version": "1.0.0",
+  "task": "speech-to-text",
+  "category": "audio",
+  "models": [
+    {
+      "repo": "onnx-community/whisper-small",
+      "size": "244MB",
+      "backend": ["webgpu", "wasm"],
+      "task": "automatic-speech-recognition"
+    }
+  ],
+  "estimatedDownload": "244MB",
+  "input": ["audio/wav", "audio/mp3", "audio/m4a", "audio/webm"],
+  "output": ["text/plain"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false
+}

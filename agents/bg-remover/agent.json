@@ -1,0 +1,23 @@
+{
+  "name": "Background Remover",
+  "description": "Remove image backgrounds instantly using AI. Drop an image, get a transparent PNG. Runs in your browser.",
+  "version": "1.0.0",
+  "task": "background-removal",
+  "category": "vision",
+  "models": [
+    {
+      "repo": "briaai/RMBG-1.4",
+      "size": "176MB",
+      "backend": ["webgpu", "wasm"],
+      "task": "image-segmentation"
+    }
+  ],
+  "estimatedDownload": "176MB",
+  "input": ["image/png", "image/jpeg", "image/webp"],
+  "output": ["image/png"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false
+}
