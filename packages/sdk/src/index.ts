@@ -20,3 +20,6 @@ export type {
   OllamaStatus,
 } from './types.js';
 export { WorkerBridge } from './worker-bridge.js';
+// Heuristic agents — living code that evolves without runtime LLM
+export { evaluateHeuristic, buildEvolvePrompt, extractCode } from './heuristic.js';
+export type { HeuristicSpec, HeuristicExample, HeuristicVersion, EvalResult } from './heuristic.js';
