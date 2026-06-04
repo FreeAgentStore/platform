@@ -1,0 +1,42 @@
+{
+  "name": "@freeagentstore/cli",
+  "version": "0.1.0",
+  "description": "fags — CLI for publishing AI tools to freeagentstore.online",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "fags": "./dist/index.js"
+  },
+  "homepage": "https://github.com/FreeAgentStore/platform#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FreeAgentStore/platform.git",
+    "directory": "packages/cli"
+  },
+  "keywords": [
+    "freeagentstore",
+    "cli",
+    "ai",
+    "agents",
+    "publish"
+  ],
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@freeagentstore/compliance": "workspace:*",
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  }
+}
