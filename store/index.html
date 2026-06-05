@@ -4,164 +4,245 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FreeAgentStore — AI tools that run free in your browser</title>
-  <meta name="description" content="A curated collection of AI-powered tools that run entirely in your browser. Free, private, no sign-up. Transcription, text-to-speech, translation, background removal, and more.">
-  <meta property="og:title" content="FreeAgentStore">
-  <meta property="og:description" content="AI tools that run free in your browser">
+  <meta name="description" content="Curated AI-powered tools — transcription, text-to-speech, background removal, sentiment analysis — all running on your hardware. Free, private, no sign-up.">
+  <meta property="og:title" content="FreeAgentStore — AI tools that run free in your browser">
+  <meta property="og:description" content="Curated AI tools that run entirely in your browser via WebGPU. Free forever, fully private.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://freeagentstore.online">
+  <meta name="twitter:card" content="summary">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"FreeAgentStore","url":"https://freeagentstore.online","description":"AI tools that run free in your browser"}</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    :root {
-      --font-sans: 'Manrope', system-ui, sans-serif;
-      --font-serif: 'Fraunces', Georgia, serif;
-      --accent: #7c3aed;
-      --accent-light: #a78bfa;
-      --bg: #0a0a0a;
-      --surface: #171717;
-      --border: #262626;
-      --text: #fafafa;
-      --text-muted: #a3a3a3;
-      --radius: 0.75rem;
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --font-body:'Manrope',system-ui,sans-serif;
+      --font-display:'Fraunces',Georgia,serif;
+      --paper:#0a0a0a;--panel:#171717;--panel-alt:#1f1f1f;
+      --ink:#fafafa;--ink-strong:#ffffff;
+      --muted:#a3a3a3;--muted-soft:#737373;
+      --accent:#7c3aed;--accent-hover:#6d28d9;--accent-soft:rgba(124,58,237,0.15);
+      --pro:#3b82f6;
+      --line:#262626;--line-strong:#404040;
+      --shadow:0 1px 3px rgba(0,0,0,0.3);
+      --shadow-lg:0 10px 25px -8px rgba(0,0,0,0.5);
+      --radius:0.75rem;
     }
-    body {
-      font-family: var(--font-sans);
-      background: var(--bg);
-      color: var(--text);
-      -webkit-font-smoothing: antialiased;
-      min-height: 100vh;
-    }
-    header {
-      max-width: 960px;
-      margin: 0 auto;
-      padding: 3rem 1.5rem 2rem;
-      text-align: center;
-    }
-    header h1 {
-      font-family: var(--font-serif);
-      font-size: 2.5rem;
-      font-weight: 700;
-      margin-bottom: 0.5rem;
-    }
-    header h1 span { color: var(--accent-light); }
-    header p {
-      color: var(--text-muted);
-      font-size: 1.1rem;
-      max-width: 600px;
-      margin: 0 auto;
-      line-height: 1.6;
-    }
-    .badges {
-      display: flex;
-      gap: 0.5rem;
-      justify-content: center;
-      margin-top: 1rem;
-      flex-wrap: wrap;
-    }
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.25rem;
-      padding: 0.25rem 0.75rem;
-      border-radius: 999px;
-      font-size: 0.8rem;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-    }
-    .agents-grid {
-      max-width: 960px;
-      margin: 0 auto;
-      padding: 0 1.5rem 3rem;
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
-      gap: 1rem;
-    }
-    .agent-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1.25rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-      transition: border-color 0.15s;
-    }
-    .agent-card:hover { border-color: var(--accent); }
-    .agent-card h3 { font-size: 1.1rem; font-weight: 600; }
-    .agent-card p { color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; }
-    .agent-meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-top: auto;
-    }
-    .agent-meta .tag {
-      font-size: 0.75rem;
-      padding: 0.15rem 0.5rem;
-      border-radius: 0.25rem;
-      background: rgba(124, 58, 237, 0.15);
-      color: var(--accent-light);
-    }
-    .agent-card .cta {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0.5rem 1rem;
-      border-radius: 0.5rem;
-      background: var(--accent);
-      color: white;
-      font-weight: 600;
-      font-size: 0.9rem;
-      text-decoration: none;
-      margin-top: 0.5rem;
-    }
-    .agent-card .cta:hover { opacity: 0.9; }
-    .empty {
-      text-align: center;
-      padding: 4rem 1.5rem;
-      color: var(--text-muted);
-    }
-    .empty h2 { font-family: var(--font-serif); font-size: 1.5rem; margin-bottom: 0.5rem; color: var(--text); }
-    footer {
-      text-align: center;
-      padding: 2rem;
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      border-top: 1px solid var(--border);
-    }
-    footer a { color: var(--accent-light); text-decoration: none; }
+    body{font-family:var(--font-body);background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;min-height:100vh}
+    .container{max-width:1200px;margin:0 auto;padding:0 1.5rem}
+    a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+
+    /* Header */
+    header{border-bottom:1px solid var(--line)}
+    header .container{display:flex;align-items:center;gap:1.25rem;padding-top:0.75rem;padding-bottom:0.75rem}
+    .brand{display:flex;align-items:center;gap:0.6rem;text-decoration:none;color:var(--ink)}
+    .brand-mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#a855f7);display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+    .brand-name{font-family:var(--font-display);font-size:1.15rem;font-weight:700;color:var(--ink)}
+    .brand-tag{font-size:0.72rem;color:var(--muted);font-weight:500}
+    nav{display:flex;gap:1.25rem;font-size:0.88rem;font-weight:600;margin-left:auto}
+    nav a{color:var(--muted);text-decoration:none;transition:color 0.15s}
+    nav a:hover{color:var(--ink)}
+    nav a.pro{color:var(--pro)}
+
+    /* Hero */
+    .hero{text-align:center;padding:3rem 0 2rem}
+    .hero h1{font-family:var(--font-display);font-size:2.25rem;font-weight:700;margin-bottom:0.5rem}
+    .hero h1 span{color:#a78bfa}
+    .hero p{color:var(--muted);font-size:1.05rem;max-width:560px;margin:0 auto;line-height:1.6}
+    .badges{display:flex;gap:0.5rem;justify-content:center;margin-top:1rem;flex-wrap:wrap}
+    .badge{padding:0.25rem 0.75rem;border-radius:999px;font-size:0.78rem;background:var(--panel);border:1px solid var(--line);color:var(--muted)}
+
+    /* Filter bar */
+    .toolbar{padding:1rem 0;display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center}
+    .filter-btn{padding:0.4rem 0.85rem;border-radius:100px;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:0.82rem;font-weight:600;cursor:pointer;transition:all 0.15s;font-family:var(--font-body)}
+    .filter-btn:hover{border-color:var(--accent);color:var(--accent)}
+    .filter-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+    .agent-count{margin-left:auto;font-size:0.82rem;color:var(--muted-soft)}
+
+    /* Agent grid */
+    .agents-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:0.75rem;padding-bottom:3rem}
+
+    /* Agent card */
+    .agent-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1rem 1.1rem;display:flex;align-items:center;gap:0.85rem;transition:border-color 0.15s,transform 0.15s,box-shadow 0.15s;box-shadow:var(--shadow)}
+    .agent-card:hover{border-color:var(--line-strong);transform:translateY(-1px);box-shadow:var(--shadow-lg)}
+    .agent-icon{width:44px;height:44px;border-radius:11px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.4rem}
+    .agent-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:0.15rem}
+    .agent-name{font-size:0.95rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .agent-desc{font-size:0.78rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .agent-meta{display:flex;gap:0.35rem;margin-top:0.2rem}
+    .tag{font-size:0.68rem;padding:0.1rem 0.4rem;border-radius:0.25rem;background:var(--accent-soft);color:#a78bfa;font-weight:500}
+    .tag.heuristic{background:rgba(217,119,6,0.15);color:#fbbf24}
+    .agent-cta{display:inline-flex;align-items:center;gap:0.3rem;background:var(--accent);color:#fff;padding:0.4rem 0.85rem;border-radius:10px;font-size:0.8rem;font-weight:600;flex-shrink:0;text-decoration:none;transition:background 0.15s}
+    .agent-cta:hover{background:var(--accent-hover);text-decoration:none}
+    .agent-cta svg{width:12px;height:12px;fill:currentColor}
+
+    /* Footer */
+    footer{border-top:1px solid var(--line);padding:2rem 0}
+    footer .container{display:flex;flex-wrap:wrap;gap:2rem;justify-content:space-between;align-items:start}
+    .footer-brand{display:flex;flex-direction:column;gap:0.25rem}
+    .footer-brand .name{font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--ink)}
+    .footer-brand .name span{color:#a78bfa}
+    .footer-brand p{font-size:0.8rem;color:var(--muted);max-width:280px;line-height:1.5}
+    .footer-links{display:flex;flex-wrap:wrap;gap:1.5rem;font-size:0.82rem}
+    .footer-links a{color:var(--muted);text-decoration:none}
+    .footer-links a:hover{color:var(--ink)}
+    .footer-links .pro{color:var(--pro)}
+    .footer-stores{display:flex;flex-direction:column;gap:0.3rem;font-size:0.78rem}
+    .footer-stores a{color:var(--muted-soft)}
+    .footer-stores a:hover{color:var(--muted)}
   </style>
 </head>
 <body>
   <header>
-    <h1>Free<span>Agent</span>Store</h1>
-    <p>AI tools that run free in your browser. No cloud, no API keys, no subscription. Your data never leaves your device.</p>
-    <div class="badges">
-      <span class="badge">100% Browser-Based</span>
-      <span class="badge">WebGPU Accelerated</span>
-      <span class="badge">Works Offline</span>
-      <span class="badge">Open Source</span>
+    <div class="container">
+      <a href="/" class="brand">
+        <span class="brand-mark">🤖</span>
+        <span style="display:flex;flex-direction:column">
+          <span class="brand-name">AgentStore</span>
+          <span class="brand-tag">Free AI Tools</span>
+        </span>
+      </a>
+      <nav>
+        <a href="/">Agents</a>
+        <a href="/skills.md">Docs</a>
+        <a href="https://github.com/FreeAgentStore">GitHub</a>
+        <a href="https://mcp.freeagentstore.online">MCP</a>
+        <a href="https://proagentstore.online" class="pro">Pro</a>
+      </nav>
     </div>
   </header>
 
-  <section class="agents-grid" id="agents">
-    <!-- Agent cards will be generated by build.js from registry.json -->
-  </section>
+  <main class="container">
+    <section class="hero">
+      <h1>Free<span>Agent</span>Store</h1>
+      <p>AI tools that run free in your browser. Models run on your hardware — no cloud, no API keys, no subscription. Your data never leaves your device.</p>
+      <div class="badges">
+        <span class="badge">WebGPU Accelerated</span>
+        <span class="badge">Works Offline</span>
+        <span class="badge">100% Private</span>
+        <span class="badge">Open Source</span>
+      </div>
+    </section>
 
-  <section class="empty" id="coming-soon">
-    <h2>First agents launching soon</h2>
-    <p>Text-to-speech, transcription, background removal, translation, and more — all running on your hardware.</p>
-    <p style="margin-top: 1rem;">
-      <a href="https://github.com/FreeAgentStore" style="color: var(--accent-light);">Follow on GitHub</a>
-    </p>
-  </section>
+    <section>
+      <div class="toolbar">
+        <button class="filter-btn active" onclick="filterAgents('all')">All</button>
+        <button class="filter-btn" onclick="filterAgents('audio')">Audio</button>
+        <button class="filter-btn" onclick="filterAgents('vision')">Vision</button>
+        <button class="filter-btn" onclick="filterAgents('text')">Text</button>
+        <button class="filter-btn" onclick="filterAgents('code')">Code</button>
+        <button class="filter-btn" onclick="filterAgents('data')">Data</button>
+        <span class="agent-count" id="agentCount">4 agents</span>
+      </div>
+
+      <div class="agents-grid" id="agentsGrid">
+        <!-- TTS -->
+        <div class="agent-card" data-category="audio">
+          <div class="agent-icon" style="background:#7c3aed">🔊</div>
+          <div class="agent-body">
+            <span class="agent-name">Text to Speech</span>
+            <span class="agent-desc">Natural speech from text — 30+ voices, 8 languages</span>
+            <div class="agent-meta">
+              <span class="tag">Kokoro 82M</span>
+              <span class="tag">160MB</span>
+            </div>
+          </div>
+          <a href="https://tts.freeagentstore.online" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
+        </div>
+
+        <!-- Transcriber -->
+        <div class="agent-card" data-category="audio">
+          <div class="agent-icon" style="background:#2563eb">🎤</div>
+          <div class="agent-body">
+            <span class="agent-name">Transcriber</span>
+            <span class="agent-desc">Transcribe audio to text with timestamps</span>
+            <div class="agent-meta">
+              <span class="tag">Whisper Small</span>
+              <span class="tag">244MB</span>
+            </div>
+          </div>
+          <a href="https://transcriber.freeagentstore.online" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
+        </div>
+
+        <!-- BG Remover -->
+        <div class="agent-card" data-category="vision">
+          <div class="agent-icon" style="background:#059669">✂️</div>
+          <div class="agent-body">
+            <span class="agent-name">Background Remover</span>
+            <span class="agent-desc">Remove backgrounds instantly — get transparent PNG</span>
+            <div class="agent-meta">
+              <span class="tag">RMBG 1.4</span>
+              <span class="tag">176MB</span>
+            </div>
+          </div>
+          <a href="https://bg-remover.freeagentstore.online" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
+        </div>
+
+        <!-- Sentiment -->
+        <div class="agent-card" data-category="text">
+          <div class="agent-icon" style="background:#d97706">😊</div>
+          <div class="agent-body">
+            <span class="agent-name">Sentiment Analyzer</span>
+            <span class="agent-desc">Instant sentiment analysis — no model, no download</span>
+            <div class="agent-meta">
+              <span class="tag heuristic">Heuristic</span>
+              <span class="tag">0MB</span>
+            </div>
+          </div>
+          <a href="https://sentiment.freeagentstore.online" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
 
   <footer>
-    <a href="https://github.com/FreeAgentStore">GitHub</a> &middot;
-    Part of the <a href="https://freeappstore.online">FreeStore</a> family
+    <div class="container">
+      <div class="footer-brand">
+        <div class="name">Free<span>Agent</span>Store</div>
+        <p>AI tools that run free in your browser. No cloud, no keys, no subscription.</p>
+      </div>
+      <div class="footer-links">
+        <a href="/">Agents</a>
+        <a href="/skills.md">Docs</a>
+        <a href="https://github.com/FreeAgentStore">GitHub</a>
+        <a href="https://mcp.freeagentstore.online">MCP Server</a>
+        <a href="https://proagentstore.online" class="pro">Pro →</a>
+      </div>
+      <div class="footer-stores">
+        <strong style="color:var(--muted);font-size:0.72rem">FreeStore Family</strong>
+        <a href="https://freeappstore.online">FreeAppStore</a>
+        <a href="https://freegamestore.online">FreeGameStore</a>
+        <a href="https://freewebstore.online">FreeWebStore</a>
+        <a href="https://freeagentstore.online"><strong style="color:var(--muted)">FreeAgentStore</strong></a>
+      </div>
+    </div>
   </footer>
+
+  <script>
+    function filterAgents(cat) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === cat || (cat === 'all' && b.textContent === 'All')));
+      const cards = document.querySelectorAll('.agent-card');
+      let visible = 0;
+      cards.forEach(c => {
+        const show = cat === 'all' || c.dataset.category === cat;
+        c.style.display = show ? '' : 'none';
+        if (show) visible++;
+      });
+      document.getElementById('agentCount').textContent = visible + ' agent' + (visible !== 1 ? 's' : '');
+    }
+  </script>
 </body>
 </html>
