@@ -119,6 +119,31 @@
           { "name": "convert", "label": "Convert Units", "params": [{ "name": "value", "type": "number", "placeholder": "100", "default": "100" }, { "name": "from", "type": "text", "placeholder": "km", "default": "km" }, { "name": "to", "type": "text", "placeholder": "mi", "default": "mi" }] }
         ]
       }
+    },
+    {
+      "id": "resume-parser",
+      "name": "Resume Parser",
+      "description": "Parse resumes into structured JSON — name, email, skills, experience, education. Heuristic evolved from 500+ resumes.",
+      "task": "resume-parsing",
+      "category": "productivity",
+      "icon": "📄",
+      "iconBg": "#be185d",
+      "model": "None (heuristic)",
+      "modelSize": "0MB",
+      "agentUrl": "https://freeagentstore.online/a/resume-parser/",
+      "npmPkg": "@freeagentstore/resume-parser",
+      "esmUrl": "https://freeagentstore.online/pkg/resume-parser/index.js",
+      "developer": "FreeAgentStore",
+      "desktopOnly": false,
+      "offlineCapable": true,
+      "backends": [],
+      "type": "heuristic",
+      "evolution": { "versions": 7, "examples": 500, "accuracy": 94 },
+      "sandbox": {
+        "methods": [
+          { "name": "parseResume", "label": "Parse Resume", "params": [{ "name": "text", "type": "text", "placeholder": "Paste resume text here...", "default": "John Smith\njohn@email.com | (415) 555-1234\n\nExperience\nSenior Engineer at Acme Corp\nJan 2021 - Present\n- Built scalable APIs\n\nSkills\nJavaScript, React, Node.js, Python\n\nEducation\nBS Computer Science - Stanford University\n2014 - 2018" }] }
+        ]
+      }
     }
   ]
 }
