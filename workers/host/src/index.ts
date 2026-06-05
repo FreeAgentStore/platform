@@ -39,10 +39,20 @@ export default {
       return new Response('Store site not yet deployed', { status: 503 });
     }
 
+    // Console → serve from R2 (console/ prefix)
+    if (host.startsWith('console.')) {
+      const key = `console${url.pathname === '/' ? '/index.html' : url.pathname}`;
+      const object = await env.AGENTS.get(key);
+      if (object) return respond(object, contentType(key), false);
+      const fallback = await env.AGENTS.get('console/index.html');
+      if (fallback) return respond(fallback, 'text/html; charset=utf-8', true);
+      return new Response('Console not deployed', { status: 503 });
+    }
+
     // Reserved subdomains
     if (host.startsWith('api.') || host.startsWith('admin.') ||
         host.startsWith('publish.') || host.startsWith('agent.') ||
-        host.startsWith('create.') || host.startsWith('console.')) {
+        host.startsWith('create.')) {
       return new Response('Not Found', { status: 404 });
     }
 
