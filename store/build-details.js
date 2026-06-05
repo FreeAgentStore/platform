@@ -314,9 +314,14 @@ function generateSandbox(agent) {
 
   const esmUrl = agent.esmUrl ?? `https://freeagentstore.online/pkg/${agent.id}/index.js`;
 
-  // ── Live sandboxes for agents with api.functions ──
-  if (agent.api?.functions?.length) {
+  // ── Live sandboxes for agents with api.functions (only if ESM is available) ──
+  if (agent.api?.functions?.length && !agent.noEsm) {
     return generateLiveSandbox(agent, esmUrl);
+  }
+
+  // ── Model/built-in agents with api.functions but no ESM — show link to full app ──
+  if (agent.api?.functions?.length && agent.noEsm) {
+    return generateNoteSandbox(agent);
   }
 
   // ── Link/iframe sandboxes for agents with api.note ──
