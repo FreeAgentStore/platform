@@ -200,7 +200,15 @@ function generateDetailPage(agent) {
         <!-- Apps using this agent -->
         <div class="section">
           <h2>Apps using this agent</h2>
-          <p style="color:var(--muted)">No apps yet. <a href="https://freeappstore.online">Build one on FreeAppStore</a> and import <code style="background:var(--panel);padding:0.1rem 0.4rem;border-radius:4px;font-size:0.82rem">${agent.npmPkg ?? '@freeagentstore/' + agent.id}</code>.</p>
+          ${(agent.usedByApps?.length > 0) ? agent.usedByApps.map(app => `
+          <a href="${app.url}" style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem;border-radius:10px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--ink);margin-bottom:0.5rem;transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--line)'">
+            <div style="flex:1">
+              <div style="font-weight:600;font-size:0.9rem">${app.name}</div>
+              <div style="font-size:0.78rem;color:var(--muted)">${app.description}</div>
+            </div>
+            <span style="font-size:0.72rem;color:var(--muted-soft);flex-shrink:0">${app.store} &rarr;</span>
+          </a>`).join('') : `
+          <p style="color:var(--muted)">No apps yet. <a href="https://freeappstore.online">Build one on FreeAppStore</a> and import <code style="background:var(--panel);padding:0.1rem 0.4rem;border-radius:4px;font-size:0.82rem">${agent.npmPkg ?? '@freeagentstore/' + agent.id}</code>.</p>`}
         </div>
 
         <!-- About -->
