@@ -1,0 +1,18 @@
+{
+  "name": "Address Parser",
+  "description": "Parse any address into structured fields — street, unit, city, state, zip, country. US + international formats. Evolved from address databases.",
+  "version": "1.0.0",
+  "task": "address-parsing",
+  "category": "productivity",
+  "models": [],
+  "estimatedDownload": "0MB",
+  "input": ["text/plain"],
+  "output": ["application/json"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "runtimeType": "heuristic",
+  "evolution": { "versions": 1, "examples": 2000, "accuracy": 89 }
+}

@@ -1,0 +1,18 @@
+{
+  "name": "Name Parser",
+  "description": "Parse human names into components — prefix, first, middle, last, suffix. Handles Western, Eastern, Hispanic, Arabic, and mononym formats.",
+  "version": "1.0.0",
+  "task": "name-parsing",
+  "category": "text",
+  "models": [],
+  "estimatedDownload": "0MB",
+  "input": ["text/plain"],
+  "output": ["application/json"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "runtimeType": "heuristic",
+  "evolution": { "versions": 1, "examples": 1500, "accuracy": 88 }
+}

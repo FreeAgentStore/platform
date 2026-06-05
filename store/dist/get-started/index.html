@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Get Started — FreeAgentStore</title>
+  <meta name="description" content="Build your first AI agent in 5 minutes. Import as a library, train in the Console, ship to FreeAppStore.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{--font-body:'Manrope',system-ui,sans-serif;--font-display:'Fraunces',Georgia,serif;--paper:#0a0a0a;--panel:#171717;--ink:#fafafa;--muted:#a3a3a3;--muted-soft:#737373;--accent:#7c3aed;--line:#262626}
+    body{font-family:var(--font-body);background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased}
+    .container{max-width:760px;margin:0 auto;padding:0 1.5rem}
+    a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+    header{border-bottom:1px solid var(--line)}
+    header .c{max-width:1200px;margin:0 auto;padding:0.75rem 1.5rem;display:flex;align-items:center;gap:1.25rem}
+    .brand{display:flex;align-items:center;gap:0.6rem;text-decoration:none;color:var(--ink)}
+    .brand-mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#a855f7);display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+    .brand-name{font-family:var(--font-display);font-size:1.15rem;font-weight:700}
+    nav{display:flex;gap:1.25rem;font-size:0.88rem;font-weight:600;margin-left:auto}
+    nav a{color:var(--muted);text-decoration:none}nav a:hover{color:var(--ink)}
+    nav a.pro{color:#3b82f6}
+    h1{font-family:var(--font-display);font-size:2.25rem;font-weight:700;margin:3rem 0 1rem}
+    h2{font-family:var(--font-display);font-size:1.3rem;font-weight:700;margin:2.5rem 0 0.75rem}
+    p{color:var(--muted);line-height:1.7;margin-bottom:1rem;font-size:0.95rem}
+    .step{display:flex;gap:1rem;margin:1.5rem 0;align-items:start}
+    .step-num{width:36px;height:36px;border-radius:10px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.9rem;flex-shrink:0}
+    .step-body h3{font-size:1rem;font-weight:600;margin-bottom:0.25rem;color:var(--ink)}
+    .step-body p{margin:0;font-size:0.88rem}
+    code{background:var(--panel);padding:0.15rem 0.5rem;border-radius:4px;font-size:0.85rem;font-family:'SF Mono',monospace}
+    pre{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1rem;font-family:'SF Mono',monospace;font-size:0.82rem;overflow-x:auto;margin:1rem 0;color:#a78bfa}
+    .highlight{color:var(--ink)}
+    .or{text-align:center;color:var(--muted-soft);font-size:0.82rem;margin:1rem 0}
+    footer{border-top:1px solid var(--line);padding:2rem 0;text-align:center;font-size:0.8rem;color:var(--muted-soft);margin-top:4rem}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="c">
+      <a href="/" class="brand"><span class="brand-mark">🤖</span><span class="brand-name">AgentStore</span></a>
+      <nav>
+        <a href="/">Agents</a>
+        <a href="/about/">About</a>
+        <a href="/get-started/">Get Started</a>
+        <a href="/console/">Console</a>
+        <a href="/skills.md">Docs</a>
+        <a href="https://proagentstore.online" class="pro">Pro</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <h1>Get Started</h1>
+    <p class="highlight" style="font-size:1.1rem">Use an existing agent in your app, or build a new one. Takes 5 minutes.</p>
+
+    <h2>Use an agent in your app</h2>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>Pick an agent</h3>
+        <p>Browse the <a href="/">catalog</a>. Each agent has a detail page with a live sandbox, integration docs, and code examples.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Import it</h3>
+        <p>Two ways — npm or ESM URL (zero install):</p>
+      </div>
+    </div>
+
+    <pre>// npm
+pnpm add @freeagentstore/resume-parser
+
+import { parseResume } from '@freeagentstore/resume-parser'
+const result = parseResume(resumeText)</pre>
+
+    <div class="or">— or —</div>
+
+    <pre>// ESM URL (zero install, works anywhere)
+import { parseResume } from 'https://freeagentstore.online/pkg/resume-parser/index.js'
+const result = parseResume(resumeText)</pre>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h3>Train it for your use case (optional)</h3>
+        <p>Open the <a href="/console/">Console</a>, upload your examples, click Evolve. Chrome's built-in AI customizes the agent for your data. Export the config and use it in your app.</p>
+      </div>
+    </div>
+
+    <pre>import { createAgentInstance } from '@freeagentstore/sdk'
+import { parseResume } from '@freeagentstore/resume-parser'
+import config from './my-healthcare-parser-config.json'
+
+const parser = createAgentInstance(parseResume, config)
+parser.run(resumeText) // uses YOUR trained rules</pre>
+
+    <h2>Build a new agent</h2>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>Decide the type</h3>
+        <p><strong>Heuristic</strong> — pure JS evolved from examples. Best for: parsing, classification, extraction, formatting.<br>
+        <strong>Built-in AI</strong> — Chrome Gemini Nano with trained config. Best for: writing, summarizing, explaining.<br>
+        <strong>Model-based</strong> — WebGPU/WASM inference. Best for: speech, vision, image processing.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Create the package</h3>
+        <p>An agent is a TypeScript package that exports functions. No magic.</p>
+      </div>
+    </div>
+
+    <pre>// packages/agents/my-agent/src/index.ts
+export function myAgent(input: string): Result {
+  // Your heuristic logic, or built-in AI call, or model inference
+  return { ... }
+}</pre>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h3>Add training data + evolution loop</h3>
+        <p>Use the SDK to evaluate and evolve your heuristic from examples.</p>
+      </div>
+    </div>
+
+    <pre>import { evaluateHeuristic, buildEvolvePrompt } from '@freeagentstore/sdk'
+
+const result = evaluateHeuristic(myCode, examples)
+// { score: 0.72, passed: 36, total: 50, failures: [...] }
+
+const prompt = buildEvolvePrompt(spec, result)
+// Feed to Chrome Built-in AI or Ollama → improved code</pre>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h3>Publish</h3>
+        <p>Push to the <a href="https://github.com/FreeAgentStore">FreeAgentStore</a> monorepo. The CI builds, tests, and deploys. Your agent gets a detail page with sandbox, ESM URL, and npm package.</p>
+      </div>
+    </div>
+
+    <h2>Connect with MCP</h2>
+    <p>Manage agents from Claude, Cursor, or VS Code via the MCP server:</p>
+    <pre>npx mcp-remote https://mcp.freeagentstore.online/mcp</pre>
+    <p>11 tools: create_agent, write_file, read_file, list_agents, deploy_status, and more. <a href="/skills.md">Full docs →</a></p>
+
+    <h2>Need server-side?</h2>
+    <p><a href="https://proagentstore.online">ProAgentStore</a> — Workers AI, D1 databases, R2 storage, cron scheduling, API gateway. For agents that need more than the browser can give. $9/mo for everything.</p>
+  </main>
+
+  <footer>
+    <a href="/">Agents</a> · <a href="/about/">About</a> · <a href="/get-started/">Get Started</a> · <a href="/skills.md">Docs</a> · <a href="https://github.com/FreeAgentStore">GitHub</a> · <a href="https://proagentstore.online" style="color:#3b82f6">Pro</a>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "name": "Name Generator",
+  "description": "Generate fantasy, sci-fi, and medieval character names. Markov chains evolved from name corpora per genre. For games, fiction, and world-building.",
+  "version": "1.0.0",
+  "task": "name-generation",
+  "category": "creative",
+  "models": [],
+  "estimatedDownload": "0MB",
+  "input": ["application/json"],
+  "output": ["application/json"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "runtimeType": "heuristic",
+  "evolution": { "versions": 1, "examples": 10000, "accuracy": 0 }
+}
