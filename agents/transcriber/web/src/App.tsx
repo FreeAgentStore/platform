@@ -6,23 +6,25 @@ export default function App() {
   const [state, setState] = useState<State>('idle');
   const [progress, setProgress] = useState(0);
   const [transcript, setTranscript] = useState('');
+  const [chunks, setChunks] = useState<{ text: string; timestamp: [number, number] }[]>([]);
   const [fileName, setFileName] = useState('');
   const workerRef = useRef<Worker | null>(null);
 
   const init = useCallback(() => {
     setState('loading');
-    const w = new Worker('/whisper-worker.js', { type: 'module' });
+    const w = new Worker('./whisper-worker.js', { type: 'module' });
     workerRef.current = w;
     w.onmessage = (e) => {
       if (e.data.type === 'progress') setProgress(e.data.pct);
       if (e.data.type === 'ready') setState('ready');
       if (e.data.type === 'result') {
         setTranscript(e.data.text);
+        setChunks(e.data.chunks ?? []);
         setState('ready');
       }
       if (e.data.type === 'error') {
         console.error(e.data.error);
-        setState('ready');
+        setState(state === 'loading' ? 'idle' : 'ready');
       }
     };
     w.postMessage({ type: 'init' });
@@ -32,13 +34,11 @@ export default function App() {
     if (!workerRef.current || state !== 'ready') return;
     setState('transcribing');
     setTranscript('');
+    setChunks([]);
     setFileName(file.name);
-    const arrayBuffer = await file.arrayBuffer();
-    const audioData = new Float32Array(arrayBuffer);
-    workerRef.current.postMessage(
-      { type: 'transcribe', id: crypto.randomUUID(), audio: audioData },
-      [audioData.buffer],
-    );
+    // Pass the file as a Blob URL — Transformers.js pipeline can handle URLs
+    const blobUrl = URL.createObjectURL(file);
+    workerRef.current.postMessage({ type: 'transcribe', id: crypto.randomUUID(), audio: blobUrl });
   }, [state]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -47,15 +47,17 @@ export default function App() {
     if (file) handleFile(file);
   }, [handleFile]);
 
+  const formatTime = (s: number) => {
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${m}:${sec.toString().padStart(2, '0')}`;
+  };
+
   return (
-    <div className="min-h-dvh bg-neutral-950 text-neutral-100 flex flex-col">
+    <div className="min-h-dvh bg-neutral-950 text-neutral-100 flex flex-col" style={{ fontFamily: "'Manrope',system-ui,sans-serif" }}>
       <header className="flex items-center gap-3 px-4 py-3 border-b border-neutral-800">
-        <a href="https://freeagentstore.online" className="text-neutral-500 hover:text-neutral-300 text-sm">
-          FreeAgentStore
-        </a>
-        <h1 className="font-semibold text-lg" style={{ fontFamily: 'var(--font-serif)' }}>
-          Transcriber
-        </h1>
+        <a href="https://freeagentstore.online" className="text-neutral-500 hover:text-neutral-300 text-sm">FreeAgentStore</a>
+        <h1 className="font-semibold text-lg" style={{ fontFamily: 'var(--font-serif)' }}>Transcriber</h1>
       </header>
 
       <main className="flex-1 flex flex-col max-w-2xl mx-auto w-full p-4 gap-4">
@@ -114,7 +116,20 @@ export default function App() {
                     Copy
                   </button>
                 </div>
-                <p className="whitespace-pre-wrap text-neutral-200 leading-relaxed">{transcript}</p>
+                {chunks.length > 0 ? (
+                  <div className="space-y-1">
+                    {chunks.map((c, i) => (
+                      <div key={i} className="flex gap-3 text-sm">
+                        <span className="text-neutral-600 font-mono text-xs w-16 flex-shrink-0 pt-0.5">
+                          {formatTime(c.timestamp[0])}
+                        </span>
+                        <span className="text-neutral-200 leading-relaxed">{c.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="whitespace-pre-wrap text-neutral-200 leading-relaxed text-sm">{transcript}</p>
+                )}
               </div>
             )}
           </>

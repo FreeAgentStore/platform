@@ -162,53 +162,6 @@
       }
     },
     {
-      "id": "unit-converter",
-      "name": "Unit Converter",
-      "description": "Convert between units instantly \u2014 length, weight, temperature, volume, speed, data, time. No model needed.",
-      "task": "unit-conversion",
-      "category": "productivity",
-      "icon": "\ud83d\udcd0",
-      "iconBg": "#0891b2",
-      "model": "None (heuristic)",
-      "modelSize": "0MB",
-      "agentUrl": "https://freeagentstore.online/a/unit-converter/",
-      "npmPkg": "@freeagentstore/unit-converter",
-      "esmUrl": "https://freeagentstore.online/pkg/unit-converter/index.js",
-      "developer": "FreeAgentStore",
-      "desktopOnly": false,
-      "offlineCapable": true,
-      "backends": [],
-      "type": "heuristic",
-      "sandbox": {
-        "methods": [
-          {
-            "name": "convert",
-            "label": "Convert Units",
-            "params": [
-              {
-                "name": "value",
-                "type": "number",
-                "placeholder": "100",
-                "default": "100"
-              },
-              {
-                "name": "from",
-                "type": "text",
-                "placeholder": "km",
-                "default": "km"
-              },
-              {
-                "name": "to",
-                "type": "text",
-                "placeholder": "mi",
-                "default": "mi"
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
       "id": "resume-parser",
       "name": "Resume Parser",
       "description": "Parse resumes into structured JSON \u2014 name, email, skills, experience, education. Heuristic evolved from 500+ resumes.",
@@ -360,6 +313,40 @@
           }
         ]
       }
+    },
+    {
+      "id": "voice-notes",
+      "name": "Voice Notes",
+      "description": "Speak and get structured notes \u2014 title, key points, action items. Web Speech API + Chrome Built-in AI.",
+      "task": "voice-to-notes",
+      "category": "productivity",
+      "icon": "\ud83c\udf99\ufe0f",
+      "iconBg": "#7c3aed",
+      "model": "Chrome Built-in AI + Web Speech API",
+      "modelSize": "0MB",
+      "agentUrl": "https://freeagentstore.online/a/voice-notes/",
+      "developer": "FreeAgentStore",
+      "desktopOnly": false,
+      "offlineCapable": false,
+      "backends": [],
+      "type": "built-in-ai"
+    },
+    {
+      "id": "icon-generator",
+      "name": "Icon Generator",
+      "description": "Describe an icon, get SVG code. AI writes vector graphics \u2014 no image model needed. Instant, zero download.",
+      "task": "icon-generation",
+      "category": "creative",
+      "icon": "\ud83c\udfa8",
+      "iconBg": "#ec4899",
+      "model": "Chrome Built-in AI (SVG writer)",
+      "modelSize": "0MB",
+      "agentUrl": "https://freeagentstore.online/a/icon-generator/",
+      "developer": "FreeAgentStore",
+      "desktopOnly": false,
+      "offlineCapable": true,
+      "backends": [],
+      "type": "built-in-ai"
     }
   ]
 }
