@@ -30,10 +30,13 @@ export default {
 
     // Apex → serve store site from R2 (store/ prefix)
     if (host === 'freeagentstore.online' || host === 'www.freeagentstore.online') {
-      const key = `store${url.pathname === '/' ? '/index.html' : url.pathname}`;
-      const object = await env.AGENTS.get(key);
-      if (object) return respond(object, contentType(key), false);
-      // Fallback to index.html for SPA
+      let storeKey = `store${url.pathname}`;
+      if (storeKey.endsWith('/')) storeKey += 'index.html';
+      if (!storeKey.split('/').pop()?.includes('.')) storeKey += '/index.html';
+
+      const object = await env.AGENTS.get(storeKey);
+      if (object) return respond(object, contentType(storeKey), false);
+      // Fallback to store index for unknown paths
       const fallback = await env.AGENTS.get('store/index.html');
       if (fallback) return respond(fallback, 'text/html; charset=utf-8', true);
       return new Response('Store site not yet deployed', { status: 503 });
