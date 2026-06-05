@@ -28,8 +28,14 @@ export default {
       return new Response('Method Not Allowed', { status: 405 });
     }
 
-    // Apex → store site (served separately)
+    // Apex → serve store site from R2 (store/ prefix)
     if (host === 'freeagentstore.online' || host === 'www.freeagentstore.online') {
+      const key = `store${url.pathname === '/' ? '/index.html' : url.pathname}`;
+      const object = await env.AGENTS.get(key);
+      if (object) return respond(object, contentType(key), false);
+      // Fallback to index.html for SPA
+      const fallback = await env.AGENTS.get('store/index.html');
+      if (fallback) return respond(fallback, 'text/html; charset=utf-8', true);
       return new Response('Store site not yet deployed', { status: 503 });
     }
 
