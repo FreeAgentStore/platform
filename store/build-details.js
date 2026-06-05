@@ -202,16 +202,14 @@ function generateDetailPage(agent) {
           <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0.75rem;font-family:monospace;font-size:0.78rem;overflow-x:auto;color:var(--muted-soft)">
             <div style="margin-bottom:0.35rem"># npm / pnpm</div>
             <div style="color:var(--muted)">pnpm add ${agent.npmPkg ?? '@freeagentstore/' + agent.id}</div>
-            <div style="margin-top:0.5rem"># or import directly (zero install)</div>
-            <div style="color:var(--muted)">import { ... } from '${agent.esmUrl ?? 'https://freeagentstore.online/pkg/' + agent.id + '/index.js'}'</div>
+            ${agent.noEsm ? '' : `<div style="margin-top:0.5rem"># or import directly (zero install)</div>
+            <div style="color:var(--muted)">import { ... } from '${agent.esmUrl ?? 'https://freeagentstore.online/pkg/' + agent.id + '/index.js'}'</div>`}
           </div>`
             : agent.api?.note
             ? `<p style="color:var(--muted);margin-bottom:0.75rem">${agent.api.note}</p>
           <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0.75rem;font-family:monospace;font-size:0.78rem;overflow-x:auto;color:var(--muted-soft)">
             <div style="margin-bottom:0.35rem"># npm / pnpm</div>
             <div style="color:var(--muted)">pnpm add ${agent.npmPkg ?? '@freeagentstore/' + agent.id}</div>
-            <div style="margin-top:0.5rem"># or import directly (zero install)</div>
-            <div style="color:var(--muted)">import { ... } from '${agent.esmUrl ?? 'https://freeagentstore.online/pkg/' + agent.id + '/index.js'}'</div>
           </div>`
             : `<p style="margin-bottom:0.75rem">Add to any app via npm or import directly from URL — no install needed.</p>
           <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1rem;font-family:monospace;font-size:0.82rem;overflow-x:auto">

@@ -53,7 +53,8 @@
           }
         ]
       },
-      "creatorGithub": "serge-ivo"
+      "creatorGithub": "serge-ivo",
+      "noEsm": true
     },
     {
       "id": "transcriber",
@@ -96,7 +97,8 @@
           }
         ]
       },
-      "creatorGithub": "serge-ivo"
+      "creatorGithub": "serge-ivo",
+      "noEsm": true
     },
     {
       "id": "bg-remover",
@@ -139,7 +141,8 @@
           }
         ]
       },
-      "creatorGithub": "serge-ivo"
+      "creatorGithub": "serge-ivo",
+      "noEsm": true
     },
     {
       "id": "sentiment",
@@ -297,7 +300,8 @@
         ],
         "defaultText": "We met on Tuesday to discuss the Q3 roadmap. Sarah presented the new analytics dashboard — the team agreed to ship it by August 15. John raised concerns about the API migration timeline. We decided to push the migration to Q4. Action items: Sarah to finalize dashboard specs by Friday, John to draft the migration plan, and Alex to update the project board. Next meeting is Thursday at 2pm."
       },
-      "creatorGithub": "serge-ivo"
+      "creatorGithub": "serge-ivo",
+      "noEsm": true
     },
     {
       "id": "writing-assistant",
@@ -345,7 +349,8 @@
           "description": "Draft emails, blog posts, social media content"
         }
       ],
-      "creatorGithub": "serge-ivo"
+      "creatorGithub": "serge-ivo",
+      "noEsm": true
     },
     {
       "id": "code-explainer",
@@ -385,7 +390,8 @@
           }
         ]
       },
-      "creatorGithub": "serge-ivo"
+      "creatorGithub": "serge-ivo",
+      "noEsm": true
     },
     {
       "id": "voice-notes",
@@ -407,7 +413,8 @@
         "imports": "import { ... } from '@freeagentstore/voice-notes'",
         "note": "This agent requires the full UI. Use it at freeagentstore.online/a/voice-notes/ or embed via iframe."
       },
-      "creatorGithub": "serge-ivo"
+      "creatorGithub": "serge-ivo",
+      "noEsm": true
     },
     {
       "id": "icon-generator",
@@ -445,7 +452,8 @@
         "note": "This agent requires the full UI. Use it at freeagentstore.online/a/browser-automation/ or embed via iframe."
       },
       "developer": "serge-ivo",
-      "creatorGithub": "serge-ivo"
+      "creatorGithub": "serge-ivo",
+      "noEsm": true
     },
     {
       "id": "unit-converter",
@@ -603,7 +611,8 @@
           }
         ]
       },
-      "creatorGithub": "serge-ivo"
+      "creatorGithub": "serge-ivo",
+      "noEsm": true
     },
     {
       "id": "regex-builder",
@@ -1462,7 +1471,8 @@
             "example": "await initModel()\nconst result = await analyzeFood(imageElement)\n// { dish: 'pizza', calories: 285, ingredients: ['dough', 'cheese'] }"
           }
         ]
-      }
+      },
+      "noEsm": true
     },
     {
       "id": "plant-identifier",
@@ -1493,7 +1503,8 @@
             "example": "const result = await identifyPlant(img)\n// { name: 'Sunflower', scientific: 'Helianthus annuus', toxic: false }"
           }
         ]
-      }
+      },
+      "noEsm": true
     },
     {
       "id": "smart-search",
@@ -1523,7 +1534,8 @@
             "example": "const index = await indexTexts(paragraphs)\nconst results = await search('how to cook pasta', index, paragraphs)\n// [{ text: '...recipe...', score: 0.87 }]"
           }
         ]
-      }
+      },
+      "noEsm": true
     },
     {
       "id": "document-scanner",
@@ -1553,7 +1565,8 @@
             "example": "const result = await scanDocument(photoElement)\n// { text: 'Dear Sir...', paragraphs: [...], wordCount: 142 }"
           }
         ]
-      }
+      },
+      "noEsm": true
     },
     {
       "id": "voice-journal",
@@ -1583,7 +1596,8 @@
             "example": "const entry = await processRecording(blob)\n// { transcript: '...', mood: { primary: 'joy' }, summary: '...' }"
           }
         ]
-      }
+      },
+      "noEsm": true
     },
     {
       "id": "scene-describer",
@@ -1613,7 +1627,8 @@
             "example": "const desc = await describeScene(img)\n// { description: 'An outdoor scene with 2 people near a car', alt: '...' }"
           }
         ]
-      }
+      },
+      "noEsm": true
     },
     {
       "id": "receipt-scanner",
@@ -1643,7 +1658,8 @@
             "example": "const receipt = await scanReceipt(photo)\n// { merchant: 'Starbucks', total: 5.75, items: [...] }"
           }
         ]
-      }
+      },
+      "noEsm": true
     },
     {
       "id": "faq-matcher",
@@ -1673,7 +1689,8 @@
             "example": "const faq = await indexFAQ([{ question: 'Reset password?', answer: '...' }])\nconst match = await findAnswer('forgot my login', faq)\n// [{ answer: '...', score: 0.89 }]"
           }
         ]
-      }
+      },
+      "noEsm": true
     },
     {
       "id": "plagiarism-checker",
@@ -1703,7 +1720,8 @@
             "example": "const result = await checkPlagiarism(original, submitted)\n// { overallScore: 0.62, verdict: 'suspicious' }"
           }
         ]
-      }
+      },
+      "noEsm": true
     },
     {
       "id": "meeting-summarizer",
@@ -1733,7 +1751,8 @@
             "example": "const meeting = await summarizeMeeting(audioBlob)\n// { decisions: [...], actionItems: [...], keyPoints: [...] }"
           }
         ]
-      }
+      },
+      "noEsm": true
     },
     {
       "id": "study-cards",
