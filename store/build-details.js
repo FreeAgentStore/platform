@@ -14,7 +14,7 @@ const outDir = __dirname;
 function generateDetailPage(agent) {
   const isHeuristic = agent.type === 'heuristic';
   const backends = (agent.backends ?? []).join(', ').toUpperCase() || 'None';
-  const repoPath = `FreeAgentStore/platform/tree/main/agents/${agent.id}`;
+  const repoPath = `FreeAgentStore/${agent.id}`;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -246,22 +246,15 @@ function generateDetailPage(agent) {
         </div>
       </aside>
     </div>
-  </main>
 
-  <footer>
-    <div class="container">
-      <a href="https://freeagentstore.online">FreeAgentStore</a> &middot;
-      <a href="https://freeagentstore.online/skills.md">Docs</a> &middot;
-      <a href="https://github.com/FreeAgentStore">GitHub</a> &middot;
-      <a href="https://proagentstore.online" style="color:#3b82f6">Pro</a>
+    <!-- README from repo -->
+    <div id="readme" class="container" style="display:none;margin-top:2rem;padding-bottom:2rem">
+      <div style="background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:1.5rem">
+        <h2 style="font-family:var(--font-display);font-size:1.15rem;font-weight:700;margin-bottom:1rem">README</h2>
+        <div id="readme-content" style="color:var(--muted);font-size:0.9rem;line-height:1.7"></div>
+      </div>
     </div>
-  <!-- README from repo -->
-  <section class="container" style="padding-bottom:2rem">
-    <div id="readme" style="display:none;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:1.5rem;margin-top:1rem">
-      <h2 style="font-family:var(--font-display);font-size:1.15rem;font-weight:700;margin-bottom:1rem">README</h2>
-      <div id="readme-content" style="color:var(--muted);font-size:0.9rem;line-height:1.7"></div>
-    </div>
-  </section>
+  </main>
 
   <footer>
     <div class="container">
