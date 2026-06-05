@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>serge-ivo — FreeAgentStore Developer</title>
+  <meta name="description" content="serge-ivo has 29 agents on FreeAgentStore.">
+  <link rel="canonical" href="https://freeagentstore.online/developers/serge-ivo/">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{--font-body:'Manrope',system-ui,sans-serif;--font-display:'Fraunces',Georgia,serif;--paper:#0a0a0a;--panel:#171717;--ink:#fafafa;--muted:#a3a3a3;--muted-soft:#737373;--accent:#7c3aed;--line:#262626;--radius:0.75rem}
+    body{font-family:var(--font-body);background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;min-height:100vh}
+    .container{max-width:800px;margin:0 auto;padding:0 1.5rem}
+    a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+    header{border-bottom:1px solid var(--line)}
+    header .container{display:flex;align-items:center;gap:1.25rem;padding-top:0.75rem;padding-bottom:0.75rem}
+    .brand{display:flex;align-items:center;gap:0.6rem;text-decoration:none;color:var(--ink)}
+    .brand-mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#a855f7);display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+    .brand-name{font-family:var(--font-display);font-size:1.15rem;font-weight:700}
+    nav{display:flex;gap:1.25rem;font-size:0.88rem;font-weight:600;margin-left:auto}
+    nav a{color:var(--muted);text-decoration:none}nav a:hover{color:var(--ink)}
+    footer{border-top:1px solid var(--line);padding:1.5rem 0;margin-top:2rem;text-align:center;font-size:0.8rem;color:var(--muted-soft)}
+    footer a{color:var(--muted)}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="https://freeagentstore.online" class="brand">
+        <span class="brand-mark">&#x1f916;</span>
+        <span class="brand-name">AgentStore</span>
+      </a>
+      <nav>
+        <a href="https://freeagentstore.online">Agents</a>
+        <a href="https://github.com/FreeAgentStore">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container" style="padding-top:2rem;padding-bottom:2rem">
+    <a href="https://freeagentstore.online" style="font-size:0.88rem;color:var(--muted);text-decoration:none">&larr; All agents</a>
+
+    <div style="display:flex;align-items:center;gap:1.25rem;margin:1.5rem 0">
+      <img src="https://github.com/serge-ivo.png?size=96" alt="serge-ivo" style="width:72px;height:72px;border-radius:16px;border:2px solid var(--line)" onerror="this.style.display='none'" />
+      <div>
+        <h1 style="font-family:var(--font-display);font-size:1.5rem;font-weight:700">serge-ivo</h1>
+        <div style="display:flex;gap:0.75rem;margin-top:0.25rem;font-size:0.85rem;color:var(--muted)">
+          <span>29 agents</span>
+          <a href="https://github.com/serge-ivo" style="color:var(--muted)">GitHub &rarr;</a>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:0.75rem">
+      
+      <a href="/agents/tts/" style="display:flex;align-items:center;gap:1rem;padding:1rem;border-radius:12px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--ink);transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--line)'">
+        <div style="width:48px;height:48px;border-radius:12px;background:#7c3aed;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">🔊</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:0.95rem">Text to Speech</div>
+          <div style="font-size:0.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Convert text to natural-sounding speech using Kokoro TTS. 30+ voices, 8 languages.</div>
+          <div style="display:flex;gap:0.4rem;margin-top:0.3rem">
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;">Model</span>
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:var(--line);color:var(--muted)">160MB</span>
+          </div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+
+      <a href="/agents/transcriber/" style="display:flex;align-items:center;gap:1rem;padding:1rem;border-radius:12px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--ink);transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--line)'">
+        <div style="width:48px;height:48px;border-radius:12px;background:#2563eb;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">🎤</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:0.95rem">Transcriber</div>
+          <div style="font-size:0.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Transcribe audio to text using Whisper AI. Drop a file, get a transcript with timestamps.</div>
+          <div style="display:flex;gap:0.4rem;margin-top:0.3rem">
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;">Model</span>
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:var(--line);color:var(--muted)">244MB</span>
+          </div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+
+      <a href="/agents/bg-remover/" style="display:flex;align-items:center;gap:1rem;padding:1rem;border-radius:12px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--ink);transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--line)'">
+        <div style="width:48px;height:48px;border-radius:12px;background:#059669;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">✂️</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:0.95rem">Background Remover</div>
+          <div style="font-size:0.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Remove image backgrounds instantly using RMBG AI. Drop an image, get a transparent PNG.</div>
+          <div style="display:flex;gap:0.4rem;margin-top:0.3rem">
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;">Model</span>
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:var(--line);color:var(--muted)">176MB</span>
+          </div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+
+      <a href="/agents/sentiment/" style="display:flex;align-items:center;gap:1rem;padding:1rem;border-radius:12px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--ink);transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--line)'">
+        <div style="width:48px;height:48px;border-radius:12px;background:#d97706;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">😊</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:0.95rem">Sentiment Analyzer</div>
+          <div style="font-size:0.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Analyze text sentiment instantly. No model download, no AI inference. Heuristic code that evolves.</div>
+          <div style="display:flex;gap:0.4rem;margin-top:0.3rem">
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:rgba(217,119,6,0.15);color:#fbbf24">Heuristic</span>
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:var(--line);color:var(--muted)">0MB</span>
+          </div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+
+      <a href="/agents/resume-parser/" style="display:flex;align-items:center;gap:1rem;padding:1rem;border-radius:12px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--ink);transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--line)'">
+        <div style="width:48px;height:48px;border-radius:12px;background:#be185d;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">📄</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:0.95rem">Resume Parser</div>
+          <div style="font-size:0.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Parse resumes into structured JSON — name, email, skills, experience, education. Heuristic evolved from 500+ resumes.</div>
+          <div style="display:flex;gap:0.4rem;margin-top:0.3rem">
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:rgba(217,119,6,0.15);color:#fbbf24">Heuristic</span>
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:var(--line);color:var(--muted)">0MB</span>
+          </div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+
+      <a href="/agents/summarizer/" style="display:flex;align-items:center;gap:1rem;padding:1rem;border-radius:12px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--ink);transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--line)'">
+        <div style="width:48px;height:48px;border-radius:12px;background:#059669;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">📝</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:0.95rem">Summarizer</div>
+          <div style="font-size:0.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Summarize any text — TL;DR, key points, headlines. Uses Chrome's built-in AI. Zero download, instant.</div>
+          <div style="display:flex;gap:0.4rem;margin-top:0.3rem">
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:rgba(5,150,105,0.2);color:#34d399">Built-in AI</span>
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:var(--line);color:var(--muted)">0MB (pre-installed)</span>
+          </div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+
+      <a href="/agents/writing-assistant/" style="display:flex;align-items:center;gap:1rem;padding:1rem;border-radius:12px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--ink);transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--line)'">
+        <div style="width:48px;height:48px;border-radius:12px;background:#2563eb;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">✍️</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:0.95rem">Writing Assistant</div>
+          <div style="font-size:0.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Draft, rewrite, and polish text. Formal, casual, or neutral tone. Uses Chrome's built-in AI. Zero download.</div>
+          <div style="display:flex;gap:0.4rem;margin-top:0.3rem">
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:rgba(5,150,105,0.2);color:#34d399">Built-in AI</span>
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:var(--line);color:var(--muted)">0MB (pre-installed)</span>
+          </div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+
+      <a href="/agents/code-explainer/" style="display:flex;align-items:center;gap:1rem;padding:1rem;border-radius:12px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--ink);transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--line)'">
+        <div style="width:48px;height:48px;border-radius:12px;background:#0891b2;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">💻</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:0.95rem">Code Explainer</div>
+          <div style="font-size:0.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Paste code, get a plain English explanation. Review for bugs, generate docs. Uses Chrome's built-in AI.</div>
+          <div style="display:flex;gap:0.4rem;margin-top:0.3rem">
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:rgba(5,150,105,0.2);color:#34d399">Built-in AI</span>
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:var(--line);color:var(--muted)">0MB (pre-installed)</span>
+          </div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+
+      <a href="/agents/voice-notes/" style="display:flex;align-items:center;gap:1rem;padding:1rem;border-radius:12px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--ink);transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--line)'">
+        <div style="width:48px;height:48px;border-radius:12px;background:#7c3aed;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">🎙️</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:0.95rem">Voice Notes</div>
+          <div style="font-size:0.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Speak and get structured notes — title, key points, action items. Web Speech API + Chrome Built-in AI.</div>
+          <div style="display:flex;gap:0.4rem;margin-top:0.3rem">
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:rgba(5,150,105,0.2);color:#34d399">Built-in AI</span>
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:var(--line);color:var(--muted)">0MB</span>
+          </div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+
+      <a href="/agents/icon-generator/" style="display:flex;align-items:center;gap:1rem;padding:1rem;border-radius:12px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--ink);transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--line)'">
+        <div style="width:48px;height:48px;border-radius:12px;background:#ec4899;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">🎨</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:0.95rem">Icon Generator</div>
+          <div style="font-size:0.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Browse 100+ curated SVG icons or search by description. Color customization, SVG/PNG export. Works instantly, no AI required.</div>
+          <div style="display:flex;gap:0.4rem;margin-top:0.3rem">
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:rgba(217,119,6,0.15);color:#fbbf24">Heuristic</span>
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:var(--line);color:var(--muted)">0MB</span>
+          </div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+
+      <a href="/agents/browser-automation/" style="display:flex;align-items:center;gap:1rem;padding:1rem;border-radius:12px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--ink);transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--line)'">
+        <div style="width:48px;height:48px;border-radius:12px;background:#f59e0b;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">🤖</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:0.95rem">Browser Automation</div>
+          <div style="font-size:0.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Record actions → AI condenses to JS → replay without AI</div>
+          <div style="display:flex;gap:0.4rem;margin-top:0.3rem">
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:rgba(5,150,105,0.2);color:#34d399">Built-in AI</span>
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:var(--line);color:var(--muted)">0MB</span>
+          </div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+
+      <a href="/agents/unit-converter/" style="display:flex;align-items:center;gap:1rem;padding:1rem;border-radius:12px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--ink);transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--line)'">
+        <div style="width:48px;height:48px;border-radius:12px;background:#0d9488;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">📏</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:0.95rem">Unit Converter</div>
+          <div style="font-size:0.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Convert between units instantly — length, weight, temperature, volume, speed, data, time. No model, no download.</div>
+          <div style="display:flex;gap:0.4rem;margin-top:0.3rem">
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:rgba(217,119,6,0.15);color:#fbbf24">Heuristic</span>
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:var(--line);color:var(--muted)">0MB</span>
+          </div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+
+      <a href="/agents/avatar-maker/" style="display:flex;align-items:center;gap:1rem;padding:1rem;border-radius:12px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--ink);transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--line)'">
+        <div style="width:48px;height:48px;border-radius:12px;background:#8b5cf6;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">👤</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:0.95rem">Avatar Maker</div>
+          <div style="font-size:0.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Upload a photo, get a stylized avatar. Geometric, pixel art, silhouette, or mosaic styles. Pure canvas rendering.</div>
+          <div style="display:flex;gap:0.4rem;margin-top:0.3rem">
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:rgba(217,119,6,0.15);color:#fbbf24">Heuristic</span>
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:var(--line);color:var(--muted)">0MB</span>
+          </div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+
+      <a href="/agents/mood-palette/" style="display:flex;align-items:center;gap:1rem;padding:1rem;border-radius:12px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--ink);transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--line)'">
+        <div style="width:48px;height:48px;border-radius:12px;background:#ec4899;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">🎨</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:0.95rem">Mood Palette</div>
+          <div style="font-size:0.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Upload a photo or describe a mood — get a color palette with names. Extract colors from images or generate from text.</div>
+          <div style="display:flex;gap:0.4rem;margin-top:0.3rem">
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:rgba(5,150,105,0.2);color:#34d399">Built-in AI</span>
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:var(--line);color:var(--muted)">0MB</span>
+          </div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+
+      <a href="/agents/regex-builder/" style="display:flex;align-items:center;gap:1rem;padding:1rem;border-radius:12px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--ink);transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--line)'">
+        <div style="width:48px;height:48px;border-radius:12px;background:#f59e0b;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">.*</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:0.95rem">Regex Builder</div>
+          <div style="font-size:0.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Describe a pattern in English, get a regex. 30+ common patterns, live testing, match highlighting.</div>
+          <div style="display:flex;gap:0.4rem;margin-top:0.3rem">
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:rgba(217,119,6,0.15);color:#fbbf24">Heuristic</span>
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:var(--line);color:var(--muted)">0MB</span>
+          </div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+
+      <a href="/agents/json-formatter/" style="display:flex;align-items:center;gap:1rem;padding:1rem;border-radius:12px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--ink);transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--line)'">
+        <div style="width:48px;height:48px;border-radius:12px;background:#0891b2;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">{ }</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:0.95rem">JSON Formatter</div>
+          <div style="font-size:0.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Paste JSON — format, minify, validate, query, diff. Syntax highlighting, tree view, TypeScript types. Pure JS, instant.</div>
+          <div style="display:flex;gap:0.4rem;margin-top:0.3rem">
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:rgba(217,119,6,0.15);color:#fbbf24">Heuristic</span>
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:var(--line);color:var(--muted)">0MB</span>
+          </div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+
+      <a href="/agents/hash-generator/" style="display:flex;align-items:center;gap:1rem;padding:1rem;border-radius:12px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--ink);transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--line)'">
+        <div style="width:48px;height:48px;border-radius:12px;background:#6366f1;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">#</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:0.95rem">Hash Generator</div>
+          <div style="font-size:0.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">SHA-256, MD5, HMAC, Base64, UUID, passwords, JWT decode, TOTP. Uses Web Crypto API. Zero deps.</div>
+          <div style="display:flex;gap:0.4rem;margin-top:0.3rem">
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:rgba(217,119,6,0.15);color:#fbbf24">Heuristic</span>
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:var(--line);color:var(--muted)">0MB</span>
+          </div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+
+      <a href="/agents/steering/" style="display:flex;align-items:center;gap:1rem;padding:1rem;border-radius:12px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--ink);transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--line)'">
+        <div style="width:48px;height:48px;border-radius:12px;background:#16a34a;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">→</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:0.95rem">Steering Behaviors</div>
+          <div style="font-size:0.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Craig Reynolds' steering behaviors for game characters. Seek, flee, wander, flock, arrive, avoid. 60fps for 500+ agents. Importable by FGS games.</div>
+          <div style="display:flex;gap:0.4rem;margin-top:0.3rem">
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:rgba(217,119,6,0.15);color:#fbbf24">Heuristic</span>
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:var(--line);color:var(--muted)">0MB</span>
+          </div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+
+      <a href="/agents/behavior-tree/" style="display:flex;align-items:center;gap:1rem;padding:1rem;border-radius:12px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--ink);transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--line)'">
+        <div style="width:48px;height:48px;border-radius:12px;background:#65a30d;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">🌳</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:0.95rem">Behavior Trees</div>
+          <div style="font-size:0.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Composable behavior trees for NPC AI. Sequence, selector, parallel, decorators. Visual editor + live preview. For game character logic.</div>
+          <div style="display:flex;gap:0.4rem;margin-top:0.3rem">
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:rgba(217,119,6,0.15);color:#fbbf24">Heuristic</span>
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:var(--line);color:var(--muted)">0MB</span>
+          </div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+
+      <a href="/agents/physics-sim/" style="display:flex;align-items:center;gap:1rem;padding:1rem;border-radius:12px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--ink);transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--line)'">
+        <div style="width:48px;height:48px;border-radius:12px;background:#dc2626;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">⚡</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:0.95rem">Physics Sim</div>
+          <div style="font-size:0.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Verlet integration physics — particles, springs, cloth, soft bodies, ragdolls. Pure math, 60fps. For game effects and dynamic objects.</div>
+          <div style="display:flex;gap:0.4rem;margin-top:0.3rem">
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:rgba(217,119,6,0.15);color:#fbbf24">Heuristic</span>
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:var(--line);color:var(--muted)">0MB</span>
+          </div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+
+      <a href="/agents/date-parser/" style="display:flex;align-items:center;gap:1rem;padding:1rem;border-radius:12px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--ink);transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--line)'">
+        <div style="width:48px;height:48px;border-radius:12px;background:#0284c7;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">📅</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:0.95rem">Date Parser</div>
+          <div style="font-size:0.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Parse any date or time string — 'next tuesday', 'March 14, 2025', 'in 3 days', '2025-03-14T10:00Z'. 500+ formats.</div>
+          <div style="display:flex;gap:0.4rem;margin-top:0.3rem">
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:rgba(217,119,6,0.15);color:#fbbf24">Heuristic</span>
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:var(--line);color:var(--muted)">0MB</span>
+          </div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+
+      <a href="/agents/emotion-detector/" style="display:flex;align-items:center;gap:1rem;padding:1rem;border-radius:12px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--ink);transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--line)'">
+        <div style="width:48px;height:48px;border-radius:12px;background:#c026d3;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">🎭</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:0.95rem">Emotion Detector</div>
+          <div style="font-size:0.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Detect emotions in text — joy, anger, sadness, fear, surprise, disgust, trust, anticipation. Plutchik's 8 emotions, evolved scoring.</div>
+          <div style="display:flex;gap:0.4rem;margin-top:0.3rem">
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:rgba(217,119,6,0.15);color:#fbbf24">Heuristic</span>
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:var(--line);color:var(--muted)">0MB</span>
+          </div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+
+      <a href="/agents/language-detector/" style="display:flex;align-items:center;gap:1rem;padding:1rem;border-radius:12px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--ink);transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--line)'">
+        <div style="width:48px;height:48px;border-radius:12px;background:#0369a1;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">🌐</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:0.95rem">Language Detector</div>
+          <div style="font-size:0.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Detect the language of any text. Character n-gram frequency analysis evolved from Wikipedia corpora. 30 languages, 95%+ accuracy.</div>
+          <div style="display:flex;gap:0.4rem;margin-top:0.3rem">
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:rgba(217,119,6,0.15);color:#fbbf24">Heuristic</span>
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:var(--line);color:var(--muted)">0MB</span>
+          </div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+
+      <a href="/agents/address-parser/" style="display:flex;align-items:center;gap:1rem;padding:1rem;border-radius:12px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--ink);transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--line)'">
+        <div style="width:48px;height:48px;border-radius:12px;background:#0284c7;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">🏠</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:0.95rem">Address Parser</div>
+          <div style="font-size:0.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Parse any address into structured fields — street, unit, city, state, zip, country. US, UK, EU, Japanese formats.</div>
+          <div style="display:flex;gap:0.4rem;margin-top:0.3rem">
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:rgba(217,119,6,0.15);color:#fbbf24">Heuristic</span>
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:var(--line);color:var(--muted)">0MB</span>
+          </div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+
+      <a href="/agents/email-classifier/" style="display:flex;align-items:center;gap:1rem;padding:1rem;border-radius:12px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--ink);transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--line)'">
+        <div style="width:48px;height:48px;border-radius:12px;background:#7c3aed;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">📧</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:0.95rem">Email Classifier</div>
+          <div style="font-size:0.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Classify emails — transactional, promotional, personal, notification, newsletter, spam. 200+ signal patterns.</div>
+          <div style="display:flex;gap:0.4rem;margin-top:0.3rem">
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:rgba(217,119,6,0.15);color:#fbbf24">Heuristic</span>
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:var(--line);color:var(--muted)">0MB</span>
+          </div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+
+      <a href="/agents/name-parser/" style="display:flex;align-items:center;gap:1rem;padding:1rem;border-radius:12px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--ink);transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--line)'">
+        <div style="width:48px;height:48px;border-radius:12px;background:#0891b2;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">👤</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:0.95rem">Name Parser</div>
+          <div style="font-size:0.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Parse human names — prefix, first, middle, last, suffix. Western, Eastern, Hispanic, Arabic, mononym formats.</div>
+          <div style="display:flex;gap:0.4rem;margin-top:0.3rem">
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:rgba(217,119,6,0.15);color:#fbbf24">Heuristic</span>
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:var(--line);color:var(--muted)">0MB</span>
+          </div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+
+      <a href="/agents/profanity-filter/" style="display:flex;align-items:center;gap:1rem;padding:1rem;border-radius:12px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--ink);transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--line)'">
+        <div style="width:48px;height:48px;border-radius:12px;background:#dc2626;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">🛡️</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:0.95rem">Profanity Filter</div>
+          <div style="font-size:0.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Context-aware profanity detection. Leetspeak, evasion patterns, severity levels. Distinguishes insults from innocent usage.</div>
+          <div style="display:flex;gap:0.4rem;margin-top:0.3rem">
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:rgba(217,119,6,0.15);color:#fbbf24">Heuristic</span>
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:var(--line);color:var(--muted)">0MB</span>
+          </div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+
+      <a href="/agents/name-generator/" style="display:flex;align-items:center;gap:1rem;padding:1rem;border-radius:12px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--ink);transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--line)'">
+        <div style="width:48px;height:48px;border-radius:12px;background:#a855f7;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">✨</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:0.95rem">Name Generator</div>
+          <div style="font-size:0.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Fantasy, sci-fi, medieval, Japanese, Nordic character names. Markov chains per genre/race/gender. For games and fiction.</div>
+          <div style="display:flex;gap:0.4rem;margin-top:0.3rem">
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:rgba(217,119,6,0.15);color:#fbbf24">Heuristic</span>
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:var(--line);color:var(--muted)">0MB</span>
+          </div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+
+      <a href="/agents/code-detector/" style="display:flex;align-items:center;gap:1rem;padding:1rem;border-radius:12px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--ink);transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--line)'">
+        <div style="width:48px;height:48px;border-radius:12px;background:#059669;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">&lt;/&gt;</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:0.95rem">Code Detector</div>
+          <div style="font-size:0.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Detect the programming language of any code snippet. 30 languages, keyword + structural + syntax scoring.</div>
+          <div style="display:flex;gap:0.4rem;margin-top:0.3rem">
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:rgba(217,119,6,0.15);color:#fbbf24">Heuristic</span>
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:var(--line);color:var(--muted)">0MB</span>
+          </div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <a href="https://freeagentstore.online">FreeAgentStore</a> &middot;
+      <a href="https://github.com/FreeAgentStore">GitHub</a>
+    </div>
+  </footer>
+</body>
+</html>

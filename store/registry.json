@@ -13,7 +13,7 @@
       "agentUrl": "https://freeagentstore.online/a/tts/",
       "npmPkg": "@freeagentstore/tts",
       "esmUrl": "https://freeagentstore.online/pkg/tts/index.js",
-      "developer": "FreeAgentStore",
+      "developer": "serge-ivo",
       "desktopOnly": true,
       "offlineCapable": true,
       "backends": [
@@ -53,7 +53,7 @@
           }
         ]
       },
-      "creatorGithub": "FreeAgentStore"
+      "creatorGithub": "serge-ivo"
     },
     {
       "id": "transcriber",
@@ -68,7 +68,7 @@
       "agentUrl": "https://freeagentstore.online/a/transcriber/",
       "npmPkg": "@freeagentstore/transcriber",
       "esmUrl": "https://freeagentstore.online/pkg/transcriber/index.js",
-      "developer": "FreeAgentStore",
+      "developer": "serge-ivo",
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [
@@ -96,7 +96,7 @@
           }
         ]
       },
-      "creatorGithub": "FreeAgentStore"
+      "creatorGithub": "serge-ivo"
     },
     {
       "id": "bg-remover",
@@ -111,7 +111,7 @@
       "agentUrl": "https://freeagentstore.online/a/bg-remover/",
       "npmPkg": "@freeagentstore/bg-remover",
       "esmUrl": "https://freeagentstore.online/pkg/bg-remover/index.js",
-      "developer": "FreeAgentStore",
+      "developer": "serge-ivo",
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [
@@ -139,7 +139,7 @@
           }
         ]
       },
-      "creatorGithub": "FreeAgentStore"
+      "creatorGithub": "serge-ivo"
     },
     {
       "id": "sentiment",
@@ -154,7 +154,7 @@
       "agentUrl": "https://freeagentstore.online/a/sentiment/",
       "npmPkg": "@freeagentstore/sentiment",
       "esmUrl": "https://freeagentstore.online/pkg/sentiment/index.js",
-      "developer": "FreeAgentStore",
+      "developer": "serge-ivo",
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
@@ -185,7 +185,7 @@
           }
         ]
       },
-      "creatorGithub": "FreeAgentStore"
+      "creatorGithub": "serge-ivo"
     },
     {
       "id": "resume-parser",
@@ -200,7 +200,7 @@
       "agentUrl": "https://freeagentstore.online/a/resume-parser/",
       "npmPkg": "@freeagentstore/resume-parser",
       "esmUrl": "https://freeagentstore.online/pkg/resume-parser/index.js",
-      "developer": "FreeAgentStore",
+      "developer": "serge-ivo",
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
@@ -236,7 +236,7 @@
           }
         ]
       },
-      "creatorGithub": "FreeAgentStore"
+      "creatorGithub": "serge-ivo"
     },
     {
       "id": "summarizer",
@@ -249,7 +249,7 @@
       "model": "Chrome Gemini Nano (built-in)",
       "modelSize": "0MB (pre-installed)",
       "agentUrl": "https://freeagentstore.online/a/summarizer/",
-      "developer": "FreeAgentStore",
+      "developer": "serge-ivo",
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
@@ -297,7 +297,7 @@
         ],
         "defaultText": "We met on Tuesday to discuss the Q3 roadmap. Sarah presented the new analytics dashboard — the team agreed to ship it by August 15. John raised concerns about the API migration timeline. We decided to push the migration to Q4. Action items: Sarah to finalize dashboard specs by Friday, John to draft the migration plan, and Alex to update the project board. Next meeting is Thursday at 2pm."
       },
-      "creatorGithub": "FreeAgentStore"
+      "creatorGithub": "serge-ivo"
     },
     {
       "id": "writing-assistant",
@@ -310,7 +310,7 @@
       "model": "Chrome Gemini Nano (built-in)",
       "modelSize": "0MB (pre-installed)",
       "agentUrl": "https://freeagentstore.online/a/writing-assistant/",
-      "developer": "FreeAgentStore",
+      "developer": "serge-ivo",
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
@@ -345,7 +345,7 @@
           "description": "Draft emails, blog posts, social media content"
         }
       ],
-      "creatorGithub": "FreeAgentStore"
+      "creatorGithub": "serge-ivo"
     },
     {
       "id": "code-explainer",
@@ -358,7 +358,7 @@
       "model": "Chrome Gemini Nano (built-in)",
       "modelSize": "0MB (pre-installed)",
       "agentUrl": "https://freeagentstore.online/a/code-explainer/",
-      "developer": "FreeAgentStore",
+      "developer": "serge-ivo",
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
@@ -385,7 +385,7 @@
           }
         ]
       },
-      "creatorGithub": "FreeAgentStore"
+      "creatorGithub": "serge-ivo"
     },
     {
       "id": "voice-notes",
@@ -398,7 +398,7 @@
       "model": "Chrome Built-in AI + Web Speech API",
       "modelSize": "0MB",
       "agentUrl": "https://freeagentstore.online/a/voice-notes/",
-      "developer": "FreeAgentStore",
+      "developer": "serge-ivo",
       "desktopOnly": false,
       "offlineCapable": false,
       "backends": [],
@@ -407,7 +407,7 @@
         "imports": "import { ... } from '@freeagentstore/voice-notes'",
         "note": "This agent requires the full UI. Use it at freeagentstore.online/a/voice-notes/ or embed via iframe."
       },
-      "creatorGithub": "FreeAgentStore"
+      "creatorGithub": "serge-ivo"
     },
     {
       "id": "icon-generator",
@@ -420,7 +420,7 @@
       "model": "None (103 curated templates)",
       "modelSize": "0MB",
       "agentUrl": "https://freeagentstore.online/a/icon-generator/",
-      "developer": "FreeAgentStore",
+      "developer": "serge-ivo",
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
@@ -429,7 +429,7 @@
         "imports": "import { ... } from '@freeagentstore/icon-generator'",
         "note": "This agent requires the full UI. Use it at freeagentstore.online/a/icon-generator/ or embed via iframe."
       },
-      "creatorGithub": "FreeAgentStore"
+      "creatorGithub": "serge-ivo"
     },
     {
       "id": "browser-automation",
@@ -444,8 +444,8 @@
         "imports": "import { ... } from '@freeagentstore/browser-automation'",
         "note": "This agent requires the full UI. Use it at freeagentstore.online/a/browser-automation/ or embed via iframe."
       },
-      "developer": "FreeAgentStore",
-      "creatorGithub": "FreeAgentStore"
+      "developer": "serge-ivo",
+      "creatorGithub": "serge-ivo"
     },
     {
       "id": "unit-converter",
@@ -458,7 +458,7 @@
       "model": "None (heuristic)",
       "modelSize": "0MB",
       "agentUrl": "https://freeagentstore.online/a/unit-converter/",
-      "developer": "FreeAgentStore",
+      "developer": "serge-ivo",
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
@@ -506,7 +506,7 @@
           }
         ]
       },
-      "creatorGithub": "FreeAgentStore"
+      "creatorGithub": "serge-ivo"
     },
     {
       "id": "avatar-maker",
@@ -519,7 +519,7 @@
       "model": "None (heuristic)",
       "modelSize": "0MB",
       "agentUrl": "https://freeagentstore.online/a/avatar-maker/",
-      "developer": "FreeAgentStore",
+      "developer": "serge-ivo",
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
@@ -554,7 +554,7 @@
           }
         ]
       },
-      "creatorGithub": "FreeAgentStore"
+      "creatorGithub": "serge-ivo"
     },
     {
       "id": "mood-palette",
@@ -567,7 +567,7 @@
       "model": "Chrome Built-in AI (optional)",
       "modelSize": "0MB",
       "agentUrl": "https://freeagentstore.online/a/mood-palette/",
-      "developer": "FreeAgentStore",
+      "developer": "serge-ivo",
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
@@ -603,7 +603,7 @@
           }
         ]
       },
-      "creatorGithub": "FreeAgentStore"
+      "creatorGithub": "serge-ivo"
     },
     {
       "id": "regex-builder",
@@ -616,7 +616,7 @@
       "model": "None (heuristic)",
       "modelSize": "0MB",
       "agentUrl": "https://freeagentstore.online/a/regex-builder/",
-      "developer": "FreeAgentStore",
+      "developer": "serge-ivo",
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
@@ -641,7 +641,7 @@
           }
         ]
       },
-      "creatorGithub": "FreeAgentStore"
+      "creatorGithub": "serge-ivo"
     },
     {
       "id": "json-formatter",
@@ -654,7 +654,7 @@
       "model": "None (heuristic)",
       "modelSize": "0MB",
       "agentUrl": "https://freeagentstore.online/a/json-formatter/",
-      "developer": "FreeAgentStore",
+      "developer": "serge-ivo",
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
@@ -694,7 +694,7 @@
           }
         ]
       },
-      "creatorGithub": "FreeAgentStore"
+      "creatorGithub": "serge-ivo"
     },
     {
       "id": "hash-generator",
@@ -707,7 +707,7 @@
       "model": "None (Web Crypto API)",
       "modelSize": "0MB",
       "agentUrl": "https://freeagentstore.online/a/hash-generator/",
-      "developer": "FreeAgentStore",
+      "developer": "serge-ivo",
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
@@ -747,7 +747,7 @@
           }
         ]
       },
-      "creatorGithub": "FreeAgentStore"
+      "creatorGithub": "serge-ivo"
     },
     {
       "id": "steering",
@@ -760,7 +760,7 @@
       "model": "None (pure math)",
       "modelSize": "0MB",
       "agentUrl": "https://freeagentstore.online/a/steering/",
-      "developer": "FreeAgentStore",
+      "developer": "serge-ivo",
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
@@ -790,7 +790,7 @@
           }
         ]
       },
-      "creatorGithub": "FreeAgentStore"
+      "creatorGithub": "serge-ivo"
     },
     {
       "id": "behavior-tree",
@@ -803,7 +803,7 @@
       "model": "None (pure logic)",
       "modelSize": "0MB",
       "agentUrl": "https://freeagentstore.online/a/behavior-tree/",
-      "developer": "FreeAgentStore",
+      "developer": "serge-ivo",
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
@@ -818,7 +818,7 @@
           }
         ]
       },
-      "creatorGithub": "FreeAgentStore"
+      "creatorGithub": "serge-ivo"
     },
     {
       "id": "physics-sim",
@@ -831,7 +831,7 @@
       "model": "None (Verlet integration)",
       "modelSize": "0MB",
       "agentUrl": "https://freeagentstore.online/a/physics-sim/",
-      "developer": "FreeAgentStore",
+      "developer": "serge-ivo",
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
@@ -856,7 +856,7 @@
           }
         ]
       },
-      "creatorGithub": "FreeAgentStore"
+      "creatorGithub": "serge-ivo"
     },
     {
       "id": "date-parser",
@@ -869,7 +869,7 @@
       "model": "None (heuristic)",
       "modelSize": "0MB",
       "agentUrl": "https://freeagentstore.online/a/date-parser/",
-      "developer": "FreeAgentStore",
+      "developer": "serge-ivo",
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
@@ -894,7 +894,7 @@
           }
         ]
       },
-      "creatorGithub": "FreeAgentStore"
+      "creatorGithub": "serge-ivo"
     },
     {
       "id": "emotion-detector",
@@ -907,7 +907,7 @@
       "model": "None (heuristic)",
       "modelSize": "0MB",
       "agentUrl": "https://freeagentstore.online/a/emotion-detector/",
-      "developer": "FreeAgentStore",
+      "developer": "serge-ivo",
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
@@ -927,7 +927,7 @@
           }
         ]
       },
-      "creatorGithub": "FreeAgentStore"
+      "creatorGithub": "serge-ivo"
     },
     {
       "id": "language-detector",
@@ -940,7 +940,7 @@
       "model": "None (heuristic)",
       "modelSize": "0MB",
       "agentUrl": "https://freeagentstore.online/a/language-detector/",
-      "developer": "FreeAgentStore",
+      "developer": "serge-ivo",
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
@@ -960,7 +960,7 @@
           }
         ]
       },
-      "creatorGithub": "FreeAgentStore"
+      "creatorGithub": "serge-ivo"
     },
     {
       "id": "address-parser",
@@ -973,7 +973,7 @@
       "model": "None (heuristic)",
       "modelSize": "0MB",
       "agentUrl": "https://freeagentstore.online/a/address-parser/",
-      "developer": "FreeAgentStore",
+      "developer": "serge-ivo",
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
@@ -993,7 +993,7 @@
           }
         ]
       },
-      "creatorGithub": "FreeAgentStore"
+      "creatorGithub": "serge-ivo"
     },
     {
       "id": "email-classifier",
@@ -1006,7 +1006,7 @@
       "model": "None (heuristic)",
       "modelSize": "0MB",
       "agentUrl": "https://freeagentstore.online/a/email-classifier/",
-      "developer": "FreeAgentStore",
+      "developer": "serge-ivo",
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
@@ -1026,7 +1026,7 @@
           }
         ]
       },
-      "creatorGithub": "FreeAgentStore"
+      "creatorGithub": "serge-ivo"
     },
     {
       "id": "name-parser",
@@ -1039,7 +1039,7 @@
       "model": "None (heuristic)",
       "modelSize": "0MB",
       "agentUrl": "https://freeagentstore.online/a/name-parser/",
-      "developer": "FreeAgentStore",
+      "developer": "serge-ivo",
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
@@ -1059,7 +1059,7 @@
           }
         ]
       },
-      "creatorGithub": "FreeAgentStore"
+      "creatorGithub": "serge-ivo"
     },
     {
       "id": "profanity-filter",
@@ -1072,7 +1072,7 @@
       "model": "None (heuristic)",
       "modelSize": "0MB",
       "agentUrl": "https://freeagentstore.online/a/profanity-filter/",
-      "developer": "FreeAgentStore",
+      "developer": "serge-ivo",
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
@@ -1097,7 +1097,7 @@
           }
         ]
       },
-      "creatorGithub": "FreeAgentStore"
+      "creatorGithub": "serge-ivo"
     },
     {
       "id": "name-generator",
@@ -1110,7 +1110,7 @@
       "model": "None (Markov chains)",
       "modelSize": "0MB",
       "agentUrl": "https://freeagentstore.online/a/name-generator/",
-      "developer": "FreeAgentStore",
+      "developer": "serge-ivo",
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
@@ -1134,7 +1134,7 @@
           }
         ]
       },
-      "creatorGithub": "FreeAgentStore"
+      "creatorGithub": "serge-ivo"
     },
     {
       "id": "code-detector",
@@ -1147,7 +1147,7 @@
       "model": "None (heuristic)",
       "modelSize": "0MB",
       "agentUrl": "https://freeagentstore.online/a/code-detector/",
-      "developer": "FreeAgentStore",
+      "developer": "serge-ivo",
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
@@ -1167,7 +1167,7 @@
           }
         ]
       },
-      "creatorGithub": "FreeAgentStore"
+      "creatorGithub": "serge-ivo"
     }
   ]
 }
