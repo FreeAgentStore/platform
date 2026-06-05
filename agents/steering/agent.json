@@ -1,0 +1,16 @@
+{
+  "name": "Steering Behaviors",
+  "description": "Craig Reynolds' steering behaviors for game characters. Seek, flee, wander, flock, arrive, avoid obstacles. Pure math, 60fps for 500+ agents.",
+  "version": "1.0.0",
+  "task": "game-ai",
+  "category": "gaming",
+  "models": [],
+  "estimatedDownload": "0MB",
+  "input": ["application/json"],
+  "output": ["application/json"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false
+}

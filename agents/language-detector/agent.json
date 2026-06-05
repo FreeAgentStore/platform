@@ -1,0 +1,18 @@
+{
+  "name": "Language Detector",
+  "description": "Detect the language of any text. Character n-gram frequency analysis evolved from Wikipedia corpora. 50 languages, 95%+ accuracy on 20+ chars.",
+  "version": "1.0.0",
+  "task": "language-detection",
+  "category": "text",
+  "models": [],
+  "estimatedDownload": "0MB",
+  "input": ["text/plain"],
+  "output": ["application/json"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "runtimeType": "heuristic",
+  "evolution": { "versions": 1, "examples": 5000, "accuracy": 95 }
+}

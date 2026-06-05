@@ -1,0 +1,548 @@
+import { ICONS, type IconDef } from './icons';
+
+// ── Synonyms ─────────────────────────────────────────────────────────
+// Maps common words to the canonical keyword used in icon definitions.
+const SYNONYMS: Record<string, string> = {
+  email: 'mail',
+  envelope: 'mail',
+  letter: 'mail',
+  inbox: 'mail',
+  gear: 'settings',
+  cog: 'settings',
+  preferences: 'settings',
+  config: 'settings',
+  options: 'settings',
+  magnify: 'search',
+  lens: 'search',
+  find: 'search',
+  lookup: 'search',
+  hamburger: 'menu',
+  nav: 'menu',
+  bars: 'menu',
+  x: 'close',
+  cancel: 'close',
+  dismiss: 'close',
+  cross: 'close',
+  tick: 'check',
+  checkmark: 'check',
+  done: 'check',
+  complete: 'check',
+  ok: 'check',
+  confirm: 'check',
+  add: 'plus',
+  new: 'plus',
+  create: 'plus',
+  subtract: 'minus',
+  back: 'arrow-left',
+  previous: 'arrow-left',
+  forward: 'arrow-right',
+  next: 'arrow-right',
+  reload: 'refresh',
+  sync: 'refresh',
+  rotate: 'refresh',
+  retry: 'refresh',
+  export: 'download',
+  import: 'upload',
+  pencil: 'edit',
+  write: 'edit',
+  pen: 'edit',
+  compose: 'edit',
+  bin: 'trash',
+  garbage: 'trash',
+  discard: 'trash',
+  duplicate: 'copy',
+  clone: 'copy',
+  clipboard: 'copy',
+  floppy: 'save',
+  disk: 'save',
+  revert: 'undo',
+  repeat: 'redo',
+  bubble: 'chat',
+  comment: 'chat',
+  conversation: 'chat',
+  talk: 'chat',
+  speech: 'chat',
+  call: 'phone',
+  telephone: 'phone',
+  dial: 'phone',
+  notification: 'bell',
+  alert: 'bell',
+  alarm: 'bell',
+  ring: 'bell',
+  announce: 'megaphone',
+  broadcast: 'megaphone',
+  shout: 'megaphone',
+  submit: 'send',
+  start: 'play',
+  begin: 'play',
+  resume: 'play',
+  wait: 'pause',
+  hold: 'pause',
+  end: 'stop',
+  halt: 'stop',
+  sound: 'volume',
+  audio: 'volume',
+  loud: 'volume',
+  microphone: 'mic',
+  record: 'mic',
+  voice: 'mic',
+  photo: 'camera',
+  picture: 'camera',
+  photograph: 'camera',
+  snap: 'camera',
+  gallery: 'image',
+  landscape: 'image',
+  movie: 'film',
+  cinema: 'film',
+  reel: 'film',
+  footage: 'film',
+  note: 'music',
+  song: 'music',
+  tune: 'music',
+  melody: 'music',
+  love: 'heart',
+  like: 'heart',
+  favorite: 'heart',
+  romance: 'heart',
+  rating: 'star',
+  rate: 'star',
+  review: 'star',
+  featured: 'star',
+  approve: 'thumbs-up',
+  good: 'thumbs-up',
+  agree: 'thumbs-up',
+  thumb: 'thumbs-up',
+  person: 'user',
+  profile: 'user',
+  account: 'user',
+  avatar: 'user',
+  people: 'users',
+  group: 'users',
+  team: 'users',
+  community: 'users',
+  members: 'users',
+  bright: 'sun',
+  day: 'sun',
+  solar: 'sun',
+  sunshine: 'sun',
+  night: 'moon',
+  dark: 'moon',
+  sleep: 'moon',
+  crescent: 'moon',
+  lunar: 'moon',
+  sky: 'cloud',
+  overcast: 'cloud',
+  weather: 'cloud',
+  drizzle: 'rain',
+  shower: 'rain',
+  wet: 'rain',
+  snowflake: 'snow',
+  winter: 'snow',
+  cold: 'snow',
+  ice: 'snow',
+  frost: 'snow',
+  freeze: 'snow',
+  plant: 'leaf',
+  eco: 'leaf',
+  green: 'leaf',
+  organic: 'leaf',
+  nature: 'leaf',
+  environment: 'leaf',
+  blossom: 'flower',
+  bloom: 'flower',
+  petal: 'flower',
+  floral: 'flower',
+  rose: 'flower',
+  daisy: 'flower',
+  garden: 'flower',
+  forest: 'tree',
+  wood: 'tree',
+  pine: 'tree',
+  evergreen: 'tree',
+  christmas: 'tree',
+  hill: 'mountain',
+  peak: 'mountain',
+  summit: 'mountain',
+  terrain: 'mountain',
+  hiking: 'mountain',
+  ocean: 'wave',
+  sea: 'wave',
+  tide: 'wave',
+  surf: 'wave',
+  beach: 'wave',
+  programming: 'code',
+  developer: 'code',
+  brackets: 'code',
+  html: 'code',
+  coding: 'code',
+  software: 'code',
+  console: 'terminal',
+  command: 'terminal',
+  shell: 'terminal',
+  cli: 'terminal',
+  prompt: 'terminal',
+  bash: 'terminal',
+  db: 'database',
+  storage: 'database',
+  data: 'database',
+  sql: 'database',
+  hosting: 'server',
+  rack: 'server',
+  backend: 'server',
+  infrastructure: 'server',
+  wireless: 'wifi',
+  internet: 'wifi',
+  network: 'wifi',
+  signal: 'wifi',
+  online: 'wifi',
+  processor: 'cpu',
+  chip: 'cpu',
+  hardware: 'cpu',
+  electronics: 'cpu',
+  circuit: 'cpu',
+  world: 'globe',
+  earth: 'globe',
+  international: 'globe',
+  web: 'globe',
+  planet: 'globe',
+  global: 'globe',
+  idea: 'lightbulb',
+  lamp: 'lightbulb',
+  insight: 'lightbulb',
+  innovation: 'lightbulb',
+  creative: 'lightbulb',
+  password: 'key',
+  access: 'key',
+  credential: 'key',
+  token: 'key',
+  secret: 'key',
+  secure: 'lock',
+  private: 'lock',
+  encrypted: 'lock',
+  protect: 'lock',
+  safety: 'shield',
+  defense: 'shield',
+  guard: 'shield',
+  trust: 'shield',
+  security: 'shield',
+  report: 'flag',
+  country: 'flag',
+  milestone: 'flag',
+  banner: 'flag',
+  time: 'clock',
+  hour: 'clock',
+  watch: 'clock',
+  timer: 'clock',
+  schedule: 'calendar',
+  event: 'calendar',
+  appointment: 'calendar',
+  planner: 'calendar',
+  date: 'calendar',
+  present: 'gift',
+  surprise: 'gift',
+  birthday: 'gift',
+  reward: 'gift',
+  prize: 'gift',
+  shopping: 'cart',
+  buy: 'cart',
+  store: 'cart',
+  ecommerce: 'cart',
+  basket: 'cart',
+  purchase: 'cart',
+  launch: 'rocket',
+  startup: 'rocket',
+  fast: 'rocket',
+  speed: 'rocket',
+  fly: 'rocket',
+  space: 'rocket',
+  boost: 'rocket',
+  round: 'circle',
+  dot: 'circle',
+  orb: 'circle',
+  ball: 'circle',
+  box: 'square',
+  rectangle: 'square',
+  block: 'square',
+  frame: 'square',
+  pyramid: 'triangle',
+  delta: 'triangle',
+  warning: 'triangle',
+  hex: 'hexagon',
+  honeycomb: 'hexagon',
+  gem: 'diamond',
+  jewel: 'diamond',
+  rhombus: 'diamond',
+  precious: 'diamond',
+  crystal: 'diamond',
+  see: 'eye',
+  view: 'eye',
+  visible: 'eye',
+  show: 'eye',
+  preview: 'eye',
+  look: 'eye',
+  hide: 'eye-off',
+  hidden: 'eye-off',
+  invisible: 'eye-off',
+  blind: 'eye-off',
+  funnel: 'filter',
+  sort: 'filter',
+  refine: 'filter',
+  narrow: 'filter',
+  fullscreen: 'maximize',
+  expand: 'maximize',
+  enlarge: 'maximize',
+  resize: 'maximize',
+  mention: 'at-sign',
+  listen: 'headphones',
+  earphones: 'headphones',
+  trophy: 'award',
+  medal: 'award',
+  achievement: 'award',
+  badge: 'award',
+  winner: 'award',
+  dawn: 'sunrise',
+  morning: 'sunrise',
+  horizon: 'sunrise',
+  daybreak: 'sunrise',
+  drop: 'droplet',
+  liquid: 'droplet',
+  tear: 'droplet',
+  hydrate: 'droplet',
+  air: 'wind',
+  breeze: 'wind',
+  gust: 'wind',
+  blow: 'wind',
+  screen: 'monitor',
+  display: 'monitor',
+  desktop: 'monitor',
+  computer: 'monitor',
+  tv: 'monitor',
+  mobile: 'smartphone',
+  cell: 'smartphone',
+  device: 'smartphone',
+  iphone: 'smartphone',
+  android: 'smartphone',
+  power: 'battery',
+  charge: 'battery',
+  energy: 'battery',
+  lightning: 'zap',
+  bolt: 'zap',
+  electricity: 'zap',
+  flash: 'zap',
+  thunder: 'zap',
+  work: 'briefcase',
+  job: 'briefcase',
+  business: 'briefcase',
+  career: 'briefcase',
+  portfolio: 'briefcase',
+  office: 'briefcase',
+  navigate: 'compass',
+  direction: 'compass',
+  explore: 'compass',
+  travel: 'compass',
+  adventure: 'compass',
+  north: 'compass',
+  location: 'pin',
+  place: 'pin',
+  marker: 'pin',
+  gps: 'pin',
+  position: 'pin',
+  cut: 'scissors',
+  trim: 'scissors',
+  clip: 'scissors',
+  snip: 'scissors',
+  crop: 'scissors',
+  maritime: 'anchor',
+  port: 'anchor',
+  dock: 'anchor',
+  naval: 'anchor',
+  ship: 'anchor',
+  boat: 'anchor',
+  cup: 'coffee',
+  drink: 'coffee',
+  beverage: 'coffee',
+  tea: 'coffee',
+  cafe: 'coffee',
+  mug: 'coffee',
+  hot: 'coffee',
+  wrench: 'tool',
+  repair: 'tool',
+  fix: 'tool',
+  maintenance: 'tool',
+  utility: 'tool',
+  spanner: 'tool',
+  target: 'crosshair',
+  aim: 'crosshair',
+  focus: 'crosshair',
+  scope: 'crosshair',
+  center: 'crosshair',
+  precision: 'crosshair',
+};
+
+// ── Color parsing ────────────────────────────────────────────────────
+const COLOR_WORDS: Record<string, string> = {
+  red: '#ef4444',
+  crimson: '#dc2626',
+  scarlet: '#b91c1c',
+  orange: '#f97316',
+  amber: '#f59e0b',
+  yellow: '#eab308',
+  gold: '#ca8a04',
+  lime: '#84cc16',
+  green: '#22c55e',
+  emerald: '#10b981',
+  teal: '#14b8a6',
+  cyan: '#06b6d4',
+  sky: '#0ea5e9',
+  blue: '#3b82f6',
+  indigo: '#6366f1',
+  violet: '#8b5cf6',
+  purple: '#a855f7',
+  fuchsia: '#d946ef',
+  pink: '#ec4899',
+  rose: '#f43f5e',
+  white: '#ffffff',
+  black: '#000000',
+  gray: '#6b7280',
+  grey: '#6b7280',
+  silver: '#9ca3af',
+  brown: '#92400e',
+  coral: '#f87171',
+  salmon: '#fb923c',
+  peach: '#fdba74',
+  mint: '#6ee7b7',
+  navy: '#1e3a5f',
+  maroon: '#7f1d1d',
+  olive: '#4d7c0f',
+  turquoise: '#2dd4bf',
+  magenta: '#e879f9',
+  lavender: '#c4b5fd',
+  warm: '#f97316',
+  cool: '#3b82f6',
+  hot: '#ef4444',
+  cold: '#06b6d4',
+  bright: '#facc15',
+  dark: '#374151',
+  light: '#f9fafb',
+  neon: '#4ade80',
+  pastel: '#c4b5fd',
+  muted: '#9ca3af',
+  earthy: '#92400e',
+  ocean: '#0284c7',
+  forest: '#166534',
+  sunset: '#f97316',
+  fire: '#ef4444',
+  ice: '#7dd3fc',
+  berry: '#a855f7',
+  wine: '#881337',
+  rust: '#b45309',
+  sand: '#d6b35c',
+  slate: '#64748b',
+  midnight: '#1e293b',
+  aqua: '#22d3ee',
+};
+
+export function extractColors(query: string): { primary: string; secondary: string } {
+  const words = query.toLowerCase().split(/\s+/);
+  const found: string[] = [];
+  for (const w of words) {
+    if (COLOR_WORDS[w]) found.push(COLOR_WORDS[w]);
+  }
+  return {
+    primary: found[0] ?? '#a78bfa',   // default violet
+    secondary: found[1] ?? found[0] ?? '#6366f1',
+  };
+}
+
+// ── Keyword matching ─────────────────────────────────────────────────
+export function matchIcons(query: string, limit = 12): IconDef[] {
+  if (!query.trim()) return ICONS;
+
+  const words = query
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .split(/\s+/)
+    .filter(Boolean);
+
+  // Expand synonyms: for each word, also include the canonical keyword
+  const expandedWords = new Set<string>();
+  for (const w of words) {
+    expandedWords.add(w);
+    if (SYNONYMS[w]) expandedWords.add(SYNONYMS[w]);
+  }
+
+  // Remove color words from matching — they're for color extraction, not icon search
+  const colorSet = new Set(Object.keys(COLOR_WORDS));
+  const searchWords = [...expandedWords].filter((w) => !colorSet.has(w));
+
+  if (searchWords.length === 0) return ICONS;
+
+  const scored: { icon: IconDef; score: number }[] = [];
+
+  for (const icon of ICONS) {
+    let score = 0;
+
+    for (const sw of searchWords) {
+      // Exact name match — strongest signal
+      if (icon.name === sw) {
+        score += 10;
+        continue;
+      }
+      // Name contains the word
+      if (icon.name.includes(sw)) {
+        score += 5;
+        continue;
+      }
+      // Keyword exact match
+      if (icon.keywords.includes(sw)) {
+        score += 3;
+        continue;
+      }
+      // Keyword partial match (e.g., "home" matching "homepage")
+      if (icon.keywords.some((k) => k.includes(sw) || sw.includes(k))) {
+        score += 1;
+      }
+    }
+
+    if (score > 0) scored.push({ icon, score });
+  }
+
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, limit).map((s) => s.icon);
+}
+
+// ── AI match (Chrome Built-in AI, optional) ──────────────────────────
+const ICON_NAMES = ICONS.map((i) => i.name);
+
+export async function aiMatch(
+  query: string,
+): Promise<{ icon: string; primary: string; secondary: string } | null> {
+  try {
+    const g = globalThis as any;
+    const LM = g.LanguageModel ?? g.ai?.languageModel;
+    if (!LM?.create) return null;
+
+    const session = await LM.create({
+      systemPrompt: `You pick the best icon from a set. Respond with ONLY a JSON object: {"icon":"name","primary":"#hex","secondary":"#hex"}. Available icons: ${ICON_NAMES.join(', ')}`,
+    });
+
+    const raw = await session.prompt(
+      `Pick the best icon and colors for: "${query}". Respond with ONLY the JSON object.`,
+    );
+    session.destroy?.();
+
+    const match = raw.match(/\{[\s\S]*?\}/);
+    if (!match) return null;
+
+    const parsed = JSON.parse(match[0]);
+    if (!parsed.icon || !ICON_NAMES.includes(parsed.icon)) return null;
+
+    return {
+      icon: parsed.icon,
+      primary: parsed.primary || '#a78bfa',
+      secondary: parsed.secondary || '#6366f1',
+    };
+  } catch {
+    return null;
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "name": "Date Parser",
+  "description": "Parse any date or time string — 'next tuesday', 'March 14, 2025', 'in 3 days', '2025-03-14T10:00Z'. Evolved from 500+ real-world formats.",
+  "version": "1.0.0",
+  "task": "date-parsing",
+  "category": "productivity",
+  "models": [],
+  "estimatedDownload": "0MB",
+  "input": ["text/plain"],
+  "output": ["application/json"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "runtimeType": "heuristic",
+  "evolution": { "versions": 1, "examples": 500, "accuracy": 92 }
+}

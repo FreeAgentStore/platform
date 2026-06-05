@@ -355,19 +355,312 @@
     {
       "id": "icon-generator",
       "name": "Icon Generator",
-      "description": "Describe an icon, get SVG code. AI writes vector graphics \u2014 no image model needed. Instant, zero download.",
+      "description": "Browse 100+ curated SVG icons or search by description. Color customization, SVG/PNG export. Works instantly, no AI required.",
       "task": "icon-generation",
       "category": "creative",
       "icon": "\ud83c\udfa8",
       "iconBg": "#ec4899",
-      "model": "Chrome Built-in AI (SVG writer)",
+      "model": "None (103 curated templates)",
       "modelSize": "0MB",
       "agentUrl": "https://freeagentstore.online/a/icon-generator/",
       "developer": "FreeAgentStore",
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
-      "type": "built-in-ai"
+      "type": "heuristic"
+    },
+    {
+      "id": "browser-automation",
+      "name": "Browser Automation",
+      "description": "Record actions \u2192 AI condenses to JS \u2192 replay without AI",
+      "category": "automation",
+      "icon": "\ud83e\udd16",
+      "iconBg": "#f59e0b",
+      "type": "built-in-ai",
+      "modelSize": "0MB"
+    },
+    {
+      "id": "unit-converter",
+      "name": "Unit Converter",
+      "description": "Convert between units instantly \u2014 length, weight, temperature, volume, speed, data, time. No model, no download.",
+      "task": "unit-conversion",
+      "category": "productivity",
+      "icon": "\ud83d\udccf",
+      "iconBg": "#0d9488",
+      "model": "None (heuristic)",
+      "modelSize": "0MB",
+      "agentUrl": "https://freeagentstore.online/a/unit-converter/",
+      "developer": "FreeAgentStore",
+      "desktopOnly": false,
+      "offlineCapable": true,
+      "backends": [],
+      "type": "heuristic",
+      "sandbox": {
+        "methods": [
+          {
+            "name": "convert",
+            "label": "Convert Units",
+            "params": [
+              {
+                "name": "value",
+                "type": "text",
+                "placeholder": "100",
+                "default": "100"
+              },
+              {
+                "name": "from",
+                "type": "text",
+                "placeholder": "km",
+                "default": "km"
+              },
+              {
+                "name": "to",
+                "type": "text",
+                "placeholder": "mi",
+                "default": "mi"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "avatar-maker",
+      "name": "Avatar Maker",
+      "description": "Upload a photo, get a stylized avatar. Geometric, pixel art, silhouette, or mosaic styles. Pure canvas rendering.",
+      "task": "avatar-generation",
+      "category": "creative",
+      "icon": "\ud83d\udc64",
+      "iconBg": "#8b5cf6",
+      "model": "None (heuristic)",
+      "modelSize": "0MB",
+      "agentUrl": "https://freeagentstore.online/a/avatar-maker/",
+      "developer": "FreeAgentStore",
+      "desktopOnly": false,
+      "offlineCapable": true,
+      "backends": [],
+      "type": "heuristic",
+      "sandbox": {
+        "methods": [
+          {
+            "name": "generateAvatar",
+            "label": "Generate Avatar",
+            "params": [
+              {
+                "name": "image",
+                "type": "file",
+                "accept": "image/*"
+              },
+              {
+                "name": "style",
+                "type": "select",
+                "options": ["geometric", "pixel-art", "silhouette", "mosaic"],
+                "default": "geometric"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "mood-palette",
+      "name": "Mood Palette",
+      "description": "Upload a photo or describe a mood \u2014 get a color palette with names. Extract colors from images or generate from text.",
+      "task": "color-palette",
+      "category": "creative",
+      "icon": "\ud83c\udfa8",
+      "iconBg": "#ec4899",
+      "model": "Chrome Built-in AI (optional)",
+      "modelSize": "0MB",
+      "agentUrl": "https://freeagentstore.online/a/mood-palette/",
+      "developer": "FreeAgentStore",
+      "desktopOnly": false,
+      "offlineCapable": true,
+      "backends": [],
+      "type": "built-in-ai",
+      "sandbox": {
+        "methods": [
+          {
+            "name": "extractFromImage",
+            "label": "Extract from Image",
+            "params": [
+              {
+                "name": "image",
+                "type": "file",
+                "accept": "image/*"
+              }
+            ]
+          },
+          {
+            "name": "generateFromText",
+            "label": "Generate from Mood",
+            "params": [
+              {
+                "name": "text",
+                "type": "text",
+                "placeholder": "ocean sunrise",
+                "default": "cozy autumn afternoon"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "regex-builder",
+      "name": "Regex Builder",
+      "description": "Describe a pattern in English, get a regex. 30+ common patterns, live testing, match highlighting.",
+      "task": "regex-building",
+      "category": "code",
+      "icon": ".*",
+      "iconBg": "#f59e0b",
+      "model": "None (heuristic)",
+      "modelSize": "0MB",
+      "agentUrl": "https://freeagentstore.online/a/regex-builder/",
+      "developer": "FreeAgentStore",
+      "desktopOnly": false,
+      "offlineCapable": true,
+      "backends": [],
+      "type": "heuristic"
+    },
+    {
+      "id": "json-formatter",
+      "name": "JSON Formatter",
+      "description": "Paste JSON \u2014 format, minify, validate, query, diff. Syntax highlighting, tree view, TypeScript types. Pure JS, instant.",
+      "task": "json-formatting",
+      "category": "code",
+      "icon": "{ }",
+      "iconBg": "#0891b2",
+      "model": "None (heuristic)",
+      "modelSize": "0MB",
+      "agentUrl": "https://freeagentstore.online/a/json-formatter/",
+      "developer": "FreeAgentStore",
+      "desktopOnly": false,
+      "offlineCapable": true,
+      "backends": [],
+      "type": "heuristic"
+    },
+    {
+      "id": "hash-generator",
+      "name": "Hash Generator",
+      "description": "SHA-256, MD5, HMAC, Base64, UUID, passwords, JWT decode, TOTP. Uses Web Crypto API. Zero deps.",
+      "task": "cryptography",
+      "category": "code",
+      "icon": "#",
+      "iconBg": "#6366f1",
+      "model": "None (Web Crypto API)",
+      "modelSize": "0MB",
+      "agentUrl": "https://freeagentstore.online/a/hash-generator/",
+      "developer": "FreeAgentStore",
+      "desktopOnly": false,
+      "offlineCapable": true,
+      "backends": [],
+      "type": "heuristic"
+    },
+    {
+      "id": "steering",
+      "name": "Steering Behaviors",
+      "description": "Craig Reynolds' steering behaviors for game characters. Seek, flee, wander, flock, arrive, avoid. 60fps for 500+ agents. Importable by FGS games.",
+      "task": "game-ai",
+      "category": "game-ai",
+      "icon": "\u2192",
+      "iconBg": "#16a34a",
+      "model": "None (pure math)",
+      "modelSize": "0MB",
+      "agentUrl": "https://freeagentstore.online/a/steering/",
+      "developer": "FreeAgentStore",
+      "desktopOnly": false,
+      "offlineCapable": true,
+      "backends": [],
+      "type": "heuristic"
+    },
+    {
+      "id": "behavior-tree",
+      "name": "Behavior Trees",
+      "description": "Composable behavior trees for NPC AI. Sequence, selector, parallel, decorators. Visual editor + live preview. For game character logic.",
+      "task": "game-ai",
+      "category": "game-ai",
+      "icon": "\ud83c\udf33",
+      "iconBg": "#65a30d",
+      "model": "None (pure logic)",
+      "modelSize": "0MB",
+      "agentUrl": "https://freeagentstore.online/a/behavior-tree/",
+      "developer": "FreeAgentStore",
+      "desktopOnly": false,
+      "offlineCapable": true,
+      "backends": [],
+      "type": "heuristic"
+    },
+    {
+      "id": "physics-sim",
+      "name": "Physics Sim",
+      "description": "Verlet integration physics \u2014 particles, springs, cloth, soft bodies, ragdolls. Pure math, 60fps. For game effects and dynamic objects.",
+      "task": "game-ai",
+      "category": "game-ai",
+      "icon": "\u26a1",
+      "iconBg": "#dc2626",
+      "model": "None (Verlet integration)",
+      "modelSize": "0MB",
+      "agentUrl": "https://freeagentstore.online/a/physics-sim/",
+      "developer": "FreeAgentStore",
+      "desktopOnly": false,
+      "offlineCapable": true,
+      "backends": [],
+      "type": "heuristic"
+    },
+    {
+      "id": "date-parser",
+      "name": "Date Parser",
+      "description": "Parse any date or time string \u2014 'next tuesday', 'March 14, 2025', 'in 3 days', '2025-03-14T10:00Z'. 500+ formats.",
+      "task": "date-parsing",
+      "category": "productivity",
+      "icon": "\ud83d\udcc5",
+      "iconBg": "#0284c7",
+      "model": "None (heuristic)",
+      "modelSize": "0MB",
+      "agentUrl": "https://freeagentstore.online/a/date-parser/",
+      "developer": "FreeAgentStore",
+      "desktopOnly": false,
+      "offlineCapable": true,
+      "backends": [],
+      "type": "heuristic",
+      "evolution": { "versions": 1, "examples": 500, "accuracy": 92 }
+    },
+    {
+      "id": "emotion-detector",
+      "name": "Emotion Detector",
+      "description": "Detect emotions in text \u2014 joy, anger, sadness, fear, surprise, disgust, trust, anticipation. Plutchik's 8 emotions, evolved scoring.",
+      "task": "emotion-detection",
+      "category": "text",
+      "icon": "\ud83c\udfad",
+      "iconBg": "#c026d3",
+      "model": "None (heuristic)",
+      "modelSize": "0MB",
+      "agentUrl": "https://freeagentstore.online/a/emotion-detector/",
+      "developer": "FreeAgentStore",
+      "desktopOnly": false,
+      "offlineCapable": true,
+      "backends": [],
+      "type": "heuristic",
+      "evolution": { "versions": 1, "examples": 1000, "accuracy": 82 }
+    },
+    {
+      "id": "language-detector",
+      "name": "Language Detector",
+      "description": "Detect the language of any text. Character n-gram frequency analysis evolved from Wikipedia corpora. 30 languages, 95%+ accuracy.",
+      "task": "language-detection",
+      "category": "text",
+      "icon": "\ud83c\udf10",
+      "iconBg": "#0369a1",
+      "model": "None (heuristic)",
+      "modelSize": "0MB",
+      "agentUrl": "https://freeagentstore.online/a/language-detector/",
+      "developer": "FreeAgentStore",
+      "desktopOnly": false,
+      "offlineCapable": true,
+      "backends": [],
+      "type": "heuristic",
+      "evolution": { "versions": 1, "examples": 5000, "accuracy": 95 }
     }
   ]
 }

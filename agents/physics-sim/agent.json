@@ -1,0 +1,16 @@
+{
+  "name": "Physics Simulation",
+  "description": "Verlet integration physics — particles, springs, cloth, soft bodies, ragdolls. Pure math, 60fps. Use for game effects and dynamic objects.",
+  "version": "1.0.0",
+  "task": "game-ai",
+  "category": "gaming",
+  "models": [],
+  "estimatedDownload": "0MB",
+  "input": ["application/json"],
+  "output": ["application/json"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false
+}

@@ -1,0 +1,17 @@
+{
+  "name": "Hash Generator",
+  "description": "Generate hashes, UUIDs, passwords, and encodings. SHA-256, MD5, HMAC, Base64, JWT decode, TOTP. Uses Web Crypto API.",
+  "version": "1.0.0",
+  "task": "hash-generation",
+  "category": "developer",
+  "models": [],
+  "estimatedDownload": "0MB",
+  "input": ["text/plain"],
+  "output": ["text/plain"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "runtimeType": "built-in-ai"
+}

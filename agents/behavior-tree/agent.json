@@ -1,0 +1,16 @@
+{
+  "name": "Behavior Trees",
+  "description": "Composable behavior trees for game NPC AI. Sequence, selector, parallel, decorators. Visual editor + live preview. Pure JS, zero deps.",
+  "version": "1.0.0",
+  "task": "game-ai",
+  "category": "gaming",
+  "models": [],
+  "estimatedDownload": "0MB",
+  "input": ["application/json"],
+  "output": ["application/json"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false
+}

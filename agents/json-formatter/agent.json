@@ -1,0 +1,17 @@
+{
+  "name": "JSON Formatter",
+  "description": "Paste JSON — format, minify, validate, query, diff. Syntax highlighting, tree view, error pinpointing. Pure JS, instant.",
+  "version": "1.0.0",
+  "task": "json-formatting",
+  "category": "developer",
+  "models": [],
+  "estimatedDownload": "0MB",
+  "input": ["application/json"],
+  "output": ["application/json", "text/plain"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "runtimeType": "built-in-ai"
+}
