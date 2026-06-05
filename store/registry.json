@@ -1514,6 +1514,336 @@
           }
         ]
       }
+    },
+    {
+      "id": "food-analyzer",
+      "name": "Food Analyzer",
+      "description": "Photograph food, get dish name + estimated calories + ingredients. MobileViT + nutrition database.",
+      "task": "food-analysis",
+      "category": "vision",
+      "icon": "🍔",
+      "iconBg": "#f97316",
+      "model": "MobileViT Small",
+      "modelSize": "20MB",
+      "agentUrl": "https://freeagentstore.online/a/food-analyzer/",
+      "developer": "serge-ivo",
+      "creatorGithub": "serge-ivo",
+      "desktopOnly": false,
+      "offlineCapable": true,
+      "backends": [
+        "webgpu",
+        "wasm"
+      ],
+      "type": "model",
+      "api": {
+        "imports": "import { initModel, analyzeFood } from '@freeagentstore/food-analyzer'",
+        "functions": [
+          {
+            "name": "analyzeFood",
+            "signature": "analyzeFood(image): Promise<FoodResult>",
+            "example": "await initModel()\nconst result = await analyzeFood(imageElement)\n// { dish: 'pizza', calories: 285, ingredients: ['dough', 'cheese'] }"
+          }
+        ]
+      }
+    },
+    {
+      "id": "plant-identifier",
+      "name": "Plant Identifier",
+      "description": "Photograph a plant, get species + care instructions + toxicity info. MobileViT + botanical database.",
+      "task": "plant-id",
+      "category": "vision",
+      "icon": "🌿",
+      "iconBg": "#16a34a",
+      "model": "MobileViT Small",
+      "modelSize": "20MB",
+      "agentUrl": "https://freeagentstore.online/a/plant-identifier/",
+      "developer": "serge-ivo",
+      "creatorGithub": "serge-ivo",
+      "desktopOnly": false,
+      "offlineCapable": true,
+      "backends": [
+        "webgpu",
+        "wasm"
+      ],
+      "type": "model",
+      "api": {
+        "imports": "import { initModel, identifyPlant } from '@freeagentstore/plant-identifier'",
+        "functions": [
+          {
+            "name": "identifyPlant",
+            "signature": "identifyPlant(image): Promise<PlantResult>",
+            "example": "const result = await identifyPlant(img)\n// { name: 'Sunflower', scientific: 'Helianthus annuus', toxic: false }"
+          }
+        ]
+      }
+    },
+    {
+      "id": "smart-search",
+      "name": "Smart Search",
+      "description": "Semantic text search — finds meaning, not just keywords. MiniLM embeddings (23MB).",
+      "task": "semantic-search",
+      "category": "text",
+      "icon": "🔍",
+      "iconBg": "#2563eb",
+      "model": "all-MiniLM-L6-v2",
+      "modelSize": "23MB",
+      "agentUrl": "https://freeagentstore.online/a/smart-search/",
+      "developer": "serge-ivo",
+      "creatorGithub": "serge-ivo",
+      "desktopOnly": false,
+      "offlineCapable": true,
+      "backends": [
+        "wasm"
+      ],
+      "type": "model",
+      "api": {
+        "imports": "import { initModel, indexTexts, search } from '@freeagentstore/smart-search'",
+        "functions": [
+          {
+            "name": "search",
+            "signature": "search(query, index, texts, topK?): Promise<SearchResult[]>",
+            "example": "const index = await indexTexts(paragraphs)\nconst results = await search('how to cook pasta', index, paragraphs)\n// [{ text: '...recipe...', score: 0.87 }]"
+          }
+        ]
+      }
+    },
+    {
+      "id": "document-scanner",
+      "name": "Document Scanner",
+      "description": "Photograph a document, get clean extracted text with paragraphs. TrOCR + layout heuristics.",
+      "task": "ocr",
+      "category": "productivity",
+      "icon": "📄",
+      "iconBg": "#6366f1",
+      "model": "TrOCR Small",
+      "modelSize": "130MB",
+      "agentUrl": "https://freeagentstore.online/a/document-scanner/",
+      "developer": "serge-ivo",
+      "creatorGithub": "serge-ivo",
+      "desktopOnly": false,
+      "offlineCapable": true,
+      "backends": [
+        "wasm"
+      ],
+      "type": "model",
+      "api": {
+        "imports": "import { initModel, scanDocument } from '@freeagentstore/document-scanner'",
+        "functions": [
+          {
+            "name": "scanDocument",
+            "signature": "scanDocument(image): Promise<ScanResult>",
+            "example": "const result = await scanDocument(photoElement)\n// { text: 'Dear Sir...', paragraphs: [...], wordCount: 142 }"
+          }
+        ]
+      }
+    },
+    {
+      "id": "voice-journal",
+      "name": "Voice Journal",
+      "description": "Record voice, get transcription + mood analysis + summary. Whisper Tiny + emotion + summarizer.",
+      "task": "voice-journaling",
+      "category": "productivity",
+      "icon": "🎙️",
+      "iconBg": "#7c3aed",
+      "model": "Whisper Tiny",
+      "modelSize": "40MB",
+      "agentUrl": "https://freeagentstore.online/a/voice-journal/",
+      "developer": "serge-ivo",
+      "creatorGithub": "serge-ivo",
+      "desktopOnly": false,
+      "offlineCapable": true,
+      "backends": [
+        "wasm"
+      ],
+      "type": "model",
+      "api": {
+        "imports": "import { initModel, processRecording } from '@freeagentstore/voice-journal'",
+        "functions": [
+          {
+            "name": "processRecording",
+            "signature": "processRecording(audioBlob): Promise<JournalEntry>",
+            "example": "const entry = await processRecording(blob)\n// { transcript: '...', mood: { primary: 'joy' }, summary: '...' }"
+          }
+        ]
+      }
+    },
+    {
+      "id": "scene-describer",
+      "name": "Scene Describer",
+      "description": "Upload a photo, get a natural language description. Object detection + spatial reasoning. For accessibility.",
+      "task": "scene-description",
+      "category": "vision",
+      "icon": "👁️",
+      "iconBg": "#0891b2",
+      "model": "DETR ResNet-50",
+      "modelSize": "160MB",
+      "agentUrl": "https://freeagentstore.online/a/scene-describer/",
+      "developer": "serge-ivo",
+      "creatorGithub": "serge-ivo",
+      "desktopOnly": false,
+      "offlineCapable": true,
+      "backends": [
+        "wasm"
+      ],
+      "type": "model",
+      "api": {
+        "imports": "import { initModel, describeScene } from '@freeagentstore/scene-describer'",
+        "functions": [
+          {
+            "name": "describeScene",
+            "signature": "describeScene(image): Promise<SceneDescription>",
+            "example": "const desc = await describeScene(img)\n// { description: 'An outdoor scene with 2 people near a car', alt: '...' }"
+          }
+        ]
+      }
+    },
+    {
+      "id": "receipt-scanner",
+      "name": "Receipt Scanner",
+      "description": "Photograph a receipt, get merchant + date + line items + totals. TrOCR + receipt parsing heuristics.",
+      "task": "receipt-scanning",
+      "category": "productivity",
+      "icon": "🧾",
+      "iconBg": "#059669",
+      "model": "TrOCR Small",
+      "modelSize": "130MB",
+      "agentUrl": "https://freeagentstore.online/a/receipt-scanner/",
+      "developer": "serge-ivo",
+      "creatorGithub": "serge-ivo",
+      "desktopOnly": false,
+      "offlineCapable": true,
+      "backends": [
+        "wasm"
+      ],
+      "type": "model",
+      "api": {
+        "imports": "import { initModel, scanReceipt } from '@freeagentstore/receipt-scanner'",
+        "functions": [
+          {
+            "name": "scanReceipt",
+            "signature": "scanReceipt(image): Promise<ReceiptResult>",
+            "example": "const receipt = await scanReceipt(photo)\n// { merchant: 'Starbucks', total: 5.75, items: [...] }"
+          }
+        ]
+      }
+    },
+    {
+      "id": "faq-matcher",
+      "name": "FAQ Matcher",
+      "description": "Index your FAQ, find the best answer for any question. Semantic matching with MiniLM (23MB).",
+      "task": "faq-matching",
+      "category": "productivity",
+      "icon": "❓",
+      "iconBg": "#0284c7",
+      "model": "all-MiniLM-L6-v2",
+      "modelSize": "23MB",
+      "agentUrl": "https://freeagentstore.online/a/faq-matcher/",
+      "developer": "serge-ivo",
+      "creatorGithub": "serge-ivo",
+      "desktopOnly": false,
+      "offlineCapable": true,
+      "backends": [
+        "wasm"
+      ],
+      "type": "model",
+      "api": {
+        "imports": "import { initModel, indexFAQ, findAnswer } from '@freeagentstore/faq-matcher'",
+        "functions": [
+          {
+            "name": "findAnswer",
+            "signature": "findAnswer(query, index, topK?): Promise<MatchResult[]>",
+            "example": "const faq = await indexFAQ([{ question: 'Reset password?', answer: '...' }])\nconst match = await findAnswer('forgot my login', faq)\n// [{ answer: '...', score: 0.89 }]"
+          }
+        ]
+      }
+    },
+    {
+      "id": "plagiarism-checker",
+      "name": "Plagiarism Checker",
+      "description": "Compare two texts for semantic similarity. MiniLM embeddings + paragraph comparison.",
+      "task": "plagiarism-check",
+      "category": "text",
+      "icon": "🔎",
+      "iconBg": "#dc2626",
+      "model": "all-MiniLM-L6-v2",
+      "modelSize": "23MB",
+      "agentUrl": "https://freeagentstore.online/a/plagiarism-checker/",
+      "developer": "serge-ivo",
+      "creatorGithub": "serge-ivo",
+      "desktopOnly": false,
+      "offlineCapable": true,
+      "backends": [
+        "wasm"
+      ],
+      "type": "model",
+      "api": {
+        "imports": "import { initModel, checkPlagiarism } from '@freeagentstore/plagiarism-checker'",
+        "functions": [
+          {
+            "name": "checkPlagiarism",
+            "signature": "checkPlagiarism(source, target): Promise<PlagiarismResult>",
+            "example": "const result = await checkPlagiarism(original, submitted)\n// { overallScore: 0.62, verdict: 'suspicious' }"
+          }
+        ]
+      }
+    },
+    {
+      "id": "meeting-summarizer",
+      "name": "Meeting Summarizer",
+      "description": "Upload a meeting recording, get transcript + decisions + action items. Whisper Tiny + meeting heuristics.",
+      "task": "meeting-summary",
+      "category": "productivity",
+      "icon": "📝",
+      "iconBg": "#7c3aed",
+      "model": "Whisper Tiny",
+      "modelSize": "40MB",
+      "agentUrl": "https://freeagentstore.online/a/meeting-summarizer/",
+      "developer": "serge-ivo",
+      "creatorGithub": "serge-ivo",
+      "desktopOnly": false,
+      "offlineCapable": true,
+      "backends": [
+        "wasm"
+      ],
+      "type": "model",
+      "api": {
+        "imports": "import { initModel, summarizeMeeting } from '@freeagentstore/meeting-summarizer'",
+        "functions": [
+          {
+            "name": "summarizeMeeting",
+            "signature": "summarizeMeeting(audioBlob): Promise<MeetingResult>",
+            "example": "const meeting = await summarizeMeeting(audioBlob)\n// { decisions: [...], actionItems: [...], keyPoints: [...] }"
+          }
+        ]
+      }
+    },
+    {
+      "id": "study-cards",
+      "name": "Study Card Maker",
+      "description": "Paste text or notes — auto-generate flashcards. Keyword extraction + question generation. Anki export.",
+      "task": "flashcard-generation",
+      "category": "education",
+      "icon": "📚",
+      "iconBg": "#f59e0b",
+      "model": "None (heuristic)",
+      "modelSize": "0MB",
+      "agentUrl": "https://freeagentstore.online/a/study-cards/",
+      "developer": "serge-ivo",
+      "creatorGithub": "serge-ivo",
+      "desktopOnly": false,
+      "offlineCapable": true,
+      "backends": [],
+      "type": "heuristic",
+      "api": {
+        "imports": "import { generateCards } from '@freeagentstore/study-cards'",
+        "functions": [
+          {
+            "name": "generateCards",
+            "signature": "generateCards(text: string): StudySet",
+            "example": "const set = generateCards('Photosynthesis is the process...')\n// { cards: [{ front: 'What is photosynthesis?', back: '...' }] }"
+          }
+        ]
+      }
     }
   ]
 }
