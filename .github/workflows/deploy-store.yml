@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'store/**'
+  workflow_dispatch:
 
 concurrency:
   group: deploy-store
@@ -28,7 +29,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
         run: |
           aws s3 sync store/ s3://fags-agents/store/ \
-            --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com \
+            --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com \
             --exclude '.gitignore' \
             --exclude 'partials/*' \
             --exclude 'templates/*' \

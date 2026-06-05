@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'agents/**'
+  workflow_dispatch:
 
 concurrency:
   group: deploy-agents
@@ -54,7 +55,7 @@ jobs:
 
             echo "--- Uploading $SLUG to R2 ---"
             aws s3 sync agents/$SLUG/web/dist/ s3://fags-agents/agents/$SLUG/ \
-              --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com \
+              --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com \
               --delete
 
             echo "--- Upserting D1 route for $SLUG ---"
