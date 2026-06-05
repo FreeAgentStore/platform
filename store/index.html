@@ -134,7 +134,8 @@
         <button class="filter-btn" onclick="filterAgents('text')">Text</button>
         <button class="filter-btn" onclick="filterAgents('code')">Code</button>
         <button class="filter-btn" onclick="filterAgents('data')">Data</button>
-        <span class="agent-count" id="agentCount">4 agents</span>
+        <button class="filter-btn" onclick="filterAgents('productivity')">Productivity</button>
+        <span class="agent-count" id="agentCount">5 agents</span>
       </div>
 
       <div class="agents-grid" id="agentsGrid">
@@ -209,6 +210,25 @@
             </div>
           </a>
           <a href="/a/sentiment/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
+        </div>
+
+        <!-- Unit Converter -->
+        <div class="agent-card" data-category="productivity">
+          <a href="/agents/unit-converter/" class="agent-card-body">
+            <div class="agent-icon" style="background:#0891b2">📐</div>
+            <div class="agent-body">
+              <span class="agent-name">Unit Converter</span>
+              <span class="agent-desc">Length, weight, temp, volume, speed, data, time</span>
+              <div class="agent-meta">
+                <span class="tag heuristic">Heuristic</span>
+                <span class="tag">0MB</span>
+              </div>
+            </div>
+          </a>
+          <a href="/a/unit-converter/" class="agent-cta">
             <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
             Open
           </a>

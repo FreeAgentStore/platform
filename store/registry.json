@@ -67,6 +67,23 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic"
+    },
+    {
+      "id": "unit-converter",
+      "name": "Unit Converter",
+      "description": "Convert between units instantly — length, weight, temperature, volume, speed, data, time. No model needed.",
+      "task": "unit-conversion",
+      "category": "productivity",
+      "icon": "📐",
+      "iconBg": "#0891b2",
+      "model": "None (heuristic)",
+      "modelSize": "0MB",
+      "agentUrl": "https://freeagentstore.online/a/unit-converter/",
+      "developer": "FreeAgentStore",
+      "desktopOnly": false,
+      "offlineCapable": true,
+      "backends": [],
+      "type": "heuristic"
     }
   ]
 }

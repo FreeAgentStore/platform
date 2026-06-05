@@ -1,0 +1,16 @@
+{
+  "name": "Unit Converter",
+  "description": "Convert between units instantly — length, weight, temperature, volume, speed, data, time. No model, no download.",
+  "version": "1.0.0",
+  "task": "unit-conversion",
+  "category": "productivity",
+  "models": [],
+  "estimatedDownload": "0MB",
+  "input": ["text/plain"],
+  "output": ["application/json"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false
+}
