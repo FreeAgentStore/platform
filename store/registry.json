@@ -265,7 +265,22 @@
       "backends": [],
       "type": "built-in-ai",
       "sandbox": {
-        "methods": []
+        "methods": [
+          {
+            "name": "summarize",
+            "label": "Summarize",
+            "builtInAI": true,
+            "systemPrompt": "Summarize the following text concisely.",
+            "params": [
+              {
+                "name": "text",
+                "type": "text",
+                "placeholder": "Paste text to summarize...",
+                "default": "Artificial intelligence (AI) is intelligence demonstrated by machines, as opposed to natural intelligence displayed by animals including humans. AI research has been defined as the field of study of intelligent agents, which refers to any system that perceives its environment and takes actions that maximize its chance of achieving its goals."
+              }
+            ]
+          }
+        ]
       }
     },
     {
@@ -285,7 +300,22 @@
       "backends": [],
       "type": "built-in-ai",
       "sandbox": {
-        "methods": []
+        "methods": [
+          {
+            "name": "write",
+            "label": "Write Text",
+            "builtInAI": true,
+            "systemPrompt": "Write helpful, clear text based on the user's request.",
+            "params": [
+              {
+                "name": "text",
+                "type": "text",
+                "placeholder": "Describe what to write...",
+                "default": "A professional email declining a meeting invitation politely"
+              }
+            ]
+          }
+        ]
       },
       "usedByApps": [
         {
@@ -313,7 +343,22 @@
       "backends": [],
       "type": "built-in-ai",
       "sandbox": {
-        "methods": []
+        "methods": [
+          {
+            "name": "explain",
+            "label": "Explain Code",
+            "builtInAI": true,
+            "systemPrompt": "Explain this code in plain English. Be concise.",
+            "params": [
+              {
+                "name": "text",
+                "type": "text",
+                "placeholder": "Paste code...",
+                "default": "const debounce = (fn, ms) => {\n  let id;\n  return (...args) => {\n    clearTimeout(id);\n    id = setTimeout(() => fn(...args), ms);\n  };\n};"
+              }
+            ]
+          }
+        ]
       }
     }
   ]

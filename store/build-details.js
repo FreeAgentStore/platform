@@ -216,6 +216,8 @@ function generateDetailPage(agent) {
           <h2>How it works</h2>
           ${isHeuristic
             ? '<p>This is a <strong>heuristic agent</strong> — pure JavaScript code evolved by an LLM from examples. No AI model at runtime. Instant results, zero download, works offline.</p>'
+            : agent.type === 'built-in-ai'
+            ? '<p>Uses <strong>Chrome Built-in AI</strong> (Gemini Nano) — a 4GB model pre-installed in your browser by Google. Zero download, instant inference, fully on-device. Falls back to Ollama if available. Requires Chrome 138+ or Edge with Aion.</p>'
             : `<p>Uses the <strong>${agent.model}</strong> model (${agent.modelSize}). Downloads once, cached in Cache Storage forever. Inference runs in a Web Worker via ${backends.includes('WEBGPU') ? 'WebGPU with WASM fallback' : 'WASM'}.</p>`
           }
           <p style="margin-top:0.5rem">100% private — no data leaves your browser. Open source (MIT). <a href="https://github.com/${repoPath}">View source</a>.</p>
@@ -306,7 +308,37 @@ function generateSandbox(agent) {
     <button onclick="runSandbox_${method.name}()" style="width:100%;padding:0.6rem;border-radius:10px;border:none;background:var(--accent);color:white;font-weight:600;font-size:0.88rem;cursor:pointer;margin-bottom:0.75rem">${method.label}</button>
     <div id="result-${method.name}" style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:0.75rem;font-family:monospace;font-size:0.82rem;min-height:2.5rem;white-space:pre-wrap;word-break:break-all;color:var(--muted)">Click "${method.label}" to try</div>
 
-    <script type="module">
+    ${method.builtInAI ? `<script>
+      window.runSandbox_${method.name} = async function() {
+        const out = document.getElementById('result-${method.name}');
+        out.style.color = 'var(--ink)';
+        out.textContent = 'Running...';
+        try {
+          const g = globalThis;
+          const LM = g.LanguageModel || (g.ai && g.ai.languageModel);
+          if (!LM || !LM.create) {
+            // Fallback: try Ollama
+            try {
+              const r = await fetch('http://localhost:11434/api/generate', {
+                method: 'POST', headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({model:'llama3.2', prompt: '${(method.systemPrompt ?? '').replace(/'/g, "\\'")}\\n\\n' + ${paramGatherer}, stream:false})
+              });
+              if (r.ok) { out.textContent = (await r.json()).response; return; }
+            } catch(e) {}
+            out.style.color = '#fbbf24';
+            out.textContent = 'Built-in AI not available in this browser.\\nEnable: chrome://flags → Prompt API for Gemini Nano\\nOr install Ollama locally.';
+            return;
+          }
+          const session = await LM.create({systemPrompt: '${(method.systemPrompt ?? '').replace(/'/g, "\\'")}'});
+          const result = await session.prompt(${paramGatherer});
+          session.destroy && session.destroy();
+          out.textContent = result;
+        } catch(e) {
+          out.style.color = '#f87171';
+          out.textContent = 'Error: ' + e.message;
+        }
+      };
+    <\/script>` : `<script type="module">
       import * as mod from '${agent.esmUrl ?? 'https://freeagentstore.online/pkg/' + agent.id + '/index.js'}';
       window.runSandbox_${method.name} = async function() {
         const out = document.getElementById('result-${method.name}');
@@ -320,7 +352,7 @@ function generateSandbox(agent) {
           out.textContent = 'Error: ' + e.message;
         }
       };
-    <\/script>`;
+    <\/script>`}`;
   }
 
   return html;
