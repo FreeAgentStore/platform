@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const registry = JSON.parse(fs.readFileSync(path.join(__dirname, 'registry.json'), 'utf-8'));
-const outDir = path.join(__dirname, 'dist');
+const outDir = __dirname;
 
 function generateDetailPage(agent) {
   const isHeuristic = agent.type === 'heuristic';
@@ -255,7 +255,36 @@ function generateDetailPage(agent) {
       <a href="https://github.com/FreeAgentStore">GitHub</a> &middot;
       <a href="https://proagentstore.online" style="color:#3b82f6">Pro</a>
     </div>
+  <!-- README from repo -->
+  <section class="container" style="padding-bottom:2rem">
+    <div id="readme" style="display:none;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:1.5rem;margin-top:1rem">
+      <h2 style="font-family:var(--font-display);font-size:1.15rem;font-weight:700;margin-bottom:1rem">README</h2>
+      <div id="readme-content" style="color:var(--muted);font-size:0.9rem;line-height:1.7"></div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <a href="https://freeagentstore.online">FreeAgentStore</a> &middot;
+      <a href="https://freeagentstore.online/skills.md">Docs</a> &middot;
+      <a href="https://github.com/FreeAgentStore">GitHub</a> &middot;
+      <a href="https://proagentstore.online" style="color:#3b82f6">Pro</a>
+    </div>
   </footer>
+
+  <script>
+    (async function() {
+      try {
+        const r = await fetch('https://api.github.com/repos/FreeAgentStore/${agent.id}/readme', {
+          headers: { Accept: 'application/vnd.github.html+json' }
+        });
+        if (!r.ok) return;
+        const html = await r.text();
+        document.getElementById('readme-content').innerHTML = html;
+        document.getElementById('readme').style.display = 'block';
+      } catch {}
+    })();
+  <\/script>
 </body>
 </html>`;
 }

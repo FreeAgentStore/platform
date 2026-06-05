@@ -34,4 +34,5 @@ jobs:
             --exclude 'partials/*' \
             --exclude 'templates/*' \
             --exclude 'build-details.js' \
+            --exclude 'dist/*' \
             --delete
