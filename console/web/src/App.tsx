@@ -69,7 +69,7 @@ export default function App() {
     const token = sessionFromUrl ?? getStoredToken();
     if (token) {
       // Verify token by calling /auth/me
-      fetch(`${AUTH_API}/auth/me`, {
+      fetch(`${AUTH_API}/v1/auth/me`, {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then(r => r.ok ? r.json() : null)
