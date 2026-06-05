@@ -198,32 +198,11 @@
             <span style="font-size:0.72rem;color:var(--muted)">Try it live</span>
           </div>
           <div id="sandbox" style="padding:1rem">
-            <p style="font-size:0.75rem;color:var(--muted-soft);margin-bottom:0.5rem">Requires 160MB model download</p><div style="margin-bottom:0.5rem">
-          <label style="font-size:0.72rem;color:var(--muted-soft);display:block;margin-bottom:0.2rem">text</label>
-          <input type="text" id="param-generate-0" value="The quick brown fox jumps over the lazy dog." placeholder="Hello world!"
-            style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-family:monospace;font-size:0.85rem" />
-        </div><div style="margin-bottom:0.5rem">
-          <label style="font-size:0.72rem;color:var(--muted-soft);display:block;margin-bottom:0.2rem">voice</label>
-          <select id="param-generate-1" style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:0.85rem"><option value="af_heart" selected>af_heart</option><option value="af_bella">af_bella</option><option value="am_adam">am_adam</option><option value="bm_george">bm_george</option></select>
-        </div>
-    <button onclick="runSandbox_generate()" style="width:100%;padding:0.6rem;border-radius:10px;border:none;background:var(--accent);color:white;font-weight:600;font-size:0.88rem;cursor:pointer;margin-bottom:0.75rem">Generate Speech</button>
-    <div id="result-generate" style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:0.75rem;font-family:monospace;font-size:0.82rem;min-height:2.5rem;white-space:pre-wrap;word-break:break-all;color:var(--muted)">Click "Generate Speech" to try</div>
-
-    <script type="module">
-      import * as mod from 'https://freeagentstore.online/pkg/tts/index.js';
-      window.runSandbox_generate = async function() {
-        const out = document.getElementById('result-generate');
-        out.style.color = 'var(--ink)';
-        out.textContent = 'Running...';
-        try {
-          const result = mod.generate(document.getElementById('param-generate-0').value, document.getElementById('param-generate-1').value);
-          out.textContent = JSON.stringify(result, null, 2);
-        } catch(e) {
-          out.style.color = '#f87171';
-          out.textContent = 'Error: ' + e.message;
-        }
-      };
-    </script>
+            
+      <p style="color:var(--muted);font-size:0.82rem;margin-bottom:0.75rem">This agent requires the full UI. Use it at freeagentstore.online/a/tts/ or embed via iframe.</p>
+      <a href="https://freeagentstore.online/a/tts/" target="_blank" rel="noopener" class="btn-primary" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.6rem 1.25rem;border-radius:10px;background:var(--accent);color:#fff;font-weight:600;font-size:0.88rem;text-decoration:none">
+        Try the full interactive version &rarr;
+      </a>
           </div>
           <div style="padding:0.5rem 1rem;border-top:1px solid var(--line);font-size:0.72rem;color:var(--muted-soft);text-align:center">
             <a href="https://freeagentstore.online/a/tts/" style="color:var(--muted)">Open full app &rarr;</a>

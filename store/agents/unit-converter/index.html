@@ -211,36 +211,89 @@
             <span style="font-size:0.72rem;color:var(--muted)">Try it live</span>
           </div>
           <div id="sandbox" style="padding:1rem">
-            <div style="margin-bottom:0.5rem">
-          <label style="font-size:0.72rem;color:var(--muted-soft);display:block;margin-bottom:0.2rem">value</label>
-          <input type="text" id="param-convert-0" value="100" placeholder="100"
-            style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-family:monospace;font-size:0.85rem" />
-        </div><div style="margin-bottom:0.5rem">
-          <label style="font-size:0.72rem;color:var(--muted-soft);display:block;margin-bottom:0.2rem">from</label>
-          <input type="text" id="param-convert-1" value="km" placeholder="km"
-            style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-family:monospace;font-size:0.85rem" />
-        </div><div style="margin-bottom:0.5rem">
-          <label style="font-size:0.72rem;color:var(--muted-soft);display:block;margin-bottom:0.2rem">to</label>
-          <input type="text" id="param-convert-2" value="mi" placeholder="mi"
-            style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-family:monospace;font-size:0.85rem" />
+            
+    <div style="margin-bottom:0.5rem">
+      <div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.5rem">
+        <button class="sb-sample" data-i="0" style="padding:0.25rem 0.6rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;font-family:inherit">100 km → mi</button>
+        <button class="sb-sample" data-i="1" style="padding:0.25rem 0.6rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;font-family:inherit">72 f → c</button>
+        <button class="sb-sample" data-i="2" style="padding:0.25rem 0.6rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;font-family:inherit">1 kg → lb</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:0.4rem;align-items:end;margin-bottom:0.4rem">
+        <div>
+          <label style="font-size:0.68rem;color:var(--muted-soft);display:block;margin-bottom:0.2rem">Value</label>
+          <input type="number" id="sb-value" value="100" style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:0.85rem" />
         </div>
-    <button onclick="runSandbox_convert()" style="width:100%;padding:0.6rem;border-radius:10px;border:none;background:var(--accent);color:white;font-weight:600;font-size:0.88rem;cursor:pointer;margin-bottom:0.75rem">Convert Units</button>
-    <div id="result-convert" style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:0.75rem;font-family:monospace;font-size:0.82rem;min-height:2.5rem;white-space:pre-wrap;word-break:break-all;color:var(--muted)">Click "Convert Units" to try</div>
+        <div style="padding-bottom:0.25rem;color:var(--muted-soft);font-size:0.82rem">→</div>
+        <div style="display:flex;gap:0.3rem">
+          <div style="flex:1">
+            <label style="font-size:0.68rem;color:var(--muted-soft);display:block;margin-bottom:0.2rem">From</label>
+            <input type="text" id="sb-from" value="km" placeholder="km" style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:0.85rem" />
+          </div>
+          <div style="flex:1">
+            <label style="font-size:0.68rem;color:var(--muted-soft);display:block;margin-bottom:0.2rem">To</label>
+            <input type="text" id="sb-to" value="mi" placeholder="mi" style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:0.85rem" />
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="sb-output" style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:0.75rem;min-height:3rem;color:var(--muted);font-size:0.85rem">Enter values to convert</div>
+    <div id="sb-error" style="display:none;margin-top:0.35rem;padding:0.5rem;border-radius:6px;background:rgba(239,68,68,0.1);color:#f87171;font-size:0.78rem"></div>
 
     <script type="module">
-      import * as mod from 'https://freeagentstore.online/pkg/unit-converter/index.js';
-      window.runSandbox_convert = async function() {
-        const out = document.getElementById('result-convert');
-        out.style.color = 'var(--ink)';
-        out.textContent = 'Running...';
+      var _samples = [{"value":100,"from":"km","to":"mi"},{"value":72,"from":"f","to":"c"},{"value":1,"from":"kg","to":"lb"}];
+      function renderResult(r) {
+      if (!r) return '<span style="color:var(--muted)">No result</span>';
+      if (r.error) return '<span style="color:#f87171">' + r.error + '</span>';
+      return '<div style="font-size:1.3rem;font-weight:700;color:var(--ink);margin-bottom:0.3rem">' + (typeof r.result === 'number' ? r.result.toFixed(6).replace(/\.?0+$/, '') : r.result) + '</div>'
+        + (r.formatted ? '<div style="font-size:0.82rem;color:var(--muted)">' + r.formatted + '</div>' : '');
+    }
+
+      var _mod, _loaded = false;
+      try {
+        _mod = await import('https://freeagentstore.online/pkg/unit-converter/index.js');
+        _loaded = true;
+      } catch(e) {
+        document.getElementById('sb-error').style.display = 'block';
+        document.getElementById('sb-error').textContent = 'Module not deployed yet. Check back soon.';
+      }
+
+      var _timer;
+      var vEl = document.getElementById('sb-value');
+      var fEl = document.getElementById('sb-from');
+      var tEl = document.getElementById('sb-to');
+      var output = document.getElementById('sb-output');
+
+      function run() {
+        if (!_loaded) return;
+        var v = Number(vEl.value), f = fEl.value.trim(), t = tEl.value.trim();
+        if (isNaN(v) || !f || !t) return;
         try {
-          const result = mod.convert(document.getElementById('param-convert-0').value, document.getElementById('param-convert-1').value, document.getElementById('param-convert-2').value);
-          out.textContent = JSON.stringify(result, null, 2);
+          var result = _mod.convert(v, f, t);
+          if (result && typeof result.then === 'function') {
+            result.then(function(r) { output.innerHTML = renderResult(r); })
+              .catch(function(e) { output.innerHTML = '<span style="color:#f87171">Error: ' + e.message + '</span>'; });
+          } else {
+            output.innerHTML = renderResult(result);
+          }
         } catch(e) {
-          out.style.color = '#f87171';
-          out.textContent = 'Error: ' + e.message;
+          output.innerHTML = '<span style="color:#f87171">Error: ' + e.message + '</span>';
         }
-      };
+      }
+
+      [vEl, fEl, tEl].forEach(function(el) {
+        el.addEventListener('input', function() { clearTimeout(_timer); _timer = setTimeout(run, 200); });
+      });
+
+      document.querySelectorAll('.sb-sample').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var s = _samples[Number(this.dataset.i)];
+          vEl.value = s.value; fEl.value = s.from; tEl.value = s.to;
+          run();
+        });
+      });
+
+      // Auto-run with defaults
+      setTimeout(run, 300);
     </script>
           </div>
           <div style="padding:0.5rem 1rem;border-top:1px solid var(--line);font-size:0.72rem;color:var(--muted-soft);text-align:center">

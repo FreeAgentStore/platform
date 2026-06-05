@@ -210,7 +210,86 @@
             <span style="font-size:0.72rem;color:var(--muted)">Try it live</span>
           </div>
           <div id="sandbox" style="padding:1rem">
-            <p style="color:var(--muted);font-size:0.85rem">Sandbox coming soon. <a href="https://freeagentstore.online/a/date-parser/">Try the full app</a>.</p>
+            
+    <div style="margin-bottom:0.5rem">
+      <div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.5rem">
+        <button class="sb-sample" data-i="0" style="padding:0.25rem 0.6rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;font-family:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">next tuesday</button>
+        <button class="sb-sample" data-i="1" style="padding:0.25rem 0.6rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;font-family:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">March 14, 2025</button>
+        <button class="sb-sample" data-i="2" style="padding:0.25rem 0.6rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;font-family:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">in 3 weeks</button>
+        <button class="sb-sample" data-i="3" style="padding:0.25rem 0.6rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;font-family:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">2025-03-14T10:30:00Z</button>
+        <button class="sb-sample" data-i="4" style="padding:0.25rem 0.6rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;font-family:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">last friday</button>
+      </div>
+      <input type="text" id="sb-input" placeholder="e.g. next tuesday, March 14 2025, in 3 weeks..." style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:0.85rem;font-family:inherit" />
+    </div>
+    <div id="sb-output" style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:0.75rem;min-height:3rem;color:var(--muted);font-size:0.85rem">Type above to try</div>
+    <div id="sb-error" style="display:none;margin-top:0.35rem;padding:0.5rem;border-radius:6px;background:rgba(239,68,68,0.1);color:#f87171;font-size:0.78rem"></div>
+
+    <script type="module">
+      var _samples = ["next tuesday","March 14, 2025","in 3 weeks","2025-03-14T10:30:00Z","last friday"];
+      function renderResult(r) {
+      if (!r) return '<span style="color:var(--muted)">Could not parse date</span>';
+      var html = '<div style="display:grid;grid-template-columns:auto 1fr;gap:0.3rem 0.75rem;font-size:0.85rem">';
+      var fields = [
+        ['Formatted', r.formatted],
+        ['ISO', r.iso],
+        ['Relative', r.relative],
+        ['Confidence', r.confidence ? Math.round(r.confidence * 100) + '%' : null]
+      ];
+      for (var i = 0; i < fields.length; i++) {
+        if (!fields[i][1]) continue;
+        html += '<div style="color:var(--muted-soft);font-size:0.72rem;text-transform:uppercase;font-weight:600;padding-top:0.15rem">' + fields[i][0] + '</div>'
+          + '<div style="color:var(--ink)">' + fields[i][1] + '</div>';
+      }
+      html += '</div>';
+      if (r.format) {
+        html += '<div style="margin-top:0.5rem"><span style="font-size:0.7rem;padding:0.15rem 0.5rem;border-radius:4px;background:rgba(124,58,237,0.15);color:#a78bfa">' + r.format + '</span></div>';
+      }
+      return html;
+    }
+
+      var _mod, _loaded = false, _err = null;
+      try {
+        _mod = await import('https://freeagentstore.online/pkg/date-parser/index.js');
+        _loaded = true;
+      } catch(e) {
+        _err = e;
+        document.getElementById('sb-error').style.display = 'block';
+        document.getElementById('sb-error').textContent = 'Module not deployed yet. Check back soon.';
+      }
+
+      var _timer;
+      var input = document.getElementById('sb-input');
+      var output = document.getElementById('sb-output');
+
+      function run() {
+        if (!_loaded) return;
+        var v = input.value;
+        if (!v.trim()) { output.innerHTML = '<span style="color:var(--muted)">Type above to try</span>'; return; }
+        try {
+          var result = _mod.parseDate(v);
+          if (result && typeof result.then === 'function') {
+            result.then(function(r) { output.innerHTML = renderResult(r); })
+              .catch(function(e) { output.innerHTML = '<span style="color:#f87171">Error: ' + e.message + '</span>'; });
+          } else {
+            output.innerHTML = renderResult(result);
+          }
+        } catch(e) {
+          output.innerHTML = '<span style="color:#f87171">Error: ' + e.message + '</span>';
+        }
+      }
+
+      input.addEventListener('input', function() {
+        clearTimeout(_timer);
+        _timer = setTimeout(run, 200);
+      });
+
+      document.querySelectorAll('.sb-sample').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          input.value = _samples[Number(this.dataset.i)];
+          input.dispatchEvent(new Event('input'));
+        });
+      });
+    </script>
           </div>
           <div style="padding:0.5rem 1rem;border-top:1px solid var(--line);font-size:0.72rem;color:var(--muted-soft);text-align:center">
             <a href="https://freeagentstore.online/a/date-parser/" style="color:var(--muted)">Open full app &rarr;</a>

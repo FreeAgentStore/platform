@@ -204,7 +204,83 @@
             <span style="font-size:0.72rem;color:var(--muted)">Try it live</span>
           </div>
           <div id="sandbox" style="padding:1rem">
-            <p style="color:var(--muted);font-size:0.85rem">Sandbox coming soon. <a href="https://freeagentstore.online/a/emotion-detector/">Try the full app</a>.</p>
+            
+    <div style="margin-bottom:0.5rem">
+      <div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.5rem">
+        <button class="sb-sample" data-i="0" style="padding:0.25rem 0.6rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;font-family:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">I'm thrilled about this promot...</button>
+        <button class="sb-sample" data-i="1" style="padding:0.25rem 0.6rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;font-family:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">This makes me furious</button>
+        <button class="sb-sample" data-i="2" style="padding:0.25rem 0.6rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;font-family:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">I'm worried about the deadline</button>
+        <button class="sb-sample" data-i="3" style="padding:0.25rem 0.6rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;font-family:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">What a wonderful surprise!</button>
+        <button class="sb-sample" data-i="4" style="padding:0.25rem 0.6rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;font-family:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">I feel so lonely today</button>
+      </div>
+      <textarea id="sb-input" rows="3" placeholder="Type something to detect emotions..." style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:0.85rem;resize:vertical;font-family:inherit"></textarea>
+    </div>
+    <div id="sb-output" style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:0.75rem;min-height:3rem;color:var(--muted);font-size:0.85rem">Type above to try</div>
+    <div id="sb-error" style="display:none;margin-top:0.35rem;padding:0.5rem;border-radius:6px;background:rgba(239,68,68,0.1);color:#f87171;font-size:0.78rem"></div>
+
+    <script type="module">
+      var _samples = ["I\'m thrilled about this promotion!","This makes me furious","I\'m worried about the deadline","What a wonderful surprise!","I feel so lonely today"];
+      function renderResult(r) {
+      if (!r) return '<span style="color:var(--muted)">No result</span>';
+      var emotionColors = { joy:'#facc15', anger:'#ef4444', sadness:'#3b82f6', fear:'#a855f7', surprise:'#f97316', disgust:'#22c55e', trust:'#06b6d4', anticipation:'#ec4899' };
+      var c = emotionColors[r.primary] || '#a3a3a3';
+      var html = '<div style="font-size:1.1rem;font-weight:700;color:' + c + ';margin-bottom:0.75rem">' + (r.primary || '?') + (r.compound ? ' <span style="font-size:0.78rem;font-weight:400;color:var(--muted)">(' + r.compound + ')</span>' : '') + '</div>';
+      var scores = r.scores || {};
+      var keys = Object.keys(scores).sort(function(a,b){ return scores[b] - scores[a]; });
+      for (var i = 0; i < keys.length; i++) {
+        var k = keys[i]; var v = scores[k]; var pct = Math.round(v * 100);
+        var bc = emotionColors[k] || '#737373';
+        html += '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem">'
+          + '<span style="width:75px;font-size:0.72rem;color:var(--muted);text-align:right">' + k + '</span>'
+          + '<div style="flex:1;background:var(--line);border-radius:3px;height:6px;overflow:hidden"><div style="width:' + pct + '%;height:100%;background:' + bc + ';border-radius:3px"></div></div>'
+          + '<span style="width:28px;font-size:0.68rem;color:var(--muted-soft)">' + pct + '%</span></div>';
+      }
+      return html;
+    }
+
+      var _mod, _loaded = false, _err = null;
+      try {
+        _mod = await import('https://freeagentstore.online/pkg/emotion-detector/index.js');
+        _loaded = true;
+      } catch(e) {
+        _err = e;
+        document.getElementById('sb-error').style.display = 'block';
+        document.getElementById('sb-error').textContent = 'Module not deployed yet. Check back soon.';
+      }
+
+      var _timer;
+      var input = document.getElementById('sb-input');
+      var output = document.getElementById('sb-output');
+
+      function run() {
+        if (!_loaded) return;
+        var v = input.value;
+        if (!v.trim()) { output.innerHTML = '<span style="color:var(--muted)">Type above to try</span>'; return; }
+        try {
+          var result = _mod.detectEmotions(v);
+          if (result && typeof result.then === 'function') {
+            result.then(function(r) { output.innerHTML = renderResult(r); })
+              .catch(function(e) { output.innerHTML = '<span style="color:#f87171">Error: ' + e.message + '</span>'; });
+          } else {
+            output.innerHTML = renderResult(result);
+          }
+        } catch(e) {
+          output.innerHTML = '<span style="color:#f87171">Error: ' + e.message + '</span>';
+        }
+      }
+
+      input.addEventListener('input', function() {
+        clearTimeout(_timer);
+        _timer = setTimeout(run, 200);
+      });
+
+      document.querySelectorAll('.sb-sample').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          input.value = _samples[Number(this.dataset.i)];
+          input.dispatchEvent(new Event('input'));
+        });
+      });
+    </script>
           </div>
           <div style="padding:0.5rem 1rem;border-top:1px solid var(--line);font-size:0.72rem;color:var(--muted-soft);text-align:center">
             <a href="https://freeagentstore.online/a/emotion-detector/" style="color:var(--muted)">Open full app &rarr;</a>

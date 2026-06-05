@@ -204,41 +204,94 @@
             <span style="font-size:0.72rem;color:var(--muted)">Try it live</span>
           </div>
           <div id="sandbox" style="padding:1rem">
-            <div style="margin-bottom:0.5rem">
-          <label style="font-size:0.72rem;color:var(--muted-soft);display:block;margin-bottom:0.2rem">text</label>
-          <input type="text" id="param-parseResume-0" value="John Smith
-john@email.com | (415) 555-1234
-
-Experience
-Senior Engineer at Acme Corp
-Jan 2021 - Present
-- Built scalable APIs
-
-Skills
-JavaScript, React, Node.js, Python
-
-Education
-BS Computer Science - Stanford University
-2014 - 2018" placeholder="Paste resume text here..."
-            style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-family:monospace;font-size:0.85rem" />
-        </div>
-    <button onclick="runSandbox_parseResume()" style="width:100%;padding:0.6rem;border-radius:10px;border:none;background:var(--accent);color:white;font-weight:600;font-size:0.88rem;cursor:pointer;margin-bottom:0.75rem">Parse Resume</button>
-    <div id="result-parseResume" style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:0.75rem;font-family:monospace;font-size:0.82rem;min-height:2.5rem;white-space:pre-wrap;word-break:break-all;color:var(--muted)">Click "Parse Resume" to try</div>
+            
+    <div style="margin-bottom:0.5rem">
+      <div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.5rem">
+        <button class="sb-sample" data-i="0" style="padding:0.25rem 0.6rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;font-family:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">John Smith
+john@email.com | (4...</button>
+      </div>
+      <textarea id="sb-input" rows="3" placeholder="Paste resume text..." style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:0.85rem;resize:vertical;font-family:inherit"></textarea>
+    </div>
+    <div id="sb-output" style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:0.75rem;min-height:3rem;color:var(--muted);font-size:0.85rem">Type above to try</div>
+    <div id="sb-error" style="display:none;margin-top:0.35rem;padding:0.5rem;border-radius:6px;background:rgba(239,68,68,0.1);color:#f87171;font-size:0.78rem"></div>
 
     <script type="module">
-      import * as mod from 'https://freeagentstore.online/pkg/resume-parser/index.js';
-      window.runSandbox_parseResume = async function() {
-        const out = document.getElementById('result-parseResume');
-        out.style.color = 'var(--ink)';
-        out.textContent = 'Running...';
-        try {
-          const result = mod.parseResume(document.getElementById('param-parseResume-0').value);
-          out.textContent = JSON.stringify(result, null, 2);
-        } catch(e) {
-          out.style.color = '#f87171';
-          out.textContent = 'Error: ' + e.message;
+      var _samples = ["John Smith\njohn@email.com | (415) 555-1234\n\nExperience\nSenior Engineer at Acme Corp\nJan 2021 - Present\n- Built scalable APIs\n\nSkills\nJavaScript, React, Node.js, Python\n\nEducation\nBS Computer Science - Stanford University\n2014 - 2018"];
+      function renderResult(r) {
+      if (!r) return '<span style="color:var(--muted)">Could not parse resume</span>';
+      var html = '';
+      if (r.name) html += '<div style="font-size:1.1rem;font-weight:700;color:var(--ink);margin-bottom:0.2rem">' + r.name + '</div>';
+      if (r.email) html += '<div style="font-size:0.82rem;color:var(--accent);margin-bottom:0.5rem">' + r.email + '</div>';
+      if (r.phone) html += '<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.5rem">' + r.phone + '</div>';
+      if (r.skills && r.skills.length) {
+        html += '<div style="font-size:0.72rem;color:var(--muted-soft);text-transform:uppercase;font-weight:600;margin-bottom:0.3rem">Skills</div>'
+          + '<div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.5rem">';
+        for (var i = 0; i < r.skills.length; i++) {
+          html += '<span style="font-size:0.72rem;padding:0.15rem 0.5rem;border-radius:4px;background:rgba(124,58,237,0.15);color:#a78bfa">' + r.skills[i] + '</span>';
         }
-      };
+        html += '</div>';
+      }
+      if (r.experience && r.experience.length) {
+        html += '<div style="font-size:0.72rem;color:var(--muted-soft);text-transform:uppercase;font-weight:600;margin-bottom:0.3rem">Experience</div>';
+        for (var i = 0; i < r.experience.length; i++) {
+          var exp = r.experience[i];
+          var title = typeof exp === 'string' ? exp : (exp.title || exp.role || '') + (exp.company ? ' at ' + exp.company : '');
+          html += '<div style="font-size:0.82rem;color:var(--ink);margin-bottom:0.2rem">' + title + '</div>';
+        }
+      }
+      if (r.education && r.education.length) {
+        html += '<div style="font-size:0.72rem;color:var(--muted-soft);text-transform:uppercase;font-weight:600;margin-top:0.4rem;margin-bottom:0.3rem">Education</div>';
+        for (var i = 0; i < r.education.length; i++) {
+          var edu = r.education[i];
+          var label = typeof edu === 'string' ? edu : (edu.degree || '') + (edu.school ? ' - ' + edu.school : '');
+          html += '<div style="font-size:0.82rem;color:var(--ink);margin-bottom:0.2rem">' + label + '</div>';
+        }
+      }
+      return html || '<pre style="color:var(--muted)">' + JSON.stringify(r, null, 2) + '</pre>';
+    }
+
+      var _mod, _loaded = false, _err = null;
+      try {
+        _mod = await import('https://freeagentstore.online/pkg/resume-parser/index.js');
+        _loaded = true;
+      } catch(e) {
+        _err = e;
+        document.getElementById('sb-error').style.display = 'block';
+        document.getElementById('sb-error').textContent = 'Module not deployed yet. Check back soon.';
+      }
+
+      var _timer;
+      var input = document.getElementById('sb-input');
+      var output = document.getElementById('sb-output');
+
+      function run() {
+        if (!_loaded) return;
+        var v = input.value;
+        if (!v.trim()) { output.innerHTML = '<span style="color:var(--muted)">Type above to try</span>'; return; }
+        try {
+          var result = _mod.parseResume(v);
+          if (result && typeof result.then === 'function') {
+            result.then(function(r) { output.innerHTML = renderResult(r); })
+              .catch(function(e) { output.innerHTML = '<span style="color:#f87171">Error: ' + e.message + '</span>'; });
+          } else {
+            output.innerHTML = renderResult(result);
+          }
+        } catch(e) {
+          output.innerHTML = '<span style="color:#f87171">Error: ' + e.message + '</span>';
+        }
+      }
+
+      input.addEventListener('input', function() {
+        clearTimeout(_timer);
+        _timer = setTimeout(run, 200);
+      });
+
+      document.querySelectorAll('.sb-sample').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          input.value = _samples[Number(this.dataset.i)];
+          input.dispatchEvent(new Event('input'));
+        });
+      });
     </script>
           </div>
           <div style="padding:0.5rem 1rem;border-top:1px solid var(--line);font-size:0.72rem;color:var(--muted-soft);text-align:center">

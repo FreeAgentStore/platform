@@ -204,7 +204,86 @@
             <span style="font-size:0.72rem;color:var(--muted)">Try it live</span>
           </div>
           <div id="sandbox" style="padding:1rem">
-            <p style="color:var(--muted);font-size:0.85rem">Sandbox coming soon. <a href="https://freeagentstore.online/a/name-parser/">Try the full app</a>.</p>
+            
+    <div style="margin-bottom:0.5rem">
+      <div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.5rem">
+        <button class="sb-sample" data-i="0" style="padding:0.25rem 0.6rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;font-family:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">Dr. María José García-López II...</button>
+        <button class="sb-sample" data-i="1" style="padding:0.25rem 0.6rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;font-family:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">Kim Jong-un</button>
+        <button class="sb-sample" data-i="2" style="padding:0.25rem 0.6rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;font-family:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">Björk</button>
+        <button class="sb-sample" data-i="3" style="padding:0.25rem 0.6rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;font-family:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">Sir Patrick Stewart</button>
+        <button class="sb-sample" data-i="4" style="padding:0.25rem 0.6rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;font-family:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">Mary Jane Watson-Parker</button>
+      </div>
+      <input type="text" id="sb-input" placeholder="e.g. Dr. Maria Garcia-Lopez Jr." style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:0.85rem;font-family:inherit" />
+    </div>
+    <div id="sb-output" style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:0.75rem;min-height:3rem;color:var(--muted);font-size:0.85rem">Type above to try</div>
+    <div id="sb-error" style="display:none;margin-top:0.35rem;padding:0.5rem;border-radius:6px;background:rgba(239,68,68,0.1);color:#f87171;font-size:0.78rem"></div>
+
+    <script type="module">
+      var _samples = ["Dr. María José García-López III","Kim Jong-un","Björk","Sir Patrick Stewart","Mary Jane Watson-Parker"];
+      function renderResult(r) {
+      if (!r) return '<span style="color:var(--muted)">Could not parse name</span>';
+      var parts = [
+        { label: 'prefix', value: r.prefix, color: '#f59e0b' },
+        { label: 'first', value: r.first, color: '#3b82f6' },
+        { label: 'middle', value: r.middle, color: '#8b5cf6' },
+        { label: 'last', value: r.last, color: '#22c55e' },
+        { label: 'suffix', value: r.suffix, color: '#ef4444' }
+      ];
+      var html = '<div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.5rem">';
+      for (var i = 0; i < parts.length; i++) {
+        if (!parts[i].value) continue;
+        html += '<div style="background:' + parts[i].color + '22;border:1px solid ' + parts[i].color + '44;border-radius:6px;padding:0.35rem 0.6rem;text-align:center">'
+          + '<div style="font-size:0.62rem;color:' + parts[i].color + ';text-transform:uppercase;font-weight:600;margin-bottom:0.1rem">' + parts[i].label + '</div>'
+          + '<div style="font-size:0.9rem;color:var(--ink)">' + parts[i].value + '</div></div>';
+      }
+      html += '</div>';
+      if (r.format) html += '<span style="font-size:0.7rem;padding:0.15rem 0.5rem;border-radius:4px;background:var(--line);color:var(--muted)">' + r.format + '</span>';
+      return html;
+    }
+
+      var _mod, _loaded = false, _err = null;
+      try {
+        _mod = await import('https://freeagentstore.online/pkg/name-parser/index.js');
+        _loaded = true;
+      } catch(e) {
+        _err = e;
+        document.getElementById('sb-error').style.display = 'block';
+        document.getElementById('sb-error').textContent = 'Module not deployed yet. Check back soon.';
+      }
+
+      var _timer;
+      var input = document.getElementById('sb-input');
+      var output = document.getElementById('sb-output');
+
+      function run() {
+        if (!_loaded) return;
+        var v = input.value;
+        if (!v.trim()) { output.innerHTML = '<span style="color:var(--muted)">Type above to try</span>'; return; }
+        try {
+          var result = _mod.parseName(v);
+          if (result && typeof result.then === 'function') {
+            result.then(function(r) { output.innerHTML = renderResult(r); })
+              .catch(function(e) { output.innerHTML = '<span style="color:#f87171">Error: ' + e.message + '</span>'; });
+          } else {
+            output.innerHTML = renderResult(result);
+          }
+        } catch(e) {
+          output.innerHTML = '<span style="color:#f87171">Error: ' + e.message + '</span>';
+        }
+      }
+
+      input.addEventListener('input', function() {
+        clearTimeout(_timer);
+        _timer = setTimeout(run, 200);
+      });
+
+      document.querySelectorAll('.sb-sample').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          input.value = _samples[Number(this.dataset.i)];
+          input.dispatchEvent(new Event('input'));
+        });
+      });
+    </script>
           </div>
           <div style="padding:0.5rem 1rem;border-top:1px solid var(--line);font-size:0.72rem;color:var(--muted-soft);text-align:center">
             <a href="https://freeagentstore.online/a/name-parser/" style="color:var(--muted)">Open full app &rarr;</a>

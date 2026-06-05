@@ -210,7 +210,101 @@
             <span style="font-size:0.72rem;color:var(--muted)">Try it live</span>
           </div>
           <div id="sandbox" style="padding:1rem">
-            <p style="color:var(--muted);font-size:0.85rem">Sandbox coming soon. <a href="https://freeagentstore.online/a/name-generator/">Try the full app</a>.</p>
+            
+    <div style="margin-bottom:0.5rem">
+      <div style="font-size:0.72rem;color:var(--muted-soft);margin-bottom:0.3rem;font-weight:600">Genre</div>
+      <div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.5rem">
+        <button class="sb-genre" data-v="fantasy" style="padding:0.3rem 0.65rem;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:#fff;font-size:0.78rem;cursor:pointer;font-family:inherit;font-weight:600">Fantasy</button>
+        <button class="sb-genre" data-v="sci-fi" style="padding:0.3rem 0.65rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.78rem;cursor:pointer;font-family:inherit;font-weight:400">Sci-Fi</button>
+        <button class="sb-genre" data-v="medieval" style="padding:0.3rem 0.65rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.78rem;cursor:pointer;font-family:inherit;font-weight:400">Medieval</button>
+        <button class="sb-genre" data-v="japanese" style="padding:0.3rem 0.65rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.78rem;cursor:pointer;font-family:inherit;font-weight:400">Japanese</button>
+        <button class="sb-genre" data-v="nordic" style="padding:0.3rem 0.65rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.78rem;cursor:pointer;font-family:inherit;font-weight:400">Nordic</button>
+        <button class="sb-genre" data-v="arabic" style="padding:0.3rem 0.65rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.78rem;cursor:pointer;font-family:inherit;font-weight:400">Arabic</button>
+      </div>
+      <div style="font-size:0.72rem;color:var(--muted-soft);margin-bottom:0.3rem;font-weight:600">Gender</div>
+      <div style="display:flex;gap:0.3rem;margin-bottom:0.75rem">
+        <button class="sb-gender" data-v="" style="padding:0.3rem 0.65rem;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:#fff;font-size:0.78rem;cursor:pointer;font-family:inherit;font-weight:600">Any</button>
+        <button class="sb-gender" data-v="male" style="padding:0.3rem 0.65rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.78rem;cursor:pointer;font-family:inherit;font-weight:400">Male</button>
+        <button class="sb-gender" data-v="female" style="padding:0.3rem 0.65rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.78rem;cursor:pointer;font-family:inherit;font-weight:400">Female</button>
+      </div>
+      <button id="sb-generate" style="width:100%;padding:0.6rem;border-radius:10px;border:none;background:var(--accent);color:white;font-weight:600;font-size:0.88rem;cursor:pointer;margin-bottom:0.75rem">Generate Name</button>
+    </div>
+    <div id="sb-output" style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:0.75rem;min-height:3rem;color:var(--muted);font-size:0.85rem">Click Generate to create a name</div>
+    <div id="sb-error" style="display:none;margin-top:0.35rem;padding:0.5rem;border-radius:6px;background:rgba(239,68,68,0.1);color:#f87171;font-size:0.78rem"></div>
+
+    <script type="module">
+      function renderResult(r) {
+      if (!r) return '<span style="color:var(--muted)">No result</span>';
+      var html = '<div style="font-size:1.2rem;font-weight:700;color:var(--ink);margin-bottom:0.15rem">' + (r.full || r.name || '?') + '</div>';
+      if (r.epithet) html += '<div style="font-size:0.85rem;color:var(--muted);font-style:italic;margin-bottom:0.3rem">' + r.epithet + '</div>';
+      var parts = [];
+      if (r.name) parts.push(['Name', r.name]);
+      if (r.surname) parts.push(['Surname', r.surname]);
+      if (parts.length) {
+        html += '<div style="display:flex;gap:0.4rem;margin-top:0.4rem">';
+        for (var i = 0; i < parts.length; i++) {
+          html += '<div style="background:rgba(124,58,237,0.15);border-radius:6px;padding:0.3rem 0.6rem">'
+            + '<div style="font-size:0.62rem;color:var(--muted-soft);text-transform:uppercase;font-weight:600">' + parts[i][0] + '</div>'
+            + '<div style="font-size:0.85rem;color:var(--ink)">' + parts[i][1] + '</div></div>';
+        }
+        html += '</div>';
+      }
+      return html;
+    }
+
+      var _mod, _loaded = false;
+      try {
+        _mod = await import('https://freeagentstore.online/pkg/name-generator/index.js');
+        _loaded = true;
+      } catch(e) {
+        document.getElementById('sb-error').style.display = 'block';
+        document.getElementById('sb-error').textContent = 'Module not deployed yet. Check back soon.';
+      }
+
+      var _genre = 'fantasy', _gender = '';
+      var output = document.getElementById('sb-output');
+
+      function selectPill(btns, activeVal) {
+        btns.forEach(function(b) {
+          var isActive = b.dataset.v === activeVal;
+          b.style.background = isActive ? 'var(--accent)' : 'transparent';
+          b.style.color = isActive ? '#fff' : 'var(--muted)';
+          b.style.borderColor = isActive ? 'var(--accent)' : 'var(--line)';
+          b.style.fontWeight = isActive ? '600' : '400';
+        });
+      }
+
+      document.querySelectorAll('.sb-genre').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          _genre = this.dataset.v;
+          selectPill(document.querySelectorAll('.sb-genre'), _genre);
+        });
+      });
+
+      document.querySelectorAll('.sb-gender').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          _gender = this.dataset.v;
+          selectPill(document.querySelectorAll('.sb-gender'), _gender);
+        });
+      });
+
+      document.getElementById('sb-generate').addEventListener('click', function() {
+        if (!_loaded) return;
+        try {
+          var opts = { genre: _genre };
+          if (_gender) opts.gender = _gender;
+          var result = _mod.generateName(opts);
+          if (result && typeof result.then === 'function') {
+            result.then(function(r) { output.innerHTML = renderResult(r); })
+              .catch(function(e) { output.innerHTML = '<span style="color:#f87171">Error: ' + e.message + '</span>'; });
+          } else {
+            output.innerHTML = renderResult(result);
+          }
+        } catch(e) {
+          output.innerHTML = '<span style="color:#f87171">Error: ' + e.message + '</span>';
+        }
+      });
+    </script>
           </div>
           <div style="padding:0.5rem 1rem;border-top:1px solid var(--line);font-size:0.72rem;color:var(--muted-soft);text-align:center">
             <a href="https://freeagentstore.online/a/name-generator/" style="color:var(--muted)">Open full app &rarr;</a>

@@ -309,15 +309,850 @@ function generateDetailPage(agent) {
 }
 
 function generateSandbox(agent) {
-  // Config-driven sandbox (presets with structured output)
+  // Config-driven sandbox (presets with structured output) — e.g. summarizer
   if (agent.sandbox?.type === 'config-driven') {
     return generateConfigSandbox(agent);
   }
 
-  if (!agent.sandbox?.methods?.length) {
-    return `<p style="color:var(--muted);font-size:0.85rem">Sandbox coming soon. <a href="${agent.agentUrl}">Try the full app</a>.</p>`;
+  const esmUrl = agent.esmUrl ?? `https://freeagentstore.online/pkg/${agent.id}/index.js`;
+
+  // ── Live sandboxes for agents with api.functions ──
+  if (agent.api?.functions?.length) {
+    return generateLiveSandbox(agent, esmUrl);
   }
 
+  // ── Link/iframe sandboxes for agents with api.note ──
+  if (agent.api?.note) {
+    return generateNoteSandbox(agent);
+  }
+
+  // ── Legacy form-based sandbox for agents with sandbox.methods ──
+  if (agent.sandbox?.methods?.length) {
+    return generateMethodSandbox(agent, esmUrl);
+  }
+
+  return `<p style="color:var(--muted);font-size:0.85rem">Sandbox coming soon. <a href="${agent.agentUrl}">Try the full app</a>.</p>`;
+}
+
+// ── Per-agent sandbox renderers ──────────────────────────────────────
+
+const LIVE_SANDBOX_CONFIGS = {
+  sentiment: {
+    inputType: 'textarea',
+    placeholder: 'Type something to analyze...',
+    samples: [
+      'This product is amazing and works perfectly!',
+      'Terrible service, waste of money',
+      "It's okay, nothing special",
+      'I absolutely love how easy this is to use',
+      'Not great, not terrible'
+    ],
+    fn: 'analyzeSentiment',
+    render: `function renderResult(r) {
+      if (!r) return '<span style="color:var(--muted)">No result</span>';
+      var colors = { positive: '#4ade80', negative: '#f87171', neutral: '#a3a3a3' };
+      var c = colors[r.sentiment] || '#a3a3a3';
+      var pct = Math.round((r.confidence ?? 0) * 100);
+      return '<div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">'
+        + '<span style="font-size:1.5rem;font-weight:700;color:' + c + ';text-transform:uppercase">' + (r.sentiment || '?') + '</span>'
+        + '<span style="font-size:0.82rem;color:var(--muted)">score: ' + (r.score ?? 0).toFixed(2) + '</span>'
+        + '</div>'
+        + '<div style="font-size:0.72rem;color:var(--muted-soft);margin-bottom:0.25rem">Confidence</div>'
+        + '<div style="background:var(--line);border-radius:4px;height:8px;overflow:hidden">'
+        + '<div style="width:' + pct + '%;height:100%;background:' + c + ';border-radius:4px;transition:width 0.3s"></div>'
+        + '</div>'
+        + '<div style="text-align:right;font-size:0.72rem;color:var(--muted-soft);margin-top:0.15rem">' + pct + '%</div>';
+    }`
+  },
+
+  'emotion-detector': {
+    inputType: 'textarea',
+    placeholder: 'Type something to detect emotions...',
+    samples: [
+      "I'm thrilled about this promotion!",
+      'This makes me furious',
+      "I'm worried about the deadline",
+      'What a wonderful surprise!',
+      'I feel so lonely today'
+    ],
+    fn: 'detectEmotions',
+    render: `function renderResult(r) {
+      if (!r) return '<span style="color:var(--muted)">No result</span>';
+      var emotionColors = { joy:'#facc15', anger:'#ef4444', sadness:'#3b82f6', fear:'#a855f7', surprise:'#f97316', disgust:'#22c55e', trust:'#06b6d4', anticipation:'#ec4899' };
+      var c = emotionColors[r.primary] || '#a3a3a3';
+      var html = '<div style="font-size:1.1rem;font-weight:700;color:' + c + ';margin-bottom:0.75rem">' + (r.primary || '?') + (r.compound ? ' <span style="font-size:0.78rem;font-weight:400;color:var(--muted)">(' + r.compound + ')</span>' : '') + '</div>';
+      var scores = r.scores || {};
+      var keys = Object.keys(scores).sort(function(a,b){ return scores[b] - scores[a]; });
+      for (var i = 0; i < keys.length; i++) {
+        var k = keys[i]; var v = scores[k]; var pct = Math.round(v * 100);
+        var bc = emotionColors[k] || '#737373';
+        html += '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem">'
+          + '<span style="width:75px;font-size:0.72rem;color:var(--muted);text-align:right">' + k + '</span>'
+          + '<div style="flex:1;background:var(--line);border-radius:3px;height:6px;overflow:hidden"><div style="width:' + pct + '%;height:100%;background:' + bc + ';border-radius:3px"></div></div>'
+          + '<span style="width:28px;font-size:0.68rem;color:var(--muted-soft)">' + pct + '%</span></div>';
+      }
+      return html;
+    }`
+  },
+
+  'language-detector': {
+    inputType: 'textarea',
+    placeholder: 'Type text in any language...',
+    samples: [
+      'Bonjour le monde',
+      'Hallo Welt, wie geht es dir?',
+      '\u3053\u3093\u306b\u3061\u306f\u4e16\u754c',
+      'Hola, como estas hoy?',
+      '\u041f\u0440\u0438\u0432\u0435\u0442 \u043c\u0438\u0440'
+    ],
+    fn: 'detectLanguage',
+    render: `function renderResult(r) {
+      if (!r) return '<span style="color:var(--muted)">No result</span>';
+      var flags = {en:'\ud83c\uddfa\ud83c\uddf8',fr:'\ud83c\uddeb\ud83c\uddf7',de:'\ud83c\udde9\ud83c\uddea',es:'\ud83c\uddea\ud83c\uddf8',it:'\ud83c\uddee\ud83c\uddf9',pt:'\ud83c\uddf5\ud83c\uddf9',ja:'\ud83c\uddef\ud83c\uddf5',ko:'\ud83c\uddf0\ud83c\uddf7',zh:'\ud83c\udde8\ud83c\uddf3',ru:'\ud83c\uddf7\ud83c\uddfa',ar:'\ud83c\uddf8\ud83c\udde6',hi:'\ud83c\uddee\ud83c\uddf3',nl:'\ud83c\uddf3\ud83c\uddf1',sv:'\ud83c\uddf8\ud83c\uddea',pl:'\ud83c\uddf5\ud83c\uddf1',tr:'\ud83c\uddf9\ud83c\uddf7',vi:'\ud83c\uddfb\ud83c\uddf3',th:'\ud83c\uddf9\ud83c\udded',uk:'\ud83c\uddfa\ud83c\udde6',cs:'\ud83c\udde8\ud83c\uddff',ro:'\ud83c\uddf7\ud83c\uddf4',da:'\ud83c\udde9\ud83c\uddf0',fi:'\ud83c\uddeb\ud83c\uddee',el:'\ud83c\uddec\ud83c\uddf7',hu:'\ud83c\udded\ud83c\uddfa',no:'\ud83c\uddf3\ud83c\uddf4',id:'\ud83c\uddee\ud83c\udde9',ms:'\ud83c\uddf2\ud83c\uddfe',tl:'\ud83c\uddf5\ud83c\udded'};
+      var flag = flags[r.language] || '\ud83c\uddf7\ud83c\uddfa';
+      var pct = Math.round((r.confidence ?? 0) * 100);
+      var html = '<div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">'
+        + '<span style="font-size:2rem">' + flag + '</span>'
+        + '<div><div style="font-size:1.1rem;font-weight:700;color:var(--ink)">' + (r.languageName || r.language || '?') + '</div>'
+        + '<div style="font-size:0.72rem;color:var(--muted)">' + (r.language || '') + '</div></div></div>'
+        + '<div style="font-size:0.72rem;color:var(--muted-soft);margin-bottom:0.25rem">Confidence</div>'
+        + '<div style="background:var(--line);border-radius:4px;height:8px;overflow:hidden">'
+        + '<div style="width:' + pct + '%;height:100%;background:var(--accent);border-radius:4px;transition:width 0.3s"></div></div>'
+        + '<div style="text-align:right;font-size:0.72rem;color:var(--muted-soft);margin-top:0.15rem">' + pct + '%</div>';
+      if (r.scores && r.scores.length > 1) {
+        html += '<div style="margin-top:0.75rem;font-size:0.72rem;color:var(--muted-soft)">Top candidates:</div>';
+        var top = r.scores.slice(0, 3);
+        for (var i = 0; i < top.length; i++) {
+          var s = top[i]; var sp = Math.round((s.confidence ?? s.score ?? 0) * 100);
+          var sf = flags[s.language] || '';
+          html += '<div style="display:flex;align-items:center;gap:0.4rem;margin-top:0.2rem;font-size:0.78rem;color:var(--muted)">'
+            + sf + ' ' + (s.languageName || s.language) + ' <span style="color:var(--muted-soft)">' + sp + '%</span></div>';
+        }
+      }
+      return html;
+    }`
+  },
+
+  'date-parser': {
+    inputType: 'input',
+    placeholder: 'e.g. next tuesday, March 14 2025, in 3 weeks...',
+    samples: [
+      'next tuesday',
+      'March 14, 2025',
+      'in 3 weeks',
+      '2025-03-14T10:30:00Z',
+      'last friday'
+    ],
+    fn: 'parseDate',
+    render: `function renderResult(r) {
+      if (!r) return '<span style="color:var(--muted)">Could not parse date</span>';
+      var html = '<div style="display:grid;grid-template-columns:auto 1fr;gap:0.3rem 0.75rem;font-size:0.85rem">';
+      var fields = [
+        ['Formatted', r.formatted],
+        ['ISO', r.iso],
+        ['Relative', r.relative],
+        ['Confidence', r.confidence ? Math.round(r.confidence * 100) + '%' : null]
+      ];
+      for (var i = 0; i < fields.length; i++) {
+        if (!fields[i][1]) continue;
+        html += '<div style="color:var(--muted-soft);font-size:0.72rem;text-transform:uppercase;font-weight:600;padding-top:0.15rem">' + fields[i][0] + '</div>'
+          + '<div style="color:var(--ink)">' + fields[i][1] + '</div>';
+      }
+      html += '</div>';
+      if (r.format) {
+        html += '<div style="margin-top:0.5rem"><span style="font-size:0.7rem;padding:0.15rem 0.5rem;border-radius:4px;background:rgba(124,58,237,0.15);color:#a78bfa">' + r.format + '</span></div>';
+      }
+      return html;
+    }`
+  },
+
+  'address-parser': {
+    inputType: 'textarea',
+    placeholder: 'Enter an address...',
+    samples: [
+      '123 Main St, San Francisco, CA 94102',
+      '10 Downing Street, London SW1A 2AA',
+      '1600 Pennsylvania Avenue NW, Washington, DC 20500'
+    ],
+    fn: 'parseAddress',
+    render: `function renderResult(r) {
+      if (!r) return '<span style="color:var(--muted)">Could not parse address</span>';
+      var fields = ['street','unit','city','state','zip','country','format'];
+      var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem">';
+      for (var i = 0; i < fields.length; i++) {
+        var v = r[fields[i]];
+        if (!v) continue;
+        html += '<div style="background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:0.4rem 0.6rem">'
+          + '<div style="font-size:0.65rem;color:var(--muted-soft);text-transform:uppercase;font-weight:600">' + fields[i] + '</div>'
+          + '<div style="font-size:0.85rem;color:var(--ink)">' + v + '</div></div>';
+      }
+      html += '</div>';
+      return html;
+    }`
+  },
+
+  'name-parser': {
+    inputType: 'input',
+    placeholder: 'e.g. Dr. Maria Garcia-Lopez Jr.',
+    samples: [
+      'Dr. Mar\u00eda Jos\u00e9 Garc\u00eda-L\u00f3pez III',
+      'Kim Jong-un',
+      'Bj\u00f6rk',
+      'Sir Patrick Stewart',
+      'Mary Jane Watson-Parker'
+    ],
+    fn: 'parseName',
+    render: `function renderResult(r) {
+      if (!r) return '<span style="color:var(--muted)">Could not parse name</span>';
+      var parts = [
+        { label: 'prefix', value: r.prefix, color: '#f59e0b' },
+        { label: 'first', value: r.first, color: '#3b82f6' },
+        { label: 'middle', value: r.middle, color: '#8b5cf6' },
+        { label: 'last', value: r.last, color: '#22c55e' },
+        { label: 'suffix', value: r.suffix, color: '#ef4444' }
+      ];
+      var html = '<div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.5rem">';
+      for (var i = 0; i < parts.length; i++) {
+        if (!parts[i].value) continue;
+        html += '<div style="background:' + parts[i].color + '22;border:1px solid ' + parts[i].color + '44;border-radius:6px;padding:0.35rem 0.6rem;text-align:center">'
+          + '<div style="font-size:0.62rem;color:' + parts[i].color + ';text-transform:uppercase;font-weight:600;margin-bottom:0.1rem">' + parts[i].label + '</div>'
+          + '<div style="font-size:0.9rem;color:var(--ink)">' + parts[i].value + '</div></div>';
+      }
+      html += '</div>';
+      if (r.format) html += '<span style="font-size:0.7rem;padding:0.15rem 0.5rem;border-radius:4px;background:var(--line);color:var(--muted)">' + r.format + '</span>';
+      return html;
+    }`
+  },
+
+  'email-classifier': {
+    inputType: 'dual', // subject + body
+    placeholder: 'Email body...',
+    placeholderSubject: 'Email subject...',
+    samples: [
+      { subject: 'Your order has shipped', body: 'Tracking number: 1Z999AA10123456784. Expected delivery: Friday.' },
+      { subject: 'Flash Sale - 50% Off Everything!', body: 'Limited time offer. Use code SAVE50 at checkout.' },
+      { subject: 'Hey, are we still on for dinner?', body: 'Let me know if 7pm works. I was thinking Italian.' }
+    ],
+    fn: 'classifyEmail',
+    render: `function renderResult(r) {
+      if (!r) return '<span style="color:var(--muted)">No result</span>';
+      var catColors = { transactional:'#3b82f6', promotional:'#f59e0b', personal:'#22c55e', notification:'#8b5cf6', newsletter:'#06b6d4', spam:'#ef4444', social:'#ec4899' };
+      var c = catColors[r.category] || '#a3a3a3';
+      var pct = Math.round((r.confidence ?? 0) * 100);
+      var html = '<div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">'
+        + '<span style="font-size:0.88rem;font-weight:700;padding:0.3rem 0.8rem;border-radius:8px;background:' + c + '22;color:' + c + ';border:1px solid ' + c + '44;text-transform:uppercase">' + (r.category || '?') + '</span></div>'
+        + '<div style="font-size:0.72rem;color:var(--muted-soft);margin-bottom:0.25rem">Confidence</div>'
+        + '<div style="background:var(--line);border-radius:4px;height:8px;overflow:hidden">'
+        + '<div style="width:' + pct + '%;height:100%;background:' + c + ';border-radius:4px;transition:width 0.3s"></div></div>'
+        + '<div style="text-align:right;font-size:0.72rem;color:var(--muted-soft);margin-top:0.15rem">' + pct + '%</div>';
+      if (r.signals && r.signals.length) {
+        html += '<div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.5rem">';
+        for (var i = 0; i < r.signals.length; i++) {
+          html += '<span style="font-size:0.68rem;padding:0.15rem 0.45rem;border-radius:4px;background:var(--line);color:var(--muted)">' + r.signals[i] + '</span>';
+        }
+        html += '</div>';
+      }
+      return html;
+    }`
+  },
+
+  'profanity-filter': {
+    inputType: 'textarea',
+    placeholder: 'Type text to check...',
+    samples: [
+      'What a beautiful day!',
+      'What the hell is going on',
+      'The donkey kicked the bucket',
+      'This is absolutely wonderful',
+      'Go to hell you jerk'
+    ],
+    fn: 'checkProfanity',
+    render: `function renderResult(r) {
+      if (!r) return '<span style="color:var(--muted)">No result</span>';
+      var sevColors = { none:'#4ade80', mild:'#facc15', moderate:'#f97316', severe:'#ef4444' };
+      var sev = r.severity || (r.flagged ? 'mild' : 'none');
+      var c = sevColors[sev] || '#a3a3a3';
+      var html = '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem">'
+        + '<span style="font-size:0.82rem;font-weight:700;padding:0.25rem 0.65rem;border-radius:6px;background:' + c + '22;color:' + c + ';border:1px solid ' + c + '44;text-transform:uppercase">' + sev + '</span>'
+        + '<span style="font-size:0.78rem;color:var(--muted)">' + (r.flagged ? 'Flagged' : 'Clean') + '</span></div>';
+      if (r.cleaned) {
+        html += '<div style="font-size:0.72rem;color:var(--muted-soft);margin-bottom:0.25rem">Cleaned text</div>'
+          + '<div style="background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:0.5rem;font-size:0.85rem;color:var(--ink)">' + r.cleaned + '</div>';
+      }
+      return html;
+    }`
+  },
+
+  'code-detector': {
+    inputType: 'textarea',
+    inputStyle: 'font-family:monospace',
+    placeholder: 'Paste code to detect language...',
+    samples: [
+      'const x: number = 42;',
+      "def hello():\n  print('hi')",
+      'SELECT * FROM users WHERE active = 1'
+    ],
+    fn: 'detectLanguage',
+    render: `function renderResult(r) {
+      if (!r) return '<span style="color:var(--muted)">Could not detect language</span>';
+      var pct = Math.round((r.confidence ?? 0) * 100);
+      var html = '<div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">'
+        + '<div style="font-size:1.1rem;font-weight:700;color:var(--ink)">' + (r.language || '?') + '</div>'
+        + '<span style="font-size:0.72rem;padding:0.15rem 0.5rem;border-radius:4px;background:var(--line);color:var(--muted)">' + (r.fileExtension || '') + '</span></div>'
+        + '<div style="font-size:0.72rem;color:var(--muted-soft);margin-bottom:0.25rem">Confidence</div>'
+        + '<div style="background:var(--line);border-radius:4px;height:8px;overflow:hidden">'
+        + '<div style="width:' + pct + '%;height:100%;background:var(--accent);border-radius:4px;transition:width 0.3s"></div></div>'
+        + '<div style="text-align:right;font-size:0.72rem;color:var(--muted-soft);margin-top:0.15rem">' + pct + '%</div>';
+      return html;
+    }`
+  },
+
+  'resume-parser': {
+    inputType: 'textarea',
+    placeholder: 'Paste resume text...',
+    samples: [
+      "John Smith\njohn@email.com | (415) 555-1234\n\nExperience\nSenior Engineer at Acme Corp\nJan 2021 - Present\n- Built scalable APIs\n\nSkills\nJavaScript, React, Node.js, Python\n\nEducation\nBS Computer Science - Stanford University\n2014 - 2018"
+    ],
+    fn: 'parseResume',
+    render: `function renderResult(r) {
+      if (!r) return '<span style="color:var(--muted)">Could not parse resume</span>';
+      var html = '';
+      if (r.name) html += '<div style="font-size:1.1rem;font-weight:700;color:var(--ink);margin-bottom:0.2rem">' + r.name + '</div>';
+      if (r.email) html += '<div style="font-size:0.82rem;color:var(--accent);margin-bottom:0.5rem">' + r.email + '</div>';
+      if (r.phone) html += '<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.5rem">' + r.phone + '</div>';
+      if (r.skills && r.skills.length) {
+        html += '<div style="font-size:0.72rem;color:var(--muted-soft);text-transform:uppercase;font-weight:600;margin-bottom:0.3rem">Skills</div>'
+          + '<div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.5rem">';
+        for (var i = 0; i < r.skills.length; i++) {
+          html += '<span style="font-size:0.72rem;padding:0.15rem 0.5rem;border-radius:4px;background:rgba(124,58,237,0.15);color:#a78bfa">' + r.skills[i] + '</span>';
+        }
+        html += '</div>';
+      }
+      if (r.experience && r.experience.length) {
+        html += '<div style="font-size:0.72rem;color:var(--muted-soft);text-transform:uppercase;font-weight:600;margin-bottom:0.3rem">Experience</div>';
+        for (var i = 0; i < r.experience.length; i++) {
+          var exp = r.experience[i];
+          var title = typeof exp === 'string' ? exp : (exp.title || exp.role || '') + (exp.company ? ' at ' + exp.company : '');
+          html += '<div style="font-size:0.82rem;color:var(--ink);margin-bottom:0.2rem">' + title + '</div>';
+        }
+      }
+      if (r.education && r.education.length) {
+        html += '<div style="font-size:0.72rem;color:var(--muted-soft);text-transform:uppercase;font-weight:600;margin-top:0.4rem;margin-bottom:0.3rem">Education</div>';
+        for (var i = 0; i < r.education.length; i++) {
+          var edu = r.education[i];
+          var label = typeof edu === 'string' ? edu : (edu.degree || '') + (edu.school ? ' - ' + edu.school : '');
+          html += '<div style="font-size:0.82rem;color:var(--ink);margin-bottom:0.2rem">' + label + '</div>';
+        }
+      }
+      return html || '<pre style="color:var(--muted)">' + JSON.stringify(r, null, 2) + '</pre>';
+    }`
+  },
+
+  'unit-converter': {
+    inputType: 'converter', // special: number + two dropdowns
+    samples: [
+      { value: 100, from: 'km', to: 'mi' },
+      { value: 72, from: 'f', to: 'c' },
+      { value: 1, from: 'kg', to: 'lb' }
+    ],
+    fn: 'convert',
+    render: `function renderResult(r) {
+      if (!r) return '<span style="color:var(--muted)">No result</span>';
+      if (r.error) return '<span style="color:#f87171">' + r.error + '</span>';
+      return '<div style="font-size:1.3rem;font-weight:700;color:var(--ink);margin-bottom:0.3rem">' + (typeof r.result === 'number' ? r.result.toFixed(6).replace(/\\.?0+$/, '') : r.result) + '</div>'
+        + (r.formatted ? '<div style="font-size:0.82rem;color:var(--muted)">' + r.formatted + '</div>' : '');
+    }`
+  },
+
+  'regex-builder': {
+    inputType: 'input',
+    placeholder: 'Describe a pattern, e.g. "email address"...',
+    samples: [
+      'email address',
+      'phone number',
+      'URL',
+      'IP address',
+      'date'
+    ],
+    fn: 'matchPattern',
+    render: `function renderResult(r) {
+      if (!r) return '<span style="color:var(--muted)">No patterns found</span>';
+      var arr = Array.isArray(r) ? r : [r];
+      if (!arr.length) return '<span style="color:var(--muted)">No patterns found</span>';
+      var html = '';
+      for (var i = 0; i < arr.length; i++) {
+        var p = arr[i];
+        html += '<div style="margin-bottom:0.75rem;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:0.6rem">'
+          + '<div style="font-size:0.82rem;font-weight:600;color:var(--ink);margin-bottom:0.3rem">' + (p.name || 'Pattern') + '</div>'
+          + '<div style="display:flex;align-items:center;gap:0.4rem">'
+          + '<code style="flex:1;font-family:monospace;font-size:0.78rem;color:#a78bfa;word-break:break-all">' + (p.regex || p) + '</code>'
+          + '<button onclick="navigator.clipboard.writeText(this.previousElementSibling.textContent);this.textContent=\\'Copied!\\';setTimeout(function(){this.textContent=\\'Copy\\'},1000)" style="padding:0.2rem 0.5rem;border-radius:4px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.68rem;cursor:pointer;flex-shrink:0">Copy</button>'
+          + '</div></div>';
+      }
+      return html;
+    }`
+  },
+
+  'json-formatter': {
+    inputType: 'textarea',
+    inputStyle: 'font-family:monospace',
+    placeholder: 'Paste JSON here...',
+    samples: [
+      '{"name":"Alice","age":30,"hobbies":["reading","coding"]}',
+      '{"users":[{"id":1,"active":true},{"id":2,"active":false}]}',
+      '[1,2,3,{"nested":true}]'
+    ],
+    fn: 'formatJson',
+    render: `function renderResult(r) {
+      if (!r) return '<span style="color:var(--muted)">No result</span>';
+      if (r.error) return '<span style="color:#f87171">' + r.error + '</span>';
+      var text = r.result || r;
+      var escaped = String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      var highlighted = escaped
+        .replace(/"([^"]*)"\\s*:/g, '<span style="color:#a78bfa">"$1"</span>:')
+        .replace(/:\\s*"([^"]*)"/g, ': <span style="color:#4ade80">"$1"</span>')
+        .replace(/:\\s*(\\d+\\.?\\d*)/g, ': <span style="color:#60a5fa">$1</span>')
+        .replace(/:\\s*(true|false|null)/g, ': <span style="color:#f59e0b">$1</span>');
+      return '<pre style="font-family:monospace;font-size:0.78rem;white-space:pre-wrap;word-break:break-word;margin:0;max-height:300px;overflow-y:auto">' + highlighted + '</pre>';
+    }`
+  },
+
+  'hash-generator': {
+    inputType: 'input',
+    placeholder: 'Type text to hash...',
+    samples: [
+      'hello world',
+      'freeagentstore',
+      'The quick brown fox'
+    ],
+    fn: 'sha256',
+    isAsync: true,
+    render: `function renderResult(r) {
+      if (!r) return '<span style="color:var(--muted)">No result</span>';
+      return '<div style="font-size:0.72rem;color:var(--muted-soft);margin-bottom:0.25rem">SHA-256</div>'
+        + '<div style="display:flex;align-items:center;gap:0.4rem">'
+        + '<code style="flex:1;font-family:monospace;font-size:0.75rem;color:var(--ink);word-break:break-all">' + r + '</code>'
+        + '<button onclick="navigator.clipboard.writeText(this.previousElementSibling.textContent);this.textContent=\\'Copied!\\';var b=this;setTimeout(function(){b.textContent=\\'Copy\\'},1000)" style="padding:0.2rem 0.5rem;border-radius:4px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.68rem;cursor:pointer;flex-shrink:0">Copy</button>'
+        + '</div>';
+    }`
+  },
+
+  'name-generator': {
+    inputType: 'generator', // pills + button
+    samples: [], // not used — has genre pills instead
+    fn: 'generateName',
+    needsButton: true,
+    render: `function renderResult(r) {
+      if (!r) return '<span style="color:var(--muted)">No result</span>';
+      var html = '<div style="font-size:1.2rem;font-weight:700;color:var(--ink);margin-bottom:0.15rem">' + (r.full || r.name || '?') + '</div>';
+      if (r.epithet) html += '<div style="font-size:0.85rem;color:var(--muted);font-style:italic;margin-bottom:0.3rem">' + r.epithet + '</div>';
+      var parts = [];
+      if (r.name) parts.push(['Name', r.name]);
+      if (r.surname) parts.push(['Surname', r.surname]);
+      if (parts.length) {
+        html += '<div style="display:flex;gap:0.4rem;margin-top:0.4rem">';
+        for (var i = 0; i < parts.length; i++) {
+          html += '<div style="background:rgba(124,58,237,0.15);border-radius:6px;padding:0.3rem 0.6rem">'
+            + '<div style="font-size:0.62rem;color:var(--muted-soft);text-transform:uppercase;font-weight:600">' + parts[i][0] + '</div>'
+            + '<div style="font-size:0.85rem;color:var(--ink)">' + parts[i][1] + '</div></div>';
+        }
+        html += '</div>';
+      }
+      return html;
+    }`
+  }
+};
+
+// Canvas/interactive agents that should show an iframe preview
+const IFRAME_AGENTS = new Set(['steering', 'behavior-tree', 'physics-sim']);
+
+function generateLiveSandbox(agent, esmUrl) {
+  const config = LIVE_SANDBOX_CONFIGS[agent.id];
+
+  // If no custom config, fall back to a generic auto-run sandbox
+  if (!config) {
+    return generateGenericLiveSandbox(agent, esmUrl);
+  }
+
+  // ── Special: name-generator (needs a button, genre pills) ──
+  if (config.inputType === 'generator') {
+    return generateNameGeneratorSandbox(agent, esmUrl, config);
+  }
+
+  // ── Special: unit-converter (number + two dropdowns) ──
+  if (config.inputType === 'converter') {
+    return generateConverterSandbox(agent, esmUrl, config);
+  }
+
+  // ── Special: email-classifier (dual inputs) ──
+  if (config.inputType === 'dual') {
+    return generateDualInputSandbox(agent, esmUrl, config);
+  }
+
+  // ── Standard: single input (textarea or input), auto-run on type ──
+  const isTextarea = config.inputType === 'textarea';
+  const extraStyle = config.inputStyle ? `;${config.inputStyle}` : '';
+
+  const samplesJson = JSON.stringify(config.samples).replace(/'/g, "\\'").replace(/<\//g, '<\\/');
+
+  const inputEl = isTextarea
+    ? `<textarea id="sb-input" rows="3" placeholder="${config.placeholder}" style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:0.85rem;resize:vertical;font-family:inherit${extraStyle}"></textarea>`
+    : `<input type="text" id="sb-input" placeholder="${config.placeholder}" style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:0.85rem;font-family:inherit${extraStyle}" />`;
+
+  return `
+    <div style="margin-bottom:0.5rem">
+      <div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.5rem">
+        ${config.samples.map((s, i) => `<button class="sb-sample" data-i="${i}" style="padding:0.25rem 0.6rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;font-family:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">${escapeHtml(typeof s === 'string' ? s : s.text).slice(0, 30)}${(typeof s === 'string' ? s : s.text).length > 30 ? '...' : ''}</button>`).join('\n        ')}
+      </div>
+      ${inputEl}
+    </div>
+    <div id="sb-output" style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:0.75rem;min-height:3rem;color:var(--muted);font-size:0.85rem">Type above to try</div>
+    <div id="sb-error" style="display:none;margin-top:0.35rem;padding:0.5rem;border-radius:6px;background:rgba(239,68,68,0.1);color:#f87171;font-size:0.78rem"></div>
+
+    <script type="module">
+      var _samples = ${samplesJson};
+      ${config.render}
+
+      var _mod, _loaded = false, _err = null;
+      try {
+        _mod = await import('${esmUrl}');
+        _loaded = true;
+      } catch(e) {
+        _err = e;
+        document.getElementById('sb-error').style.display = 'block';
+        document.getElementById('sb-error').textContent = 'Module not deployed yet. Check back soon.';
+      }
+
+      var _timer;
+      var input = document.getElementById('sb-input');
+      var output = document.getElementById('sb-output');
+
+      function run() {
+        if (!_loaded) return;
+        var v = input.value;
+        if (!v.trim()) { output.innerHTML = '<span style="color:var(--muted)">Type above to try</span>'; return; }
+        try {
+          var result = _mod.${config.fn}(v);
+          if (result && typeof result.then === 'function') {
+            result.then(function(r) { output.innerHTML = renderResult(r); })
+              .catch(function(e) { output.innerHTML = '<span style="color:#f87171">Error: ' + e.message + '</span>'; });
+          } else {
+            output.innerHTML = renderResult(result);
+          }
+        } catch(e) {
+          output.innerHTML = '<span style="color:#f87171">Error: ' + e.message + '</span>';
+        }
+      }
+
+      input.addEventListener('input', function() {
+        clearTimeout(_timer);
+        _timer = setTimeout(run, 200);
+      });
+
+      document.querySelectorAll('.sb-sample').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          input.value = _samples[Number(this.dataset.i)];
+          input.dispatchEvent(new Event('input'));
+        });
+      });
+    <\/script>`;
+}
+
+function generateDualInputSandbox(agent, esmUrl, config) {
+  const samplesJson = JSON.stringify(config.samples).replace(/'/g, "\\'").replace(/<\//g, '<\\/');
+
+  return `
+    <div style="margin-bottom:0.5rem">
+      <div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.5rem">
+        ${config.samples.map((s, i) => `<button class="sb-sample" data-i="${i}" style="padding:0.25rem 0.6rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;font-family:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px">${escapeHtml(s.subject).slice(0, 30)}</button>`).join('\n        ')}
+      </div>
+      <label style="font-size:0.72rem;color:var(--muted-soft);display:block;margin-bottom:0.2rem">Subject</label>
+      <input type="text" id="sb-subject" placeholder="${config.placeholderSubject}" style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:0.85rem;font-family:inherit;margin-bottom:0.4rem" />
+      <label style="font-size:0.72rem;color:var(--muted-soft);display:block;margin-bottom:0.2rem">Body</label>
+      <textarea id="sb-body" rows="3" placeholder="${config.placeholder}" style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:0.85rem;resize:vertical;font-family:inherit"></textarea>
+    </div>
+    <div id="sb-output" style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:0.75rem;min-height:3rem;color:var(--muted);font-size:0.85rem">Fill in subject and body to classify</div>
+    <div id="sb-error" style="display:none;margin-top:0.35rem;padding:0.5rem;border-radius:6px;background:rgba(239,68,68,0.1);color:#f87171;font-size:0.78rem"></div>
+
+    <script type="module">
+      var _samples = ${samplesJson};
+      ${config.render}
+
+      var _mod, _loaded = false;
+      try {
+        _mod = await import('${esmUrl}');
+        _loaded = true;
+      } catch(e) {
+        document.getElementById('sb-error').style.display = 'block';
+        document.getElementById('sb-error').textContent = 'Module not deployed yet. Check back soon.';
+      }
+
+      var _timer;
+      var subj = document.getElementById('sb-subject');
+      var body = document.getElementById('sb-body');
+      var output = document.getElementById('sb-output');
+
+      function run() {
+        if (!_loaded) return;
+        var s = subj.value, b = body.value;
+        if (!s.trim() && !b.trim()) { output.innerHTML = '<span style="color:var(--muted)">Fill in subject and body to classify</span>'; return; }
+        try {
+          var result = _mod.${config.fn}(s, b);
+          if (result && typeof result.then === 'function') {
+            result.then(function(r) { output.innerHTML = renderResult(r); })
+              .catch(function(e) { output.innerHTML = '<span style="color:#f87171">Error: ' + e.message + '</span>'; });
+          } else {
+            output.innerHTML = renderResult(result);
+          }
+        } catch(e) {
+          output.innerHTML = '<span style="color:#f87171">Error: ' + e.message + '</span>';
+        }
+      }
+
+      subj.addEventListener('input', function() { clearTimeout(_timer); _timer = setTimeout(run, 200); });
+      body.addEventListener('input', function() { clearTimeout(_timer); _timer = setTimeout(run, 200); });
+
+      document.querySelectorAll('.sb-sample').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var s = _samples[Number(this.dataset.i)];
+          subj.value = s.subject;
+          body.value = s.body;
+          run();
+        });
+      });
+    <\/script>`;
+}
+
+function generateConverterSandbox(agent, esmUrl, config) {
+  const samplesJson = JSON.stringify(config.samples).replace(/'/g, "\\'").replace(/<\//g, '<\\/');
+
+  return `
+    <div style="margin-bottom:0.5rem">
+      <div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.5rem">
+        ${config.samples.map((s, i) => `<button class="sb-sample" data-i="${i}" style="padding:0.25rem 0.6rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;font-family:inherit">${s.value} ${s.from} → ${s.to}</button>`).join('\n        ')}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:0.4rem;align-items:end;margin-bottom:0.4rem">
+        <div>
+          <label style="font-size:0.68rem;color:var(--muted-soft);display:block;margin-bottom:0.2rem">Value</label>
+          <input type="number" id="sb-value" value="100" style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:0.85rem" />
+        </div>
+        <div style="padding-bottom:0.25rem;color:var(--muted-soft);font-size:0.82rem">→</div>
+        <div style="display:flex;gap:0.3rem">
+          <div style="flex:1">
+            <label style="font-size:0.68rem;color:var(--muted-soft);display:block;margin-bottom:0.2rem">From</label>
+            <input type="text" id="sb-from" value="km" placeholder="km" style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:0.85rem" />
+          </div>
+          <div style="flex:1">
+            <label style="font-size:0.68rem;color:var(--muted-soft);display:block;margin-bottom:0.2rem">To</label>
+            <input type="text" id="sb-to" value="mi" placeholder="mi" style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:0.85rem" />
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="sb-output" style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:0.75rem;min-height:3rem;color:var(--muted);font-size:0.85rem">Enter values to convert</div>
+    <div id="sb-error" style="display:none;margin-top:0.35rem;padding:0.5rem;border-radius:6px;background:rgba(239,68,68,0.1);color:#f87171;font-size:0.78rem"></div>
+
+    <script type="module">
+      var _samples = ${samplesJson};
+      ${config.render}
+
+      var _mod, _loaded = false;
+      try {
+        _mod = await import('${esmUrl}');
+        _loaded = true;
+      } catch(e) {
+        document.getElementById('sb-error').style.display = 'block';
+        document.getElementById('sb-error').textContent = 'Module not deployed yet. Check back soon.';
+      }
+
+      var _timer;
+      var vEl = document.getElementById('sb-value');
+      var fEl = document.getElementById('sb-from');
+      var tEl = document.getElementById('sb-to');
+      var output = document.getElementById('sb-output');
+
+      function run() {
+        if (!_loaded) return;
+        var v = Number(vEl.value), f = fEl.value.trim(), t = tEl.value.trim();
+        if (isNaN(v) || !f || !t) return;
+        try {
+          var result = _mod.${config.fn}(v, f, t);
+          if (result && typeof result.then === 'function') {
+            result.then(function(r) { output.innerHTML = renderResult(r); })
+              .catch(function(e) { output.innerHTML = '<span style="color:#f87171">Error: ' + e.message + '</span>'; });
+          } else {
+            output.innerHTML = renderResult(result);
+          }
+        } catch(e) {
+          output.innerHTML = '<span style="color:#f87171">Error: ' + e.message + '</span>';
+        }
+      }
+
+      [vEl, fEl, tEl].forEach(function(el) {
+        el.addEventListener('input', function() { clearTimeout(_timer); _timer = setTimeout(run, 200); });
+      });
+
+      document.querySelectorAll('.sb-sample').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var s = _samples[Number(this.dataset.i)];
+          vEl.value = s.value; fEl.value = s.from; tEl.value = s.to;
+          run();
+        });
+      });
+
+      // Auto-run with defaults
+      setTimeout(run, 300);
+    <\/script>`;
+}
+
+function generateNameGeneratorSandbox(agent, esmUrl, config) {
+  const genres = ['Fantasy', 'Sci-Fi', 'Medieval', 'Japanese', 'Nordic', 'Arabic'];
+  const genders = ['Any', 'Male', 'Female'];
+
+  return `
+    <div style="margin-bottom:0.5rem">
+      <div style="font-size:0.72rem;color:var(--muted-soft);margin-bottom:0.3rem;font-weight:600">Genre</div>
+      <div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.5rem">
+        ${genres.map((g, i) => `<button class="sb-genre" data-v="${g.toLowerCase()}" style="padding:0.3rem 0.65rem;border-radius:6px;border:1px solid ${i === 0 ? 'var(--accent)' : 'var(--line)'};background:${i === 0 ? 'var(--accent)' : 'transparent'};color:${i === 0 ? '#fff' : 'var(--muted)'};font-size:0.78rem;cursor:pointer;font-family:inherit;font-weight:${i === 0 ? '600' : '400'}">${g}</button>`).join('\n        ')}
+      </div>
+      <div style="font-size:0.72rem;color:var(--muted-soft);margin-bottom:0.3rem;font-weight:600">Gender</div>
+      <div style="display:flex;gap:0.3rem;margin-bottom:0.75rem">
+        ${genders.map((g, i) => `<button class="sb-gender" data-v="${g === 'Any' ? '' : g.toLowerCase()}" style="padding:0.3rem 0.65rem;border-radius:6px;border:1px solid ${i === 0 ? 'var(--accent)' : 'var(--line)'};background:${i === 0 ? 'var(--accent)' : 'transparent'};color:${i === 0 ? '#fff' : 'var(--muted)'};font-size:0.78rem;cursor:pointer;font-family:inherit;font-weight:${i === 0 ? '600' : '400'}">${g}</button>`).join('\n        ')}
+      </div>
+      <button id="sb-generate" style="width:100%;padding:0.6rem;border-radius:10px;border:none;background:var(--accent);color:white;font-weight:600;font-size:0.88rem;cursor:pointer;margin-bottom:0.75rem">Generate Name</button>
+    </div>
+    <div id="sb-output" style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:0.75rem;min-height:3rem;color:var(--muted);font-size:0.85rem">Click Generate to create a name</div>
+    <div id="sb-error" style="display:none;margin-top:0.35rem;padding:0.5rem;border-radius:6px;background:rgba(239,68,68,0.1);color:#f87171;font-size:0.78rem"></div>
+
+    <script type="module">
+      ${config.render}
+
+      var _mod, _loaded = false;
+      try {
+        _mod = await import('${esmUrl}');
+        _loaded = true;
+      } catch(e) {
+        document.getElementById('sb-error').style.display = 'block';
+        document.getElementById('sb-error').textContent = 'Module not deployed yet. Check back soon.';
+      }
+
+      var _genre = 'fantasy', _gender = '';
+      var output = document.getElementById('sb-output');
+
+      function selectPill(btns, activeVal) {
+        btns.forEach(function(b) {
+          var isActive = b.dataset.v === activeVal;
+          b.style.background = isActive ? 'var(--accent)' : 'transparent';
+          b.style.color = isActive ? '#fff' : 'var(--muted)';
+          b.style.borderColor = isActive ? 'var(--accent)' : 'var(--line)';
+          b.style.fontWeight = isActive ? '600' : '400';
+        });
+      }
+
+      document.querySelectorAll('.sb-genre').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          _genre = this.dataset.v;
+          selectPill(document.querySelectorAll('.sb-genre'), _genre);
+        });
+      });
+
+      document.querySelectorAll('.sb-gender').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          _gender = this.dataset.v;
+          selectPill(document.querySelectorAll('.sb-gender'), _gender);
+        });
+      });
+
+      document.getElementById('sb-generate').addEventListener('click', function() {
+        if (!_loaded) return;
+        try {
+          var opts = { genre: _genre };
+          if (_gender) opts.gender = _gender;
+          var result = _mod.${config.fn}(opts);
+          if (result && typeof result.then === 'function') {
+            result.then(function(r) { output.innerHTML = renderResult(r); })
+              .catch(function(e) { output.innerHTML = '<span style="color:#f87171">Error: ' + e.message + '</span>'; });
+          } else {
+            output.innerHTML = renderResult(result);
+          }
+        } catch(e) {
+          output.innerHTML = '<span style="color:#f87171">Error: ' + e.message + '</span>';
+        }
+      });
+    <\/script>`;
+}
+
+function generateGenericLiveSandbox(agent, esmUrl) {
+  const fn = agent.api.functions[0];
+  if (!fn) return `<p style="color:var(--muted);font-size:0.85rem">Sandbox coming soon.</p>`;
+
+  return `
+    <textarea id="sb-input" rows="3" placeholder="Enter input..." style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:0.85rem;resize:vertical;font-family:inherit;margin-bottom:0.5rem"></textarea>
+    <div id="sb-output" style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:0.75rem;font-family:monospace;font-size:0.82rem;min-height:3rem;white-space:pre-wrap;word-break:break-all;color:var(--muted)">Type above to try</div>
+    <div id="sb-error" style="display:none;margin-top:0.35rem;padding:0.5rem;border-radius:6px;background:rgba(239,68,68,0.1);color:#f87171;font-size:0.78rem"></div>
+
+    <script type="module">
+      var _mod, _loaded = false;
+      try {
+        _mod = await import('${esmUrl}');
+        _loaded = true;
+      } catch(e) {
+        document.getElementById('sb-error').style.display = 'block';
+        document.getElementById('sb-error').textContent = 'Module not deployed yet. Check back soon.';
+      }
+
+      var _timer;
+      var input = document.getElementById('sb-input');
+      var output = document.getElementById('sb-output');
+
+      input.addEventListener('input', function() {
+        clearTimeout(_timer);
+        _timer = setTimeout(function() {
+          if (!_loaded) return;
+          var v = input.value;
+          if (!v.trim()) { output.textContent = 'Type above to try'; return; }
+          try {
+            var result = _mod.${fn.name}(v);
+            if (result && typeof result.then === 'function') {
+              result.then(function(r) { output.textContent = JSON.stringify(r, null, 2); })
+                .catch(function(e) { output.textContent = 'Error: ' + e.message; });
+            } else {
+              output.textContent = JSON.stringify(result, null, 2);
+            }
+          } catch(e) {
+            output.textContent = 'Error: ' + e.message;
+          }
+        }, 200);
+      });
+    <\/script>`;
+}
+
+function generateNoteSandbox(agent) {
+  const note = agent.api.note;
+
+  // Canvas/interactive agents: show iframe preview
+  if (IFRAME_AGENTS.has(agent.id) && agent.agentUrl) {
+    return `
+      <p style="color:var(--muted);font-size:0.82rem;margin-bottom:0.75rem">${note}</p>
+      <div style="border-radius:8px;overflow:hidden;border:1px solid var(--line);margin-bottom:0.5rem">
+        <iframe src="${agent.agentUrl}" style="width:100%;height:400px;border:none" loading="lazy"></iframe>
+      </div>
+      <a href="${agent.agentUrl}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:0.3rem;font-size:0.78rem;color:var(--muted)">Open full screen &rarr;</a>`;
+  }
+
+  // Other note agents: show note + link
+  if (agent.agentUrl) {
+    return `
+      <p style="color:var(--muted);font-size:0.82rem;margin-bottom:0.75rem">${note}</p>
+      <a href="${agent.agentUrl}" target="_blank" rel="noopener" class="btn-primary" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.6rem 1.25rem;border-radius:10px;background:var(--accent);color:#fff;font-weight:600;font-size:0.88rem;text-decoration:none">
+        Try the full interactive version &rarr;
+      </a>`;
+  }
+
+  return `<p style="color:var(--muted);font-size:0.82rem">${note}</p>`;
+}
+
+function generateMethodSandbox(agent, esmUrl) {
   const methods = agent.sandbox.methods;
   let html = '';
 
@@ -392,7 +1227,7 @@ function generateSandbox(agent) {
         }
       };
     <\/script>` : `<script type="module">
-      import * as mod from '${agent.esmUrl ?? 'https://freeagentstore.online/pkg/' + agent.id + '/index.js'}';
+      import * as mod from '${esmUrl}';
       window.runSandbox_${method.name} = async function() {
         const out = document.getElementById('result-${method.name}');
         out.style.color = 'var(--ink)';
@@ -409,6 +1244,10 @@ function generateSandbox(agent) {
   }
 
   return html;
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 function generateConfigSandbox(agent) {

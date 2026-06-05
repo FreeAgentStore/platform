@@ -204,7 +204,87 @@
             <span style="font-size:0.72rem;color:var(--muted)">Try it live</span>
           </div>
           <div id="sandbox" style="padding:1rem">
-            <p style="color:var(--muted);font-size:0.85rem">Sandbox coming soon. <a href="https://freeagentstore.online/a/email-classifier/">Try the full app</a>.</p>
+            
+    <div style="margin-bottom:0.5rem">
+      <div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.5rem">
+        <button class="sb-sample" data-i="0" style="padding:0.25rem 0.6rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;font-family:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px">Your order has shipped</button>
+        <button class="sb-sample" data-i="1" style="padding:0.25rem 0.6rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;font-family:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px">Flash Sale - 50% Off Everythin</button>
+        <button class="sb-sample" data-i="2" style="padding:0.25rem 0.6rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;font-family:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px">Hey, are we still on for dinne</button>
+      </div>
+      <label style="font-size:0.72rem;color:var(--muted-soft);display:block;margin-bottom:0.2rem">Subject</label>
+      <input type="text" id="sb-subject" placeholder="Email subject..." style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:0.85rem;font-family:inherit;margin-bottom:0.4rem" />
+      <label style="font-size:0.72rem;color:var(--muted-soft);display:block;margin-bottom:0.2rem">Body</label>
+      <textarea id="sb-body" rows="3" placeholder="Email body..." style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:0.85rem;resize:vertical;font-family:inherit"></textarea>
+    </div>
+    <div id="sb-output" style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:0.75rem;min-height:3rem;color:var(--muted);font-size:0.85rem">Fill in subject and body to classify</div>
+    <div id="sb-error" style="display:none;margin-top:0.35rem;padding:0.5rem;border-radius:6px;background:rgba(239,68,68,0.1);color:#f87171;font-size:0.78rem"></div>
+
+    <script type="module">
+      var _samples = [{"subject":"Your order has shipped","body":"Tracking number: 1Z999AA10123456784. Expected delivery: Friday."},{"subject":"Flash Sale - 50% Off Everything!","body":"Limited time offer. Use code SAVE50 at checkout."},{"subject":"Hey, are we still on for dinner?","body":"Let me know if 7pm works. I was thinking Italian."}];
+      function renderResult(r) {
+      if (!r) return '<span style="color:var(--muted)">No result</span>';
+      var catColors = { transactional:'#3b82f6', promotional:'#f59e0b', personal:'#22c55e', notification:'#8b5cf6', newsletter:'#06b6d4', spam:'#ef4444', social:'#ec4899' };
+      var c = catColors[r.category] || '#a3a3a3';
+      var pct = Math.round((r.confidence ?? 0) * 100);
+      var html = '<div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">'
+        + '<span style="font-size:0.88rem;font-weight:700;padding:0.3rem 0.8rem;border-radius:8px;background:' + c + '22;color:' + c + ';border:1px solid ' + c + '44;text-transform:uppercase">' + (r.category || '?') + '</span></div>'
+        + '<div style="font-size:0.72rem;color:var(--muted-soft);margin-bottom:0.25rem">Confidence</div>'
+        + '<div style="background:var(--line);border-radius:4px;height:8px;overflow:hidden">'
+        + '<div style="width:' + pct + '%;height:100%;background:' + c + ';border-radius:4px;transition:width 0.3s"></div></div>'
+        + '<div style="text-align:right;font-size:0.72rem;color:var(--muted-soft);margin-top:0.15rem">' + pct + '%</div>';
+      if (r.signals && r.signals.length) {
+        html += '<div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.5rem">';
+        for (var i = 0; i < r.signals.length; i++) {
+          html += '<span style="font-size:0.68rem;padding:0.15rem 0.45rem;border-radius:4px;background:var(--line);color:var(--muted)">' + r.signals[i] + '</span>';
+        }
+        html += '</div>';
+      }
+      return html;
+    }
+
+      var _mod, _loaded = false;
+      try {
+        _mod = await import('https://freeagentstore.online/pkg/email-classifier/index.js');
+        _loaded = true;
+      } catch(e) {
+        document.getElementById('sb-error').style.display = 'block';
+        document.getElementById('sb-error').textContent = 'Module not deployed yet. Check back soon.';
+      }
+
+      var _timer;
+      var subj = document.getElementById('sb-subject');
+      var body = document.getElementById('sb-body');
+      var output = document.getElementById('sb-output');
+
+      function run() {
+        if (!_loaded) return;
+        var s = subj.value, b = body.value;
+        if (!s.trim() && !b.trim()) { output.innerHTML = '<span style="color:var(--muted)">Fill in subject and body to classify</span>'; return; }
+        try {
+          var result = _mod.classifyEmail(s, b);
+          if (result && typeof result.then === 'function') {
+            result.then(function(r) { output.innerHTML = renderResult(r); })
+              .catch(function(e) { output.innerHTML = '<span style="color:#f87171">Error: ' + e.message + '</span>'; });
+          } else {
+            output.innerHTML = renderResult(result);
+          }
+        } catch(e) {
+          output.innerHTML = '<span style="color:#f87171">Error: ' + e.message + '</span>';
+        }
+      }
+
+      subj.addEventListener('input', function() { clearTimeout(_timer); _timer = setTimeout(run, 200); });
+      body.addEventListener('input', function() { clearTimeout(_timer); _timer = setTimeout(run, 200); });
+
+      document.querySelectorAll('.sb-sample').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var s = _samples[Number(this.dataset.i)];
+          subj.value = s.subject;
+          body.value = s.body;
+          run();
+        });
+      });
+    </script>
           </div>
           <div style="padding:0.5rem 1rem;border-top:1px solid var(--line);font-size:0.72rem;color:var(--muted-soft);text-align:center">
             <a href="https://freeagentstore.online/a/email-classifier/" style="color:var(--muted)">Open full app &rarr;</a>

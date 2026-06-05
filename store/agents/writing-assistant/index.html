@@ -204,45 +204,11 @@
             <span style="font-size:0.72rem;color:var(--muted)">Try it live</span>
           </div>
           <div id="sandbox" style="padding:1rem">
-            <div style="margin-bottom:0.5rem">
-          <label style="font-size:0.72rem;color:var(--muted-soft);display:block;margin-bottom:0.2rem">text</label>
-          <input type="text" id="param-write-0" value="A professional email declining a meeting invitation politely" placeholder="Describe what to write..."
-            style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-family:monospace;font-size:0.85rem" />
-        </div>
-    <button onclick="runSandbox_write()" style="width:100%;padding:0.6rem;border-radius:10px;border:none;background:var(--accent);color:white;font-weight:600;font-size:0.88rem;cursor:pointer;margin-bottom:0.75rem">Write Text</button>
-    <div id="result-write" style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:0.75rem;font-family:monospace;font-size:0.82rem;min-height:2.5rem;white-space:pre-wrap;word-break:break-all;color:var(--muted)">Click "Write Text" to try</div>
-
-    <script>
-      window.runSandbox_write = async function() {
-        const out = document.getElementById('result-write');
-        out.style.color = 'var(--ink)';
-        out.textContent = 'Running...';
-        try {
-          const g = globalThis;
-          const LM = g.LanguageModel || (g.ai && g.ai.languageModel);
-          if (!LM || !LM.create) {
-            // Fallback: try Ollama
-            try {
-              const r = await fetch('http://localhost:11434/api/generate', {
-                method: 'POST', headers: {'Content-Type':'application/json'},
-                body: JSON.stringify({model:'llama3.2', prompt: 'Write helpful, clear text based on the user\'s request.\n\n' + document.getElementById('param-write-0').value, stream:false})
-              });
-              if (r.ok) { out.textContent = (await r.json()).response; return; }
-            } catch(e) {}
-            out.style.color = '#fbbf24';
-            out.textContent = 'Built-in AI not available in this browser.\nEnable: chrome://flags → Prompt API for Gemini Nano\nOr install Ollama locally.';
-            return;
-          }
-          const session = await LM.create({systemPrompt: 'Write helpful, clear text based on the user\'s request.'});
-          const result = await session.prompt(document.getElementById('param-write-0').value);
-          session.destroy && session.destroy();
-          out.textContent = result;
-        } catch(e) {
-          out.style.color = '#f87171';
-          out.textContent = 'Error: ' + e.message;
-        }
-      };
-    </script>
+            
+      <p style="color:var(--muted);font-size:0.82rem;margin-bottom:0.75rem">This agent requires the full UI. Use it at freeagentstore.online/a/writing-assistant/ or embed via iframe.</p>
+      <a href="https://freeagentstore.online/a/writing-assistant/" target="_blank" rel="noopener" class="btn-primary" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.6rem 1.25rem;border-radius:10px;background:var(--accent);color:#fff;font-weight:600;font-size:0.88rem;text-decoration:none">
+        Try the full interactive version &rarr;
+      </a>
           </div>
           <div style="padding:0.5rem 1rem;border-top:1px solid var(--line);font-size:0.72rem;color:var(--muted-soft);text-align:center">
             <a href="https://freeagentstore.online/a/writing-assistant/" style="color:var(--muted)">Open full app &rarr;</a>

@@ -204,7 +204,91 @@
             <span style="font-size:0.72rem;color:var(--muted)">Try it live</span>
           </div>
           <div id="sandbox" style="padding:1rem">
-            <p style="color:var(--muted);font-size:0.85rem">Sandbox coming soon. <a href="https://freeagentstore.online/a/language-detector/">Try the full app</a>.</p>
+            
+    <div style="margin-bottom:0.5rem">
+      <div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.5rem">
+        <button class="sb-sample" data-i="0" style="padding:0.25rem 0.6rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;font-family:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">Bonjour le monde</button>
+        <button class="sb-sample" data-i="1" style="padding:0.25rem 0.6rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;font-family:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">Hallo Welt, wie geht es dir?</button>
+        <button class="sb-sample" data-i="2" style="padding:0.25rem 0.6rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;font-family:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">こんにちは世界</button>
+        <button class="sb-sample" data-i="3" style="padding:0.25rem 0.6rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;font-family:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">Hola, como estas hoy?</button>
+        <button class="sb-sample" data-i="4" style="padding:0.25rem 0.6rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;font-family:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">Привет мир</button>
+      </div>
+      <textarea id="sb-input" rows="3" placeholder="Type text in any language..." style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:0.85rem;resize:vertical;font-family:inherit"></textarea>
+    </div>
+    <div id="sb-output" style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:0.75rem;min-height:3rem;color:var(--muted);font-size:0.85rem">Type above to try</div>
+    <div id="sb-error" style="display:none;margin-top:0.35rem;padding:0.5rem;border-radius:6px;background:rgba(239,68,68,0.1);color:#f87171;font-size:0.78rem"></div>
+
+    <script type="module">
+      var _samples = ["Bonjour le monde","Hallo Welt, wie geht es dir?","こんにちは世界","Hola, como estas hoy?","Привет мир"];
+      function renderResult(r) {
+      if (!r) return '<span style="color:var(--muted)">No result</span>';
+      var flags = {en:'🇺🇸',fr:'🇫🇷',de:'🇩🇪',es:'🇪🇸',it:'🇮🇹',pt:'🇵🇹',ja:'🇯🇵',ko:'🇰🇷',zh:'🇨🇳',ru:'🇷🇺',ar:'🇸🇦',hi:'🇮🇳',nl:'🇳🇱',sv:'🇸🇪',pl:'🇵🇱',tr:'🇹🇷',vi:'🇻🇳',th:'🇹🇭',uk:'🇺🇦',cs:'🇨🇿',ro:'🇷🇴',da:'🇩🇰',fi:'🇫🇮',el:'🇬🇷',hu:'🇭🇺',no:'🇳🇴',id:'🇮🇩',ms:'🇲🇾',tl:'🇵🇭'};
+      var flag = flags[r.language] || '🇷🇺';
+      var pct = Math.round((r.confidence ?? 0) * 100);
+      var html = '<div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">'
+        + '<span style="font-size:2rem">' + flag + '</span>'
+        + '<div><div style="font-size:1.1rem;font-weight:700;color:var(--ink)">' + (r.languageName || r.language || '?') + '</div>'
+        + '<div style="font-size:0.72rem;color:var(--muted)">' + (r.language || '') + '</div></div></div>'
+        + '<div style="font-size:0.72rem;color:var(--muted-soft);margin-bottom:0.25rem">Confidence</div>'
+        + '<div style="background:var(--line);border-radius:4px;height:8px;overflow:hidden">'
+        + '<div style="width:' + pct + '%;height:100%;background:var(--accent);border-radius:4px;transition:width 0.3s"></div></div>'
+        + '<div style="text-align:right;font-size:0.72rem;color:var(--muted-soft);margin-top:0.15rem">' + pct + '%</div>';
+      if (r.scores && r.scores.length > 1) {
+        html += '<div style="margin-top:0.75rem;font-size:0.72rem;color:var(--muted-soft)">Top candidates:</div>';
+        var top = r.scores.slice(0, 3);
+        for (var i = 0; i < top.length; i++) {
+          var s = top[i]; var sp = Math.round((s.confidence ?? s.score ?? 0) * 100);
+          var sf = flags[s.language] || '';
+          html += '<div style="display:flex;align-items:center;gap:0.4rem;margin-top:0.2rem;font-size:0.78rem;color:var(--muted)">'
+            + sf + ' ' + (s.languageName || s.language) + ' <span style="color:var(--muted-soft)">' + sp + '%</span></div>';
+        }
+      }
+      return html;
+    }
+
+      var _mod, _loaded = false, _err = null;
+      try {
+        _mod = await import('https://freeagentstore.online/pkg/language-detector/index.js');
+        _loaded = true;
+      } catch(e) {
+        _err = e;
+        document.getElementById('sb-error').style.display = 'block';
+        document.getElementById('sb-error').textContent = 'Module not deployed yet. Check back soon.';
+      }
+
+      var _timer;
+      var input = document.getElementById('sb-input');
+      var output = document.getElementById('sb-output');
+
+      function run() {
+        if (!_loaded) return;
+        var v = input.value;
+        if (!v.trim()) { output.innerHTML = '<span style="color:var(--muted)">Type above to try</span>'; return; }
+        try {
+          var result = _mod.detectLanguage(v);
+          if (result && typeof result.then === 'function') {
+            result.then(function(r) { output.innerHTML = renderResult(r); })
+              .catch(function(e) { output.innerHTML = '<span style="color:#f87171">Error: ' + e.message + '</span>'; });
+          } else {
+            output.innerHTML = renderResult(result);
+          }
+        } catch(e) {
+          output.innerHTML = '<span style="color:#f87171">Error: ' + e.message + '</span>';
+        }
+      }
+
+      input.addEventListener('input', function() {
+        clearTimeout(_timer);
+        _timer = setTimeout(run, 200);
+      });
+
+      document.querySelectorAll('.sb-sample').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          input.value = _samples[Number(this.dataset.i)];
+          input.dispatchEvent(new Event('input'));
+        });
+      });
+    </script>
           </div>
           <div style="padding:0.5rem 1rem;border-top:1px solid var(--line);font-size:0.72rem;color:var(--muted-soft);text-align:center">
             <a href="https://freeagentstore.online/a/language-detector/" style="color:var(--muted)">Open full app &rarr;</a>

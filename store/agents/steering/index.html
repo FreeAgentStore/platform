@@ -223,7 +223,45 @@ const force = flock(agent, neighbors)</div>
             <span style="font-size:0.72rem;color:var(--muted)">Try it live</span>
           </div>
           <div id="sandbox" style="padding:1rem">
-            <p style="color:var(--muted);font-size:0.85rem">Sandbox coming soon. <a href="https://freeagentstore.online/a/steering/">Try the full app</a>.</p>
+            
+    <textarea id="sb-input" rows="3" placeholder="Enter input..." style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:0.85rem;resize:vertical;font-family:inherit;margin-bottom:0.5rem"></textarea>
+    <div id="sb-output" style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:0.75rem;font-family:monospace;font-size:0.82rem;min-height:3rem;white-space:pre-wrap;word-break:break-all;color:var(--muted)">Type above to try</div>
+    <div id="sb-error" style="display:none;margin-top:0.35rem;padding:0.5rem;border-radius:6px;background:rgba(239,68,68,0.1);color:#f87171;font-size:0.78rem"></div>
+
+    <script type="module">
+      var _mod, _loaded = false;
+      try {
+        _mod = await import('https://freeagentstore.online/pkg/steering/index.js');
+        _loaded = true;
+      } catch(e) {
+        document.getElementById('sb-error').style.display = 'block';
+        document.getElementById('sb-error').textContent = 'Module not deployed yet. Check back soon.';
+      }
+
+      var _timer;
+      var input = document.getElementById('sb-input');
+      var output = document.getElementById('sb-output');
+
+      input.addEventListener('input', function() {
+        clearTimeout(_timer);
+        _timer = setTimeout(function() {
+          if (!_loaded) return;
+          var v = input.value;
+          if (!v.trim()) { output.textContent = 'Type above to try'; return; }
+          try {
+            var result = _mod.seek(v);
+            if (result && typeof result.then === 'function') {
+              result.then(function(r) { output.textContent = JSON.stringify(r, null, 2); })
+                .catch(function(e) { output.textContent = 'Error: ' + e.message; });
+            } else {
+              output.textContent = JSON.stringify(result, null, 2);
+            }
+          } catch(e) {
+            output.textContent = 'Error: ' + e.message;
+          }
+        }, 200);
+      });
+    </script>
           </div>
           <div style="padding:0.5rem 1rem;border-top:1px solid var(--line);font-size:0.72rem;color:var(--muted-soft);text-align:center">
             <a href="https://freeagentstore.online/a/steering/" style="color:var(--muted)">Open full app &rarr;</a>
