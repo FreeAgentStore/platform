@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import TrainAgent from './TrainAgent';
 
 const API = 'https://api.freeagentstore.online';
 const GITHUB_ORG = 'FreeAgentStore';
@@ -34,6 +35,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+  const [trainingAgent, setTrainingAgent] = useState<Agent | null>(null);
   const [deployHistory, setDeployHistory] = useState<DeployRun[]>([]);
   const [theme, setTheme] = useState<'dark' | 'light'>(() =>
     window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
@@ -154,11 +156,19 @@ export default function App() {
       </header>
 
       <div className="max-w-6xl mx-auto px-4 py-6">
-        {selectedAgent ? (
+        {trainingAgent ? (
+          <TrainAgent
+            agentId={trainingAgent.id}
+            agentName={trainingAgent.name}
+            isDark={isDark}
+            onBack={() => setTrainingAgent(null)}
+          />
+        ) : selectedAgent ? (
           <AgentDetail
             agent={selectedAgent}
             deploys={deployHistory}
             onBack={() => setSelectedAgent(null)}
+            onTrain={() => { setTrainingAgent(selectedAgent); setSelectedAgent(null); }}
             isDark={isDark}
           />
         ) : (
@@ -213,10 +223,11 @@ export default function App() {
   );
 }
 
-function AgentDetail({ agent, deploys, onBack, isDark }: {
+function AgentDetail({ agent, deploys, onBack, onTrain, isDark }: {
   agent: Agent;
   deploys: DeployRun[];
   onBack: () => void;
+  onTrain: () => void;
   isDark: boolean;
 }) {
   const [liveStatus, setLiveStatus] = useState<string>('checking...');
@@ -272,6 +283,10 @@ function AgentDetail({ agent, deploys, onBack, isDark }: {
              className={`text-xs px-3 py-1.5 rounded-lg border font-medium no-underline ${isDark ? 'border-neutral-700 text-neutral-300' : 'border-gray-300 text-gray-700'}`}>
             Store Listing
           </a>
+          <button onClick={onTrain}
+             className="text-xs px-3 py-1.5 rounded-lg border font-medium bg-amber-600 border-amber-600 text-white">
+            Train Custom Instance
+          </button>
         </div>
       </div>
 
