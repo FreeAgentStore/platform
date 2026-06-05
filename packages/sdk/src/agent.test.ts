@@ -1,12 +1,21 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { initAgent } from './agent.js';
 
 // Stub browser APIs needed by sub-modules
-vi.stubGlobal('caches', { open: vi.fn().mockResolvedValue({ match: vi.fn(), put: vi.fn(), keys: vi.fn().mockResolvedValue([]) }) });
+vi.stubGlobal('caches', {
+  open: vi
+    .fn()
+    .mockResolvedValue({ match: vi.fn(), put: vi.fn(), keys: vi.fn().mockResolvedValue([]) }),
+});
 vi.stubGlobal('navigator', { storage: { estimate: vi.fn().mockResolvedValue({ usage: 0 }) } });
 vi.stubGlobal('indexedDB', {
   open: vi.fn(() => {
-    const req = { result: { transaction: vi.fn(), objectStoreNames: { contains: () => true } }, onsuccess: null as any, onerror: null, onupgradeneeded: null };
+    const req = {
+      result: { transaction: vi.fn(), objectStoreNames: { contains: () => true } },
+      onsuccess: null as any,
+      onerror: null,
+      onupgradeneeded: null,
+    };
     setTimeout(() => req.onsuccess?.(), 0);
     return req;
   }),

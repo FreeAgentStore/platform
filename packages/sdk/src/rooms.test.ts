@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { Rooms, Room } from './rooms.js';
+import { describe, expect, it, vi } from 'vitest';
+import { Room, Rooms } from './rooms.js';
 
 // Mock WebSocket
 class MockWebSocket {
