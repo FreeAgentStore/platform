@@ -1,0 +1,25 @@
+{
+  "name": "Scene Describer",
+  "description": "Upload a photo, get a natural language description. Object detection + spatial reasoning. For accessibility and content creation.",
+  "version": "1.0.0",
+  "task": "scene-description",
+  "category": "vision",
+  "models": [
+    {
+      "repo": "Xenova/detr-resnet-50",
+      "size": "13MB",
+      "backend": ["webgpu", "wasm"],
+      "task": "object-detection"
+    }
+  ],
+  "estimatedDownload": "13MB",
+  "input": ["image/jpeg", "image/png", "image/webp"],
+  "output": ["application/json"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "runtimeType": "model",
+  "modelSize": "13MB"
+}

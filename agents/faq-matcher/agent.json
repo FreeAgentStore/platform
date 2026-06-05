@@ -1,0 +1,25 @@
+{
+  "name": "FAQ Matcher",
+  "description": "Index your FAQ, then find the best answer for any question. Semantic search with MiniLM embeddings (23MB). Understands meaning, not just keywords.",
+  "version": "1.0.0",
+  "task": "semantic-search",
+  "category": "productivity",
+  "models": [
+    {
+      "repo": "Xenova/all-MiniLM-L6-v2",
+      "size": "23MB",
+      "backend": ["webgpu", "wasm"],
+      "task": "feature-extraction"
+    }
+  ],
+  "estimatedDownload": "23MB",
+  "input": ["text/plain"],
+  "output": ["application/json"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "runtimeType": "model",
+  "modelSize": "23MB"
+}

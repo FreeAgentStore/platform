@@ -1,0 +1,25 @@
+{
+  "name": "Plagiarism Checker",
+  "description": "Compare two texts for similarity. Semantic comparison using MiniLM embeddings — finds meaning overlap, not just copied words.",
+  "version": "1.0.0",
+  "task": "plagiarism-detection",
+  "category": "text",
+  "models": [
+    {
+      "repo": "Xenova/all-MiniLM-L6-v2",
+      "size": "23MB",
+      "backend": ["webgpu", "wasm"],
+      "task": "feature-extraction"
+    }
+  ],
+  "estimatedDownload": "23MB",
+  "input": ["text/plain"],
+  "output": ["application/json"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "runtimeType": "model",
+  "modelSize": "23MB"
+}

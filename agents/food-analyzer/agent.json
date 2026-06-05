@@ -1,0 +1,30 @@
+{
+  "name": "Food Analyzer",
+  "description": "Photograph food, get dish name + estimated calories + ingredients. MobileNet classification + nutrition database.",
+  "version": "1.0.0",
+  "task": "food-analysis",
+  "category": "vision",
+  "models": [
+    {
+      "repo": "Xenova/mobilevit-small",
+      "size": "20MB",
+      "backend": ["webgpu", "wasm"],
+      "task": "image-classification"
+    }
+  ],
+  "estimatedDownload": "20MB",
+  "input": ["image/jpeg", "image/png", "image/webp"],
+  "output": ["application/json"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "runtimeType": "model",
+  "modelSize": "20MB",
+  "evolution": {
+    "versions": 1,
+    "examples": 500,
+    "accuracy": 75
+  }
+}

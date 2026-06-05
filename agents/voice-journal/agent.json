@@ -1,0 +1,25 @@
+{
+  "name": "Voice Journal",
+  "description": "Record voice, get transcription + mood analysis + summary. Whisper Tiny (40MB) + emotion detector + summarizer.",
+  "version": "1.0.0",
+  "task": "voice-journaling",
+  "category": "productivity",
+  "models": [
+    {
+      "repo": "Xenova/whisper-tiny.en",
+      "size": "40MB",
+      "backend": ["webgpu", "wasm"],
+      "task": "automatic-speech-recognition"
+    }
+  ],
+  "estimatedDownload": "40MB",
+  "input": ["audio/webm", "audio/wav"],
+  "output": ["application/json"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "runtimeType": "model",
+  "modelSize": "40MB"
+}

@@ -1,0 +1,25 @@
+{
+  "name": "Smart Search",
+  "description": "Semantic text search — finds meaning, not just keywords. Index any text, search by concept. Uses all-MiniLM-L6-v2 embeddings (23MB).",
+  "version": "1.0.0",
+  "task": "semantic-search",
+  "category": "text",
+  "models": [
+    {
+      "repo": "Xenova/all-MiniLM-L6-v2",
+      "size": "23MB",
+      "backend": ["wasm"],
+      "task": "feature-extraction"
+    }
+  ],
+  "estimatedDownload": "23MB",
+  "input": ["text/plain"],
+  "output": ["application/json"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "runtimeType": "model",
+  "modelSize": "23MB"
+}

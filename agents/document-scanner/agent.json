@@ -1,0 +1,25 @@
+{
+  "name": "Document Scanner",
+  "description": "Photograph a document, get clean extracted text with paragraphs preserved. TrOCR model + layout heuristics.",
+  "version": "1.0.0",
+  "task": "document-scanning",
+  "category": "productivity",
+  "models": [
+    {
+      "repo": "Xenova/trocr-small-printed",
+      "size": "130MB",
+      "backend": ["webgpu", "wasm"],
+      "task": "image-to-text"
+    }
+  ],
+  "estimatedDownload": "130MB",
+  "input": ["image/jpeg", "image/png", "image/webp"],
+  "output": ["text/plain"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "runtimeType": "model",
+  "modelSize": "130MB"
+}

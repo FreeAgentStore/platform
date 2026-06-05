@@ -1,0 +1,25 @@
+{
+  "name": "Study Card Maker",
+  "description": "Paste text or record audio notes — auto-generate flashcards. Keyword extraction + question generation heuristics.",
+  "version": "1.0.0",
+  "task": "flashcard-generation",
+  "category": "education",
+  "runtimeType": "model",
+  "models": [
+    {
+      "repo": "onnx-community/whisper-tiny.en",
+      "size": "40MB",
+      "backend": ["webgpu", "wasm"],
+      "task": "automatic-speech-recognition"
+    }
+  ],
+  "estimatedDownload": "40MB",
+  "modelSize": "40MB",
+  "input": ["text/plain", "audio/wav", "audio/mp3", "audio/m4a", "audio/webm"],
+  "output": ["application/json"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false
+}

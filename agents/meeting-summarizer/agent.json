@@ -1,0 +1,25 @@
+{
+  "name": "Meeting Summarizer",
+  "description": "Upload a meeting recording, get transcript + speaker turns + decisions + action items. Whisper Tiny (40MB) + meeting heuristics.",
+  "version": "1.0.0",
+  "task": "meeting-summarization",
+  "category": "productivity",
+  "runtimeType": "model",
+  "models": [
+    {
+      "repo": "onnx-community/whisper-tiny.en",
+      "size": "40MB",
+      "backend": ["webgpu", "wasm"],
+      "task": "automatic-speech-recognition"
+    }
+  ],
+  "estimatedDownload": "40MB",
+  "modelSize": "40MB",
+  "input": ["audio/wav", "audio/mp3", "audio/m4a", "audio/webm"],
+  "output": ["application/json"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false
+}

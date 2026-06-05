@@ -1,0 +1,25 @@
+{
+  "name": "Plant Identifier",
+  "description": "Photograph a plant, get species name + care instructions + toxicity info. MobileNet + botanical database.",
+  "version": "1.0.0",
+  "task": "plant-identification",
+  "category": "vision",
+  "models": [
+    {
+      "repo": "Xenova/mobilevit-small",
+      "size": "20MB",
+      "backend": ["webgpu", "wasm"],
+      "task": "image-classification"
+    }
+  ],
+  "estimatedDownload": "20MB",
+  "input": ["image/jpeg", "image/png", "image/webp"],
+  "output": ["application/json"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "runtimeType": "model",
+  "modelSize": "20MB"
+}
