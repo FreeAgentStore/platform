@@ -138,7 +138,10 @@
         <button class="filter-btn" onclick="filterAgents('audio')">Audio</button>
         <button class="filter-btn" onclick="filterAgents('vision')">Vision</button>
         <button class="filter-btn" onclick="filterAgents('automation')">Automation</button>
-        <span class="agent-count" id="agentCount">37 agents</span>
+        <button class="filter-btn" onclick="filterAgents('web-analysis')">Web Analysis</button>
+        <button class="filter-btn" onclick="filterAgents('developer-tools')">Developer Tools</button>
+        <button class="filter-btn" onclick="filterAgents('education')">Education</button>
+        <span class="agent-count" id="agentCount">51 agents</span>
       </div>
       <div class="toolbar" style="margin-top:0.35rem;gap:0.35rem">
         <span style="font-size:0.72rem;color:var(--muted-soft);font-weight:600;margin-right:0.25rem">TYPE</span>
@@ -158,7 +161,7 @@
               <span class="agent-name">Text to Speech</span>
               <span class="agent-desc">Convert text to natural-sounding speech using Kokoro TTS. 30...</span>
               <div class="agent-meta">
-                <span class="tag" style="">Kokoro 82M</span>
+                <span class="tag" style="background:rgba(59,130,246,0.15);color:#60a5fa">Model</span>
                 <span class="tag">160MB</span>
               </div>
             </div>
@@ -176,7 +179,7 @@
               <span class="agent-name">Transcriber</span>
               <span class="agent-desc">Transcribe audio to text using Whisper AI. Drop a file, get ...</span>
               <div class="agent-meta">
-                <span class="tag" style="">Whisper Small</span>
+                <span class="tag" style="background:rgba(59,130,246,0.15);color:#60a5fa">Model</span>
                 <span class="tag">244MB</span>
               </div>
             </div>
@@ -194,7 +197,7 @@
               <span class="agent-name">Background Remover</span>
               <span class="agent-desc">Remove image backgrounds instantly using RMBG AI. Drop an im...</span>
               <div class="agent-meta">
-                <span class="tag" style="">RMBG 1.4</span>
+                <span class="tag" style="background:rgba(59,130,246,0.15);color:#60a5fa">Model</span>
                 <span class="tag">176MB</span>
               </div>
             </div>
@@ -230,8 +233,8 @@
               <span class="agent-name">Resume Parser</span>
               <span class="agent-desc">Parse resumes into structured JSON — name, email, skills, ex...</span>
               <div class="agent-meta">
-                <span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Heuristic</span>
-                <span class="tag">0MB</span>
+                <span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Evolved</span>
+                <span class="tag">94%</span>
               </div>
             </div>
           </a>
@@ -318,7 +321,7 @@
             <div class="agent-icon" style="background:#ec4899">🎨</div>
             <div class="agent-body">
               <span class="agent-name">Icon Generator</span>
-              <span class="agent-desc">100+ curated SVG icons. Search, customize colors, export SVG/...</span>
+              <span class="agent-desc">Browse 100+ curated SVG icons or search by description. Colo...</span>
               <div class="agent-meta">
                 <span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Heuristic</span>
                 <span class="tag">0MB</span>
@@ -354,7 +357,7 @@
             <div class="agent-icon" style="background:#0d9488">📏</div>
             <div class="agent-body">
               <span class="agent-name">Unit Converter</span>
-              <span class="agent-desc">Convert between units instantly — length, weight, temperature...</span>
+              <span class="agent-desc">Convert between units instantly — length, weight, temperatur...</span>
               <div class="agent-meta">
                 <span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Heuristic</span>
                 <span class="tag">0MB</span>
@@ -390,7 +393,7 @@
             <div class="agent-icon" style="background:#ec4899">🎨</div>
             <div class="agent-body">
               <span class="agent-name">Mood Palette</span>
-              <span class="agent-desc">Upload a photo or describe a mood — get a color palette with ...</span>
+              <span class="agent-desc">Upload a photo or describe a mood — get a color palette with...</span>
               <div class="agent-meta">
                 <span class="tag" style="background:rgba(5,150,105,0.2);color:#34d399">Built-in AI</span>
                 <span class="tag">0MB</span>
@@ -408,7 +411,7 @@
             <div class="agent-icon" style="background:#f59e0b;font-family:monospace;font-size:0.9rem">.*</div>
             <div class="agent-body">
               <span class="agent-name">Regex Builder</span>
-              <span class="agent-desc">Describe a pattern in English, get a regex. Live testing, matc...</span>
+              <span class="agent-desc">Describe a pattern in English, get a regex. 30+ common patte...</span>
               <div class="agent-meta">
                 <span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Heuristic</span>
                 <span class="tag">0MB</span>
@@ -426,7 +429,7 @@
             <div class="agent-icon" style="background:#0891b2;font-family:monospace;font-size:0.75rem">{ }</div>
             <div class="agent-body">
               <span class="agent-name">JSON Formatter</span>
-              <span class="agent-desc">Format, minify, validate, query, diff. Syntax highlighting, t...</span>
+              <span class="agent-desc">Paste JSON — format, minify, validate, query, diff. Syntax h...</span>
               <div class="agent-meta">
                 <span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Heuristic</span>
                 <span class="tag">0MB</span>
@@ -444,7 +447,7 @@
             <div class="agent-icon" style="background:#6366f1;font-family:monospace;font-size:1.2rem">#</div>
             <div class="agent-body">
               <span class="agent-name">Hash Generator</span>
-              <span class="agent-desc">SHA-256, MD5, HMAC, Base64, UUID, passwords, JWT decode. Web ...</span>
+              <span class="agent-desc">SHA-256, MD5, HMAC, Base64, UUID, passwords, JWT decode, TOT...</span>
               <div class="agent-meta">
                 <span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Heuristic</span>
                 <span class="tag">0MB</span>
@@ -459,10 +462,10 @@
 
         <div class="agent-card" data-category="game-ai">
           <a href="/agents/steering/" class="agent-card-body">
-            <div class="agent-icon" style="background:#16a34a;font-size:1.3rem">&rarr;</div>
+            <div class="agent-icon" style="background:#16a34a">→</div>
             <div class="agent-body">
               <span class="agent-name">Steering Behaviors</span>
-              <span class="agent-desc">Seek, flee, wander, flock, arrive, avoid. 60fps for 500+ age...</span>
+              <span class="agent-desc">Craig Reynolds' steering behaviors for game characters. Seek...</span>
               <div class="agent-meta">
                 <span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Game AI</span>
                 <span class="tag">0MB</span>
@@ -480,7 +483,7 @@
             <div class="agent-icon" style="background:#65a30d">🌳</div>
             <div class="agent-body">
               <span class="agent-name">Behavior Trees</span>
-              <span class="agent-desc">Composable NPC AI. Sequence, selector, parallel, decorators. ...</span>
+              <span class="agent-desc">Composable behavior trees for NPC AI. Sequence, selector, pa...</span>
               <div class="agent-meta">
                 <span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Game AI</span>
                 <span class="tag">0MB</span>
@@ -492,12 +495,13 @@
             Open
           </a>
         </div>
+
         <div class="agent-card" data-category="game-ai">
           <a href="/agents/physics-sim/" class="agent-card-body">
-            <div class="agent-icon" style="background:#dc2626">&#x26a1;</div>
+            <div class="agent-icon" style="background:#dc2626">⚡</div>
             <div class="agent-body">
               <span class="agent-name">Physics Sim</span>
-              <span class="agent-desc">Verlet physics — particles, springs, cloth, soft bodies, ragd...</span>
+              <span class="agent-desc">Verlet integration physics — particles, springs, cloth, soft...</span>
               <div class="agent-meta">
                 <span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Game AI</span>
                 <span class="tag">0MB</span>
@@ -509,15 +513,16 @@
             Open
           </a>
         </div>
+
         <div class="agent-card" data-category="productivity">
           <a href="/agents/date-parser/" class="agent-card-body">
-            <div class="agent-icon" style="background:#0284c7">&#x1f4c5;</div>
+            <div class="agent-icon" style="background:#0284c7">📅</div>
             <div class="agent-body">
               <span class="agent-name">Date Parser</span>
-              <span class="agent-desc">Parse any date — 'next tuesday', ISO 8601, Unix timestamps, n...</span>
+              <span class="agent-desc">Parse any date or time string — 'next tuesday', 'March 14, 2...</span>
               <div class="agent-meta">
                 <span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Evolved</span>
-                <span class="tag">500+ formats</span>
+                <span class="tag">92%</span>
               </div>
             </div>
           </a>
@@ -529,13 +534,13 @@
 
         <div class="agent-card" data-category="text">
           <a href="/agents/emotion-detector/" class="agent-card-body">
-            <div class="agent-icon" style="background:#c026d3">&#x1f3ad;</div>
+            <div class="agent-icon" style="background:#c026d3">🎭</div>
             <div class="agent-body">
               <span class="agent-name">Emotion Detector</span>
-              <span class="agent-desc">8 Plutchik emotions — joy, anger, sadness, fear, surprise, di...</span>
+              <span class="agent-desc">Detect emotions in text — joy, anger, sadness, fear, surpris...</span>
               <div class="agent-meta">
                 <span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Evolved</span>
-                <span class="tag">1000 examples</span>
+                <span class="tag">82%</span>
               </div>
             </div>
           </a>
@@ -547,13 +552,13 @@
 
         <div class="agent-card" data-category="text">
           <a href="/agents/language-detector/" class="agent-card-body">
-            <div class="agent-icon" style="background:#0369a1">&#x1f310;</div>
+            <div class="agent-icon" style="background:#0369a1">🌐</div>
             <div class="agent-body">
               <span class="agent-name">Language Detector</span>
-              <span class="agent-desc">Detect language from text. Trigram analysis, 30 languages, 95...</span>
+              <span class="agent-desc">Detect the language of any text. Character n-gram frequency ...</span>
               <div class="agent-meta">
                 <span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Evolved</span>
-                <span class="tag">5000 examples</span>
+                <span class="tag">95%</span>
               </div>
             </div>
           </a>
@@ -562,15 +567,16 @@
             Open
           </a>
         </div>
+
         <div class="agent-card" data-category="productivity">
           <a href="/agents/address-parser/" class="agent-card-body">
-            <div class="agent-icon" style="background:#0284c7">&#x1f3e0;</div>
+            <div class="agent-icon" style="background:#0284c7">🏠</div>
             <div class="agent-body">
               <span class="agent-name">Address Parser</span>
-              <span class="agent-desc">Parse any address — US, UK, EU, Japanese. Street, city, state...</span>
+              <span class="agent-desc">Parse any address into structured fields — street, unit, cit...</span>
               <div class="agent-meta">
                 <span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Evolved</span>
-                <span class="tag">2000 addresses</span>
+                <span class="tag">89%</span>
               </div>
             </div>
           </a>
@@ -582,13 +588,13 @@
 
         <div class="agent-card" data-category="productivity">
           <a href="/agents/email-classifier/" class="agent-card-body">
-            <div class="agent-icon" style="background:#7c3aed">&#x1f4e7;</div>
+            <div class="agent-icon" style="background:#7c3aed">📧</div>
             <div class="agent-body">
               <span class="agent-name">Email Classifier</span>
-              <span class="agent-desc">Transactional, promotional, personal, notification, newslette...</span>
+              <span class="agent-desc">Classify emails — transactional, promotional, personal, noti...</span>
               <div class="agent-meta">
                 <span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Evolved</span>
-                <span class="tag">3000 emails</span>
+                <span class="tag">87%</span>
               </div>
             </div>
           </a>
@@ -600,13 +606,13 @@
 
         <div class="agent-card" data-category="productivity">
           <a href="/agents/name-parser/" class="agent-card-body">
-            <div class="agent-icon" style="background:#0891b2">&#x1f464;</div>
+            <div class="agent-icon" style="background:#0891b2">👤</div>
             <div class="agent-body">
               <span class="agent-name">Name Parser</span>
-              <span class="agent-desc">Parse human names — Western, Eastern, Hispanic, mononym. Pref...</span>
+              <span class="agent-desc">Parse human names — prefix, first, middle, last, suffix. Wes...</span>
               <div class="agent-meta">
                 <span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Evolved</span>
-                <span class="tag">1500 names</span>
+                <span class="tag">88%</span>
               </div>
             </div>
           </a>
@@ -618,13 +624,13 @@
 
         <div class="agent-card" data-category="text">
           <a href="/agents/profanity-filter/" class="agent-card-body">
-            <div class="agent-icon" style="background:#dc2626">&#x1f6e1;&#xfe0f;</div>
+            <div class="agent-icon" style="background:#dc2626">🛡️</div>
             <div class="agent-body">
               <span class="agent-name">Profanity Filter</span>
-              <span class="agent-desc">Context-aware. Leetspeak, evasion, severity levels. Distingui...</span>
+              <span class="agent-desc">Context-aware profanity detection. Leetspeak, evasion patter...</span>
               <div class="agent-meta">
                 <span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Evolved</span>
-                <span class="tag">5000 examples</span>
+                <span class="tag">91%</span>
               </div>
             </div>
           </a>
@@ -636,13 +642,13 @@
 
         <div class="agent-card" data-category="game-ai">
           <a href="/agents/name-generator/" class="agent-card-body">
-            <div class="agent-icon" style="background:#a855f7">&#x2728;</div>
+            <div class="agent-icon" style="background:#a855f7">✨</div>
             <div class="agent-body">
               <span class="agent-name">Name Generator</span>
-              <span class="agent-desc">Fantasy, sci-fi, medieval, Japanese, Nordic character names. M...</span>
+              <span class="agent-desc">Fantasy, sci-fi, medieval, Japanese, Nordic character names....</span>
               <div class="agent-meta">
-                <span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Game AI</span>
-                <span class="tag">10000 names</span>
+                <span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Evolved</span>
+                <span class="tag">10000 examples</span>
               </div>
             </div>
           </a>
@@ -652,15 +658,69 @@
           </a>
         </div>
 
+        <div class="agent-card" data-category="web-analysis">
+          <a href="/agents/login-detector/" class="agent-card-body">
+            <div class="agent-icon" style="background:#059669">🔐</div>
+            <div class="agent-body">
+              <span class="agent-name">Login Page Detector</span>
+              <span class="agent-desc">Detect login/sign-in pages from HTML. Scores structural, tex...</span>
+              <div class="agent-meta">
+                <span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Heuristic</span>
+                <span class="tag">0MB</span>
+              </div>
+            </div>
+          </a>
+          <a href="/a/login-detector/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
+        </div>
+
+        <div class="agent-card" data-category="web-analysis">
+          <a href="/agents/form-field-finder/" class="agent-card-body">
+            <div class="agent-icon" style="background:#2563eb">🔍</div>
+            <div class="agent-body">
+              <span class="agent-name">Form Field Finder</span>
+              <span class="agent-desc">Find and classify form fields in HTML — email, password, use...</span>
+              <div class="agent-meta">
+                <span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Heuristic</span>
+                <span class="tag">0MB</span>
+              </div>
+            </div>
+          </a>
+          <a href="/a/form-field-finder/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
+        </div>
+
+        <div class="agent-card" data-category="developer-tools">
+          <a href="/agents/trainer/" class="agent-card-body">
+            <div class="agent-icon" style="background:#7c3aed">🏋️</div>
+            <div class="agent-body">
+              <span class="agent-name">Heuristic Trainer</span>
+              <span class="agent-desc">Build and train heuristic agents. Feed test data, LLM genera...</span>
+              <div class="agent-meta">
+                <span class="tag" style="background:rgba(124,58,237,0.15);color:#a78bfa">Developer Tools</span>
+                <span class="tag">0MB</span>
+              </div>
+            </div>
+          </a>
+          <a href="/a/trainer/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
+        </div>
+
         <div class="agent-card" data-category="code">
           <a href="/agents/code-detector/" class="agent-card-body">
-            <div class="agent-icon" style="background:#059669;font-family:monospace;font-size:0.8rem">&lt;/&gt;</div>
+            <div class="agent-icon" style="background:#059669">&lt;/&gt;</div>
             <div class="agent-body">
               <span class="agent-name">Code Detector</span>
-              <span class="agent-desc">Detect programming language of any snippet. 30 languages, JS ...</span>
+              <span class="agent-desc">Detect the programming language of any code snippet. 30 lang...</span>
               <div class="agent-meta">
                 <span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Evolved</span>
-                <span class="tag">8000 snippets</span>
+                <span class="tag">91%</span>
               </div>
             </div>
           </a>
@@ -669,100 +729,347 @@
             Open
           </a>
         </div>
+
         <div class="agent-card" data-category="text">
           <a href="/agents/intent-detector/" class="agent-card-body">
-            <div class="agent-icon" style="background:#6366f1">&#x1f9e0;</div>
+            <div class="agent-icon" style="background:#6366f1">🧠</div>
             <div class="agent-body">
               <span class="agent-name">Intent Detector</span>
-              <span class="agent-desc">Question, command, statement, greeting, farewell. Evolved sco...</span>
-              <div class="agent-meta"><span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Evolved</span><span class="tag">90%</span></div>
+              <span class="agent-desc">Detect text intent — question, command, statement, greeting,...</span>
+              <div class="agent-meta">
+                <span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Evolved</span>
+                <span class="tag">90%</span>
+              </div>
             </div>
           </a>
-          <a href="/a/intent-detector/" class="agent-cta"><svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>Open</a>
+          <a href="/a/intent-detector/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
         </div>
 
         <div class="agent-card" data-category="productivity">
           <a href="/agents/urgency-detector/" class="agent-card-body">
-            <div class="agent-icon" style="background:#dc2626">&#x1f6a8;</div>
+            <div class="agent-icon" style="background:#dc2626">🚨</div>
             <div class="agent-body">
               <span class="agent-name">Urgency Detector</span>
-              <span class="agent-desc">Critical, high, normal, low. For support tickets, emails, no...</span>
-              <div class="agent-meta"><span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Evolved</span><span class="tag">86%</span></div>
+              <span class="agent-desc">Detect text urgency — critical, high, normal, low. For suppo...</span>
+              <div class="agent-meta">
+                <span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Evolved</span>
+                <span class="tag">86%</span>
+              </div>
             </div>
           </a>
-          <a href="/a/urgency-detector/" class="agent-cta"><svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>Open</a>
+          <a href="/a/urgency-detector/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
         </div>
 
         <div class="agent-card" data-category="text">
           <a href="/agents/formality-detector/" class="agent-card-body">
-            <div class="agent-icon" style="background:#0891b2">&#x1f454;</div>
+            <div class="agent-icon" style="background:#0891b2">👔</div>
             <div class="agent-body">
               <span class="agent-name">Formality Detector</span>
-              <span class="agent-desc">Formal, neutral, casual, slang. For tone adjustment, writing...</span>
-              <div class="agent-meta"><span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Evolved</span><span class="tag">84%</span></div>
+              <span class="agent-desc">Detect text formality — formal, neutral, casual, slang. For ...</span>
+              <div class="agent-meta">
+                <span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Evolved</span>
+                <span class="tag">84%</span>
+              </div>
             </div>
           </a>
-          <a href="/a/formality-detector/" class="agent-cta"><svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>Open</a>
+          <a href="/a/formality-detector/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
         </div>
 
         <div class="agent-card" data-category="productivity">
           <a href="/agents/feedback-classifier/" class="agent-card-body">
-            <div class="agent-icon" style="background:#059669">&#x1f4cb;</div>
+            <div class="agent-icon" style="background:#059669">📋</div>
             <div class="agent-body">
               <span class="agent-name">Feedback Classifier</span>
-              <span class="agent-desc">Bug, feature request, complaint, praise, question, suggestio...</span>
-              <div class="agent-meta"><span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Evolved</span><span class="tag">85%</span></div>
+              <span class="agent-desc">Classify feedback — bug, feature request, complaint, praise,...</span>
+              <div class="agent-meta">
+                <span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Evolved</span>
+                <span class="tag">85%</span>
+              </div>
             </div>
           </a>
-          <a href="/a/feedback-classifier/" class="agent-cta"><svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>Open</a>
+          <a href="/a/feedback-classifier/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
         </div>
 
         <div class="agent-card" data-category="text">
           <a href="/agents/topic-classifier/" class="agent-card-body">
-            <div class="agent-icon" style="background:#7c3aed">&#x1f4f0;</div>
+            <div class="agent-icon" style="background:#7c3aed">📰</div>
             <div class="agent-body">
               <span class="agent-name">Topic Classifier</span>
-              <span class="agent-desc">Technology, business, health, sports, entertainment, science,...</span>
-              <div class="agent-meta"><span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Evolved</span><span class="tag">83%</span></div>
+              <span class="agent-desc">Classify text topic — technology, business, health, sports, ...</span>
+              <div class="agent-meta">
+                <span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Evolved</span>
+                <span class="tag">83%</span>
+              </div>
             </div>
           </a>
-          <a href="/a/topic-classifier/" class="agent-cta"><svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>Open</a>
+          <a href="/a/topic-classifier/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
         </div>
 
         <div class="agent-card" data-category="text">
           <a href="/agents/clickbait-detector/" class="agent-card-body">
-            <div class="agent-icon" style="background:#f59e0b">&#x1f3a3;</div>
+            <div class="agent-icon" style="background:#f59e0b">🎣</div>
             <div class="agent-body">
               <span class="agent-name">Clickbait Detector</span>
-              <span class="agent-desc">Scores sensationalism, emotional manipulation, vagueness. For...</span>
-              <div class="agent-meta"><span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Evolved</span><span class="tag">88%</span></div>
+              <span class="agent-desc">Detect clickbait headlines. Scores sensationalism, emotional...</span>
+              <div class="agent-meta">
+                <span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Evolved</span>
+                <span class="tag">88%</span>
+              </div>
             </div>
           </a>
-          <a href="/a/clickbait-detector/" class="agent-cta"><svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>Open</a>
+          <a href="/a/clickbait-detector/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
         </div>
 
         <div class="agent-card" data-category="text">
           <a href="/agents/question-detector/" class="agent-card-body">
-            <div class="agent-icon" style="background:#2563eb">&#x2753;</div>
+            <div class="agent-icon" style="background:#2563eb">❓</div>
             <div class="agent-body">
               <span class="agent-name">Question Detector</span>
-              <span class="agent-desc">Yes/no, open-ended, rhetorical, choice, or not a question. F...</span>
-              <div class="agent-meta"><span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Evolved</span><span class="tag">87%</span></div>
+              <span class="agent-desc">Classify questions — yes/no, open-ended, rhetorical, choice,...</span>
+              <div class="agent-meta">
+                <span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Evolved</span>
+                <span class="tag">87%</span>
+              </div>
             </div>
           </a>
-          <a href="/a/question-detector/" class="agent-cta"><svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>Open</a>
+          <a href="/a/question-detector/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
         </div>
 
         <div class="agent-card" data-category="text">
           <a href="/agents/sarcasm-detector/" class="agent-card-body">
-            <div class="agent-icon" style="background:#a855f7">&#x1f643;</div>
+            <div class="agent-icon" style="background:#a855f7">🙃</div>
             <div class="agent-body">
               <span class="agent-name">Sarcasm Detector</span>
-              <span class="agent-desc">Contradiction, exaggeration, understatement patterns. Honestl...</span>
-              <div class="agent-meta"><span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Evolved</span><span class="tag">72%</span></div>
+              <span class="agent-desc">Detect sarcasm — contradiction, exaggeration, understatement...</span>
+              <div class="agent-meta">
+                <span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Evolved</span>
+                <span class="tag">72%</span>
+              </div>
             </div>
           </a>
-          <a href="/a/sarcasm-detector/" class="agent-cta"><svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>Open</a>
+          <a href="/a/sarcasm-detector/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
+        </div>
+
+        <div class="agent-card" data-category="vision">
+          <a href="/agents/food-analyzer/" class="agent-card-body">
+            <div class="agent-icon" style="background:#f97316">🍔</div>
+            <div class="agent-body">
+              <span class="agent-name">Food Analyzer</span>
+              <span class="agent-desc">Photograph food, get dish name + estimated calories + ingred...</span>
+              <div class="agent-meta">
+                <span class="tag" style="background:rgba(59,130,246,0.15);color:#60a5fa">Model</span>
+                <span class="tag">20MB</span>
+              </div>
+            </div>
+          </a>
+          <a href="/a/food-analyzer/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
+        </div>
+
+        <div class="agent-card" data-category="vision">
+          <a href="/agents/plant-identifier/" class="agent-card-body">
+            <div class="agent-icon" style="background:#16a34a">🌿</div>
+            <div class="agent-body">
+              <span class="agent-name">Plant Identifier</span>
+              <span class="agent-desc">Photograph a plant, get species + care instructions + toxici...</span>
+              <div class="agent-meta">
+                <span class="tag" style="background:rgba(59,130,246,0.15);color:#60a5fa">Model</span>
+                <span class="tag">20MB</span>
+              </div>
+            </div>
+          </a>
+          <a href="/a/plant-identifier/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
+        </div>
+
+        <div class="agent-card" data-category="text">
+          <a href="/agents/smart-search/" class="agent-card-body">
+            <div class="agent-icon" style="background:#2563eb">🔍</div>
+            <div class="agent-body">
+              <span class="agent-name">Smart Search</span>
+              <span class="agent-desc">Semantic text search — finds meaning, not just keywords. Min...</span>
+              <div class="agent-meta">
+                <span class="tag" style="background:rgba(59,130,246,0.15);color:#60a5fa">Model</span>
+                <span class="tag">23MB</span>
+              </div>
+            </div>
+          </a>
+          <a href="/a/smart-search/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
+        </div>
+
+        <div class="agent-card" data-category="productivity">
+          <a href="/agents/document-scanner/" class="agent-card-body">
+            <div class="agent-icon" style="background:#6366f1">📄</div>
+            <div class="agent-body">
+              <span class="agent-name">Document Scanner</span>
+              <span class="agent-desc">Photograph a document, get clean extracted text with paragra...</span>
+              <div class="agent-meta">
+                <span class="tag" style="background:rgba(59,130,246,0.15);color:#60a5fa">Model</span>
+                <span class="tag">130MB</span>
+              </div>
+            </div>
+          </a>
+          <a href="/a/document-scanner/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
+        </div>
+
+        <div class="agent-card" data-category="productivity">
+          <a href="/agents/voice-journal/" class="agent-card-body">
+            <div class="agent-icon" style="background:#7c3aed">🎙️</div>
+            <div class="agent-body">
+              <span class="agent-name">Voice Journal</span>
+              <span class="agent-desc">Record voice, get transcription + mood analysis + summary. W...</span>
+              <div class="agent-meta">
+                <span class="tag" style="background:rgba(59,130,246,0.15);color:#60a5fa">Model</span>
+                <span class="tag">40MB</span>
+              </div>
+            </div>
+          </a>
+          <a href="/a/voice-journal/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
+        </div>
+
+        <div class="agent-card" data-category="vision">
+          <a href="/agents/scene-describer/" class="agent-card-body">
+            <div class="agent-icon" style="background:#0891b2">👁️</div>
+            <div class="agent-body">
+              <span class="agent-name">Scene Describer</span>
+              <span class="agent-desc">Upload a photo, get a natural language description. Object d...</span>
+              <div class="agent-meta">
+                <span class="tag" style="background:rgba(59,130,246,0.15);color:#60a5fa">Model</span>
+                <span class="tag">160MB</span>
+              </div>
+            </div>
+          </a>
+          <a href="/a/scene-describer/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
+        </div>
+
+        <div class="agent-card" data-category="productivity">
+          <a href="/agents/receipt-scanner/" class="agent-card-body">
+            <div class="agent-icon" style="background:#059669">🧾</div>
+            <div class="agent-body">
+              <span class="agent-name">Receipt Scanner</span>
+              <span class="agent-desc">Photograph a receipt, get merchant + date + line items + tot...</span>
+              <div class="agent-meta">
+                <span class="tag" style="background:rgba(59,130,246,0.15);color:#60a5fa">Model</span>
+                <span class="tag">130MB</span>
+              </div>
+            </div>
+          </a>
+          <a href="/a/receipt-scanner/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
+        </div>
+
+        <div class="agent-card" data-category="productivity">
+          <a href="/agents/faq-matcher/" class="agent-card-body">
+            <div class="agent-icon" style="background:#0284c7">❓</div>
+            <div class="agent-body">
+              <span class="agent-name">FAQ Matcher</span>
+              <span class="agent-desc">Index your FAQ, find the best answer for any question. Seman...</span>
+              <div class="agent-meta">
+                <span class="tag" style="background:rgba(59,130,246,0.15);color:#60a5fa">Model</span>
+                <span class="tag">23MB</span>
+              </div>
+            </div>
+          </a>
+          <a href="/a/faq-matcher/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
+        </div>
+
+        <div class="agent-card" data-category="text">
+          <a href="/agents/plagiarism-checker/" class="agent-card-body">
+            <div class="agent-icon" style="background:#dc2626">🔎</div>
+            <div class="agent-body">
+              <span class="agent-name">Plagiarism Checker</span>
+              <span class="agent-desc">Compare two texts for semantic similarity. MiniLM embeddings...</span>
+              <div class="agent-meta">
+                <span class="tag" style="background:rgba(59,130,246,0.15);color:#60a5fa">Model</span>
+                <span class="tag">23MB</span>
+              </div>
+            </div>
+          </a>
+          <a href="/a/plagiarism-checker/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
+        </div>
+
+        <div class="agent-card" data-category="productivity">
+          <a href="/agents/meeting-summarizer/" class="agent-card-body">
+            <div class="agent-icon" style="background:#7c3aed">📝</div>
+            <div class="agent-body">
+              <span class="agent-name">Meeting Summarizer</span>
+              <span class="agent-desc">Upload a meeting recording, get transcript + decisions + act...</span>
+              <div class="agent-meta">
+                <span class="tag" style="background:rgba(59,130,246,0.15);color:#60a5fa">Model</span>
+                <span class="tag">40MB</span>
+              </div>
+            </div>
+          </a>
+          <a href="/a/meeting-summarizer/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
+        </div>
+
+        <div class="agent-card" data-category="education">
+          <a href="/agents/study-cards/" class="agent-card-body">
+            <div class="agent-icon" style="background:#f59e0b">📚</div>
+            <div class="agent-body">
+              <span class="agent-name">Study Card Maker</span>
+              <span class="agent-desc">Paste text or notes — auto-generate flashcards. Keyword extr...</span>
+              <div class="agent-meta">
+                <span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Heuristic</span>
+                <span class="tag">0MB</span>
+              </div>
+            </div>
+          </a>
+          <a href="/a/study-cards/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
         </div>
       </div>
     </section>

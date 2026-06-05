@@ -27,7 +27,7 @@ export async function init(agentId: string, _templateName: string) {
   }
 
   // Find template: check local templates dir, then try npm package location
-  const localTemplate = findTemplate();
+  const localTemplate = findTemplate(TEMPLATE_DIR);
   if (!localTemplate) {
     console.error('Template not found. Make sure @freeagentstore/cli is installed correctly.');
     process.exit(1);
@@ -50,15 +50,15 @@ export async function init(agentId: string, _templateName: string) {
   console.log(`When ready: fags publish`);
 }
 
-function findTemplate(): string | null {
+function findTemplate(templateDir: string): string | null {
   // Try relative to CLI package (when installed via npm)
   const cliDir = path.dirname(new URL(import.meta.url).pathname);
   const candidates = [
-    path.resolve(cliDir, '..', '..', '..', 'templates', TEMPLATE_DIR),
-    path.resolve(cliDir, '..', '..', 'templates', TEMPLATE_DIR),
+    path.resolve(cliDir, '..', '..', '..', 'templates', templateDir),
+    path.resolve(cliDir, '..', '..', 'templates', templateDir),
     // When running from the monorepo
-    path.resolve(process.cwd(), '..', 'templates', TEMPLATE_DIR),
-    path.resolve(process.cwd(), '..', '..', 'templates', TEMPLATE_DIR),
+    path.resolve(process.cwd(), '..', 'templates', templateDir),
+    path.resolve(process.cwd(), '..', '..', 'templates', templateDir),
   ];
 
   for (const candidate of candidates) {
