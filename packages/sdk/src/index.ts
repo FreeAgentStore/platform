@@ -4,6 +4,17 @@ export type { FreeAgentStore } from './agent.js';
 export { initAgent } from './agent.js';
 // Core primitives (vendored from FAS pattern)
 export { Auth } from './auth.js';
+export type { BuiltInAvailability, BuiltInSession } from './built-in-ai.js';
+// Built-in AI (Chrome Gemini Nano / Edge Aion) — zero download
+export {
+  createPromptSession,
+  createRewriter,
+  createSummarizer,
+  createTranslator,
+  createWriter,
+  detectBuiltInAI,
+  smartPrompt,
+} from './built-in-ai.js';
 export type { EvalResult, HeuristicExample, HeuristicSpec, HeuristicVersion } from './heuristic.js';
 // Heuristic agents — living code that evolves without runtime LLM
 export { buildEvolvePrompt, evaluateHeuristic, extractCode } from './heuristic.js';

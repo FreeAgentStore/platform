@@ -1,0 +1,17 @@
+{
+  "name": "Code Explainer",
+  "description": "Paste code, get a plain English explanation. Uses Chrome's built-in AI — zero download, instant.",
+  "version": "1.0.0",
+  "task": "code-explanation",
+  "category": "code",
+  "models": [],
+  "estimatedDownload": "0MB",
+  "input": ["text/plain"],
+  "output": ["text/plain"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "runtimeType": "built-in-ai"
+}

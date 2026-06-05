@@ -1,0 +1,17 @@
+{
+  "name": "Writing Assistant",
+  "description": "Draft, rewrite, and polish text. Uses Chrome's built-in AI — zero download, instant. Formal, casual, or neutral tone.",
+  "version": "1.0.0",
+  "task": "writing",
+  "category": "text",
+  "models": [],
+  "estimatedDownload": "0MB",
+  "input": ["text/plain"],
+  "output": ["text/plain"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "runtimeType": "built-in-ai"
+}

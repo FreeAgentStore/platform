@@ -144,6 +144,66 @@
           { "name": "parseResume", "label": "Parse Resume", "params": [{ "name": "text", "type": "text", "placeholder": "Paste resume text here...", "default": "John Smith\njohn@email.com | (415) 555-1234\n\nExperience\nSenior Engineer at Acme Corp\nJan 2021 - Present\n- Built scalable APIs\n\nSkills\nJavaScript, React, Node.js, Python\n\nEducation\nBS Computer Science - Stanford University\n2014 - 2018" }] }
         ]
       }
+    },
+    {
+      "id": "summarizer",
+      "name": "Summarizer",
+      "description": "Summarize any text — TL;DR, key points, headlines. Uses Chrome's built-in AI. Zero download, instant.",
+      "task": "summarization",
+      "category": "text",
+      "icon": "📝",
+      "iconBg": "#059669",
+      "model": "Chrome Gemini Nano (built-in)",
+      "modelSize": "0MB (pre-installed)",
+      "agentUrl": "https://freeagentstore.online/a/summarizer/",
+      "developer": "FreeAgentStore",
+      "desktopOnly": false,
+      "offlineCapable": true,
+      "backends": [],
+      "type": "built-in-ai",
+      "sandbox": {
+        "methods": []
+      }
+    },
+    {
+      "id": "writing-assistant",
+      "name": "Writing Assistant",
+      "description": "Draft, rewrite, and polish text. Formal, casual, or neutral tone. Uses Chrome's built-in AI. Zero download.",
+      "task": "writing",
+      "category": "text",
+      "icon": "✍️",
+      "iconBg": "#2563eb",
+      "model": "Chrome Gemini Nano (built-in)",
+      "modelSize": "0MB (pre-installed)",
+      "agentUrl": "https://freeagentstore.online/a/writing-assistant/",
+      "developer": "FreeAgentStore",
+      "desktopOnly": false,
+      "offlineCapable": true,
+      "backends": [],
+      "type": "built-in-ai",
+      "sandbox": {
+        "methods": []
+      }
+    },
+    {
+      "id": "code-explainer",
+      "name": "Code Explainer",
+      "description": "Paste code, get a plain English explanation. Review for bugs, generate docs. Uses Chrome's built-in AI.",
+      "task": "code-explanation",
+      "category": "code",
+      "icon": "💻",
+      "iconBg": "#0891b2",
+      "model": "Chrome Gemini Nano (built-in)",
+      "modelSize": "0MB (pre-installed)",
+      "agentUrl": "https://freeagentstore.online/a/code-explainer/",
+      "developer": "FreeAgentStore",
+      "desktopOnly": false,
+      "offlineCapable": true,
+      "backends": [],
+      "type": "built-in-ai",
+      "sandbox": {
+        "methods": []
+      }
     }
   ]
 }

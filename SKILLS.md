@@ -5,11 +5,17 @@
 
 ## What is FreeAgentStore?
 
-A curated store of AI-powered tools that run entirely in the browser. Models run on the user's GPU/CPU via WebGPU/WASM. Zero server inference cost. Full privacy — data never leaves the device.
+A curated store of AI agents that run entirely in the browser. Agents are composable JS libraries usable via npm, ESM URL, or as standalone apps. Zero server cost. Full privacy — data never leaves the device.
 
-**Two agent types:**
-- **Model-based** — download an AI model (~150-250MB), cached forever, runs in Web Worker
-- **Heuristic** — pure JS functions evolved by LLM from examples. No model, instant results.
+**Three agent tiers:**
+- **Built-in AI** (0MB, instant) — uses Chrome Gemini Nano / Edge Aion, pre-installed in the browser. Summarizer, Writing Assistant, Code Explainer.
+- **Heuristic** (0MB, instant) — pure JS functions evolved by LLM from examples. Resume Parser, Sentiment Analyzer.
+- **Model-based** (150-2000MB download, cached) — specialized AI models via WebGPU/WASM. TTS, Transcriber, Background Remover.
+
+**Three ways to use any agent:**
+- `pnpm add @freeagentstore/resume-parser` (npm)
+- `import from 'https://freeagentstore.online/pkg/resume-parser/index.js'` (ESM URL, zero install)
+- Visit `freeagentstore.online/a/resume-parser/` (standalone app)
 
 ## Quick reference
 
