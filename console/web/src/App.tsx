@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import TrainAgent from './TrainAgent';
 
-const API = 'https://api.freeagentstore.online';
+// Auth via FAS API (shared session signing key across all stores)
+const AUTH_API = 'https://api.freeappstore.online';
 const GITHUB_ORG = 'FreeAgentStore';
+const SESSION_KEY = 'fags:session';
 
 interface User {
   id: string;
@@ -30,6 +32,17 @@ interface DeployRun {
   url: string;
 }
 
+function getStoredToken(): string | null {
+  try { return localStorage.getItem(SESSION_KEY); } catch { return null; }
+}
+
+function storeToken(token: string | null) {
+  try {
+    if (token) localStorage.setItem(SESSION_KEY, token);
+    else localStorage.removeItem(SESSION_KEY);
+  } catch {}
+}
+
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,18 +56,41 @@ export default function App() {
 
   const isDark = theme === 'dark';
 
-  // Check auth
+  // On mount: check for fas_session in URL (OAuth callback) or localStorage
   useEffect(() => {
-    fetch(`${API}/auth/me`, { credentials: 'include' })
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data?.user) setUser(data.user); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    const params = new URLSearchParams(window.location.search);
+    const sessionFromUrl = params.get('fas_session');
+    if (sessionFromUrl) {
+      storeToken(sessionFromUrl);
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+
+    const token = sessionFromUrl ?? getStoredToken();
+    if (token) {
+      // Verify token by calling /auth/me
+      fetch(`${AUTH_API}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data?.user) {
+            setUser(data.user);
+            storeToken(token);
+          } else {
+            storeToken(null);
+          }
+        })
+        .catch(() => storeToken(null))
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
   }, []);
 
   // Load agents from registry
   useEffect(() => {
-    fetch('https://freeagentstore.online/registry.json')
+    fetch('/registry.json')
       .then(r => r.json())
       .then(data => setAgents(data.agents ?? []))
       .catch(() => {});
@@ -80,12 +116,15 @@ export default function App() {
   }, [selectedAgent]);
 
   const signIn = () => {
-    window.location.href = `${API}/auth/github?app=console&return_to=${encodeURIComponent(window.location.href)}`;
+    // Redirect to FAS auth with return_to pointing back here
+    // FAS auth will redirect back with ?fas_session=TOKEN
+    const returnTo = window.location.origin + window.location.pathname;
+    window.location.href = `${AUTH_API}/v1/auth/github/start?app_id=fags-console&response_mode=query&return_to=${encodeURIComponent(returnTo)}`;
   };
 
   const signOut = () => {
-    fetch(`${API}/auth/logout`, { method: 'POST', credentials: 'include' })
-      .then(() => setUser(null));
+    storeToken(null);
+    setUser(null);
   };
 
   if (loading) {
@@ -130,7 +169,7 @@ export default function App() {
       {/* Header */}
       <header className={`border-b ${isDark ? 'border-neutral-800 bg-neutral-950' : 'border-gray-200 bg-white'} sticky top-0 z-10`}>
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-4">
-          <a href="https://freeagentstore.online" className="flex items-center gap-2 text-sm no-underline"
+          <a href="/" className="flex items-center gap-2 text-sm no-underline"
              style={{ color: isDark ? '#a3a3a3' : '#6b7280' }}>
             <span style={{ fontFamily: 'var(--font-serif)', fontWeight: 700, fontSize: '1rem', color: isDark ? '#fff' : '#111' }}>
               Agent<span style={{ color: '#a78bfa' }}>Console</span>
@@ -200,6 +239,9 @@ export default function App() {
                       </span>
                       {a.type === 'heuristic' && (
                         <span className="text-xs px-2 py-0.5 rounded bg-amber-900/30 text-amber-400">heuristic</span>
+                      )}
+                      {a.type === 'built-in-ai' && (
+                        <span className="text-xs px-2 py-0.5 rounded bg-emerald-900/30 text-emerald-400">built-in AI</span>
                       )}
                     </div>
                     <svg className={`w-4 h-4 flex-shrink-0 ${isDark ? 'text-neutral-600' : 'text-gray-300'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -273,15 +315,15 @@ function AgentDetail({ agent, deploys, onBack, onTrain, isDark }: {
         <div className="flex flex-wrap gap-2 mt-4">
           <a href={agent.agentUrl} target="_blank" rel="noopener"
              className="text-xs px-3 py-1.5 rounded-lg text-white font-medium no-underline" style={{ backgroundColor: 'var(--accent)' }}>
-            Open Agent
+            Open Demo
           </a>
           <a href={`https://github.com/${GITHUB_ORG}/platform/tree/main/agents/${agent.id}`} target="_blank" rel="noopener"
              className={`text-xs px-3 py-1.5 rounded-lg border font-medium no-underline ${isDark ? 'border-neutral-700 text-neutral-300' : 'border-gray-300 text-gray-700'}`}>
             View Source
           </a>
-          <a href={`https://freeagentstore.online`} target="_blank" rel="noopener"
+          <a href={`https://freeagentstore.online/agents/${agent.id}/`}
              className={`text-xs px-3 py-1.5 rounded-lg border font-medium no-underline ${isDark ? 'border-neutral-700 text-neutral-300' : 'border-gray-300 text-gray-700'}`}>
-            Store Listing
+            Detail Page
           </a>
           <button onClick={onTrain}
              className="text-xs px-3 py-1.5 rounded-lg border font-medium bg-amber-600 border-amber-600 text-white">
