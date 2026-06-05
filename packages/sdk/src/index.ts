@@ -26,7 +26,7 @@ export { OllamaClient } from './ollama.js';
 export { ResultStore } from './result-store.js';
 export { Rooms } from './rooms.js';
 export type {
-  AgentConfig,
+  AgentConfig as AgentInitConfig,
   InferenceResult,
   ModelConfig,
   ModelStatus,
@@ -34,3 +34,16 @@ export type {
   OllamaStatus,
 } from './types.js';
 export { WorkerBridge } from './worker-bridge.js';
+// Agent config & instances — customizable, trainable agents
+export {
+  createAgentInstance,
+  loadAgentConfig,
+  saveAgentConfig,
+  exportConfig,
+  importConfig,
+  createBlankConfig,
+} from './agent-config.js';
+export type { AgentConfig, AgentInstance, FieldDef, TrainingExample, EvolutionEntry } from './agent-config.js';
+// Agent evolution — train agents using built-in AI
+export { evolveAgentConfig } from './agent-evolve.js';
+export type { EvolveResult } from './agent-evolve.js';
