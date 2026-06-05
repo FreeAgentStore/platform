@@ -6,7 +6,7 @@
       "description": "Convert text to natural-sounding speech using Kokoro TTS. 30+ voices, 8 languages.",
       "task": "text-to-speech",
       "category": "audio",
-      "icon": "\ud83d\udd0a",
+      "icon": "🔊",
       "iconBg": "#7c3aed",
       "model": "Kokoro 82M",
       "modelSize": "160MB",
@@ -52,7 +52,8 @@
             "note": "Requires 160MB model download"
           }
         ]
-      }
+      },
+      "creatorGithub": "FreeAgentStore"
     },
     {
       "id": "transcriber",
@@ -60,7 +61,7 @@
       "description": "Transcribe audio to text using Whisper AI. Drop a file, get a transcript with timestamps.",
       "task": "speech-to-text",
       "category": "audio",
-      "icon": "\ud83c\udfa4",
+      "icon": "🎤",
       "iconBg": "#2563eb",
       "model": "Whisper Small",
       "modelSize": "244MB",
@@ -94,7 +95,8 @@
             "note": "Requires 244MB model download"
           }
         ]
-      }
+      },
+      "creatorGithub": "FreeAgentStore"
     },
     {
       "id": "bg-remover",
@@ -102,7 +104,7 @@
       "description": "Remove image backgrounds instantly using RMBG AI. Drop an image, get a transparent PNG.",
       "task": "background-removal",
       "category": "vision",
-      "icon": "\u2702\ufe0f",
+      "icon": "✂️",
       "iconBg": "#059669",
       "model": "RMBG 1.4",
       "modelSize": "176MB",
@@ -136,7 +138,8 @@
             "note": "Requires 176MB model download"
           }
         ]
-      }
+      },
+      "creatorGithub": "FreeAgentStore"
     },
     {
       "id": "sentiment",
@@ -144,7 +147,7 @@
       "description": "Analyze text sentiment instantly. No model download, no AI inference. Heuristic code that evolves.",
       "task": "sentiment-analysis",
       "category": "text",
-      "icon": "\ud83d\ude0a",
+      "icon": "😊",
       "iconBg": "#d97706",
       "model": "None (heuristic)",
       "modelSize": "0MB",
@@ -181,15 +184,16 @@
             ]
           }
         ]
-      }
+      },
+      "creatorGithub": "FreeAgentStore"
     },
     {
       "id": "resume-parser",
       "name": "Resume Parser",
-      "description": "Parse resumes into structured JSON \u2014 name, email, skills, experience, education. Heuristic evolved from 500+ resumes.",
+      "description": "Parse resumes into structured JSON — name, email, skills, experience, education. Heuristic evolved from 500+ resumes.",
       "task": "resume-parsing",
       "category": "productivity",
-      "icon": "\ud83d\udcc4",
+      "icon": "📄",
       "iconBg": "#be185d",
       "model": "None (heuristic)",
       "modelSize": "0MB",
@@ -231,15 +235,16 @@
             ]
           }
         ]
-      }
+      },
+      "creatorGithub": "FreeAgentStore"
     },
     {
       "id": "summarizer",
       "name": "Summarizer",
-      "description": "Summarize any text \u2014 TL;DR, key points, headlines. Uses Chrome's built-in AI. Zero download, instant.",
+      "description": "Summarize any text — TL;DR, key points, headlines. Uses Chrome's built-in AI. Zero download, instant.",
       "task": "summarization",
       "category": "text",
-      "icon": "\ud83d\udcdd",
+      "icon": "📝",
       "iconBg": "#059669",
       "model": "Chrome Gemini Nano (built-in)",
       "modelSize": "0MB (pre-installed)",
@@ -290,8 +295,9 @@
             "format": "bullets"
           }
         ],
-        "defaultText": "We met on Tuesday to discuss the Q3 roadmap. Sarah presented the new analytics dashboard \u2014 the team agreed to ship it by August 15. John raised concerns about the API migration timeline. We decided to push the migration to Q4. Action items: Sarah to finalize dashboard specs by Friday, John to draft the migration plan, and Alex to update the project board. Next meeting is Thursday at 2pm."
-      }
+        "defaultText": "We met on Tuesday to discuss the Q3 roadmap. Sarah presented the new analytics dashboard — the team agreed to ship it by August 15. John raised concerns about the API migration timeline. We decided to push the migration to Q4. Action items: Sarah to finalize dashboard specs by Friday, John to draft the migration plan, and Alex to update the project board. Next meeting is Thursday at 2pm."
+      },
+      "creatorGithub": "FreeAgentStore"
     },
     {
       "id": "writing-assistant",
@@ -299,7 +305,7 @@
       "description": "Draft, rewrite, and polish text. Formal, casual, or neutral tone. Uses Chrome's built-in AI. Zero download.",
       "task": "writing",
       "category": "text",
-      "icon": "\u270d\ufe0f",
+      "icon": "✍️",
       "iconBg": "#2563eb",
       "model": "Chrome Gemini Nano (built-in)",
       "modelSize": "0MB (pre-installed)",
@@ -338,7 +344,8 @@
           "url": "https://freeappstore.online/apps/writer/",
           "description": "Draft emails, blog posts, social media content"
         }
-      ]
+      ],
+      "creatorGithub": "FreeAgentStore"
     },
     {
       "id": "code-explainer",
@@ -346,7 +353,7 @@
       "description": "Paste code, get a plain English explanation. Review for bugs, generate docs. Uses Chrome's built-in AI.",
       "task": "code-explanation",
       "category": "code",
-      "icon": "\ud83d\udcbb",
+      "icon": "💻",
       "iconBg": "#0891b2",
       "model": "Chrome Gemini Nano (built-in)",
       "modelSize": "0MB (pre-installed)",
@@ -377,15 +384,16 @@
             ]
           }
         ]
-      }
+      },
+      "creatorGithub": "FreeAgentStore"
     },
     {
       "id": "voice-notes",
       "name": "Voice Notes",
-      "description": "Speak and get structured notes \u2014 title, key points, action items. Web Speech API + Chrome Built-in AI.",
+      "description": "Speak and get structured notes — title, key points, action items. Web Speech API + Chrome Built-in AI.",
       "task": "voice-to-notes",
       "category": "productivity",
-      "icon": "\ud83c\udf99\ufe0f",
+      "icon": "🎙️",
       "iconBg": "#7c3aed",
       "model": "Chrome Built-in AI + Web Speech API",
       "modelSize": "0MB",
@@ -398,7 +406,8 @@
       "api": {
         "imports": "import { ... } from '@freeagentstore/voice-notes'",
         "note": "This agent requires the full UI. Use it at freeagentstore.online/a/voice-notes/ or embed via iframe."
-      }
+      },
+      "creatorGithub": "FreeAgentStore"
     },
     {
       "id": "icon-generator",
@@ -406,7 +415,7 @@
       "description": "Browse 100+ curated SVG icons or search by description. Color customization, SVG/PNG export. Works instantly, no AI required.",
       "task": "icon-generation",
       "category": "creative",
-      "icon": "\ud83c\udfa8",
+      "icon": "🎨",
       "iconBg": "#ec4899",
       "model": "None (103 curated templates)",
       "modelSize": "0MB",
@@ -419,29 +428,32 @@
       "api": {
         "imports": "import { ... } from '@freeagentstore/icon-generator'",
         "note": "This agent requires the full UI. Use it at freeagentstore.online/a/icon-generator/ or embed via iframe."
-      }
+      },
+      "creatorGithub": "FreeAgentStore"
     },
     {
       "id": "browser-automation",
       "name": "Browser Automation",
-      "description": "Record actions \u2192 AI condenses to JS \u2192 replay without AI",
+      "description": "Record actions → AI condenses to JS → replay without AI",
       "category": "automation",
-      "icon": "\ud83e\udd16",
+      "icon": "🤖",
       "iconBg": "#f59e0b",
       "type": "built-in-ai",
       "modelSize": "0MB",
       "api": {
         "imports": "import { ... } from '@freeagentstore/browser-automation'",
         "note": "This agent requires the full UI. Use it at freeagentstore.online/a/browser-automation/ or embed via iframe."
-      }
+      },
+      "developer": "FreeAgentStore",
+      "creatorGithub": "FreeAgentStore"
     },
     {
       "id": "unit-converter",
       "name": "Unit Converter",
-      "description": "Convert between units instantly \u2014 length, weight, temperature, volume, speed, data, time. No model, no download.",
+      "description": "Convert between units instantly — length, weight, temperature, volume, speed, data, time. No model, no download.",
       "task": "unit-conversion",
       "category": "productivity",
-      "icon": "\ud83d\udccf",
+      "icon": "📏",
       "iconBg": "#0d9488",
       "model": "None (heuristic)",
       "modelSize": "0MB",
@@ -493,7 +505,8 @@
             ]
           }
         ]
-      }
+      },
+      "creatorGithub": "FreeAgentStore"
     },
     {
       "id": "avatar-maker",
@@ -501,7 +514,7 @@
       "description": "Upload a photo, get a stylized avatar. Geometric, pixel art, silhouette, or mosaic styles. Pure canvas rendering.",
       "task": "avatar-generation",
       "category": "creative",
-      "icon": "\ud83d\udc64",
+      "icon": "👤",
       "iconBg": "#8b5cf6",
       "model": "None (heuristic)",
       "modelSize": "0MB",
@@ -529,21 +542,27 @@
               {
                 "name": "style",
                 "type": "select",
-                "options": ["geometric", "pixel-art", "silhouette", "mosaic"],
+                "options": [
+                  "geometric",
+                  "pixel-art",
+                  "silhouette",
+                  "mosaic"
+                ],
                 "default": "geometric"
               }
             ]
           }
         ]
-      }
+      },
+      "creatorGithub": "FreeAgentStore"
     },
     {
       "id": "mood-palette",
       "name": "Mood Palette",
-      "description": "Upload a photo or describe a mood \u2014 get a color palette with names. Extract colors from images or generate from text.",
+      "description": "Upload a photo or describe a mood — get a color palette with names. Extract colors from images or generate from text.",
       "task": "color-palette",
       "category": "creative",
-      "icon": "\ud83c\udfa8",
+      "icon": "🎨",
       "iconBg": "#ec4899",
       "model": "Chrome Built-in AI (optional)",
       "modelSize": "0MB",
@@ -583,7 +602,8 @@
             ]
           }
         ]
-      }
+      },
+      "creatorGithub": "FreeAgentStore"
     },
     {
       "id": "regex-builder",
@@ -620,12 +640,13 @@
             "example": "PATTERNS.forEach(p => console.log(p.name, p.regex))\n// Email, URL, Phone (US), IPv4, UUID, ..."
           }
         ]
-      }
+      },
+      "creatorGithub": "FreeAgentStore"
     },
     {
       "id": "json-formatter",
       "name": "JSON Formatter",
-      "description": "Paste JSON \u2014 format, minify, validate, query, diff. Syntax highlighting, tree view, TypeScript types. Pure JS, instant.",
+      "description": "Paste JSON — format, minify, validate, query, diff. Syntax highlighting, tree view, TypeScript types. Pure JS, instant.",
       "task": "json-formatting",
       "category": "code",
       "icon": "{ }",
@@ -672,7 +693,8 @@
             "example": "jsonToTypes({ id: 1, name: 'Alice' })\n// 'interface Root {\\n  id: number;\\n  name: string;\\n}'"
           }
         ]
-      }
+      },
+      "creatorGithub": "FreeAgentStore"
     },
     {
       "id": "hash-generator",
@@ -724,7 +746,8 @@
             "example": "const jwt = decodeJwt('eyJhbG...')\n// { header: { alg: 'HS256' }, payload: { sub: '1234' }, signature: '...' }"
           }
         ]
-      }
+      },
+      "creatorGithub": "FreeAgentStore"
     },
     {
       "id": "steering",
@@ -732,7 +755,7 @@
       "description": "Craig Reynolds' steering behaviors for game characters. Seek, flee, wander, flock, arrive, avoid. 60fps for 500+ agents. Importable by FGS games.",
       "task": "game-ai",
       "category": "game-ai",
-      "icon": "\u2192",
+      "icon": "→",
       "iconBg": "#16a34a",
       "model": "None (pure math)",
       "modelSize": "0MB",
@@ -745,12 +768,29 @@
       "api": {
         "imports": "import { createAgent, seek, flee, flock, applyForce } from '@freeagentstore/steering'",
         "functions": [
-          { "name": "seek", "signature": "seek(agent: Agent, target: Vec2): Vec2", "example": "const force = seek(agent, { x: 100, y: 200 })\napplyForce(agent, force, dt)" },
-          { "name": "flee", "signature": "flee(agent: Agent, target: Vec2, range?: number): Vec2", "example": "const force = flee(agent, predatorPos, 150)" },
-          { "name": "flock", "signature": "flock(agent: Agent, neighbors: Agent[], weights?): Vec2", "example": "const neighbors = getNeighbors(agent, allAgents, 100)\nconst force = flock(agent, neighbors)" },
-          { "name": "createAgent", "signature": "createAgent(x, y, maxSpeed?, maxForce?): Agent", "example": "const boid = createAgent(50, 50, 3, 0.1)" }
+          {
+            "name": "seek",
+            "signature": "seek(agent: Agent, target: Vec2): Vec2",
+            "example": "const force = seek(agent, { x: 100, y: 200 })\napplyForce(agent, force, dt)"
+          },
+          {
+            "name": "flee",
+            "signature": "flee(agent: Agent, target: Vec2, range?: number): Vec2",
+            "example": "const force = flee(agent, predatorPos, 150)"
+          },
+          {
+            "name": "flock",
+            "signature": "flock(agent: Agent, neighbors: Agent[], weights?): Vec2",
+            "example": "const neighbors = getNeighbors(agent, allAgents, 100)\nconst force = flock(agent, neighbors)"
+          },
+          {
+            "name": "createAgent",
+            "signature": "createAgent(x, y, maxSpeed?, maxForce?): Agent",
+            "example": "const boid = createAgent(50, 50, 3, 0.1)"
+          }
         ]
-      }
+      },
+      "creatorGithub": "FreeAgentStore"
     },
     {
       "id": "behavior-tree",
@@ -758,7 +798,7 @@
       "description": "Composable behavior trees for NPC AI. Sequence, selector, parallel, decorators. Visual editor + live preview. For game character logic.",
       "task": "game-ai",
       "category": "game-ai",
-      "icon": "\ud83c\udf33",
+      "icon": "🌳",
       "iconBg": "#65a30d",
       "model": "None (pure logic)",
       "modelSize": "0MB",
@@ -771,17 +811,22 @@
       "api": {
         "imports": "import { BT, Sequence, Selector, Wait, MoveTo } from '@freeagentstore/behavior-tree'",
         "functions": [
-          { "name": "BT.selector", "signature": "BT.selector(name): Builder", "example": "const tree = BT.selector('root')\n  .sequence('attack')\n    .leaf('inRange', IsInRange('player', 50))\n    .leaf('attack', PlayAnimation('attack'))\n  .end()\n  .leaf('patrol', Patrol())\n.build()" }
+          {
+            "name": "BT.selector",
+            "signature": "BT.selector(name): Builder",
+            "example": "const tree = BT.selector('root')\n  .sequence('attack')\n    .leaf('inRange', IsInRange('player', 50))\n    .leaf('attack', PlayAnimation('attack'))\n  .end()\n  .leaf('patrol', Patrol())\n.build()"
+          }
         ]
-      }
+      },
+      "creatorGithub": "FreeAgentStore"
     },
     {
       "id": "physics-sim",
       "name": "Physics Sim",
-      "description": "Verlet integration physics \u2014 particles, springs, cloth, soft bodies, ragdolls. Pure math, 60fps. For game effects and dynamic objects.",
+      "description": "Verlet integration physics — particles, springs, cloth, soft bodies, ragdolls. Pure math, 60fps. For game effects and dynamic objects.",
       "task": "game-ai",
       "category": "game-ai",
-      "icon": "\u26a1",
+      "icon": "⚡",
       "iconBg": "#dc2626",
       "model": "None (Verlet integration)",
       "modelSize": "0MB",
@@ -794,19 +839,32 @@
       "api": {
         "imports": "import { createWorld, createCloth, step } from '@freeagentstore/physics-sim'",
         "functions": [
-          { "name": "createWorld", "signature": "createWorld(): PhysicsWorld", "example": "const world = createWorld()" },
-          { "name": "createCloth", "signature": "createCloth(x, y, cols, rows, spacing, pinTop?): { particles, constraints }", "example": "const cloth = createCloth(100, 50, 20, 15, 10, true)" },
-          { "name": "step", "signature": "step(world, dt, gravity, iterations): void", "example": "step(world, 1/60, { x: 0, y: 980 }, 3)" }
+          {
+            "name": "createWorld",
+            "signature": "createWorld(): PhysicsWorld",
+            "example": "const world = createWorld()"
+          },
+          {
+            "name": "createCloth",
+            "signature": "createCloth(x, y, cols, rows, spacing, pinTop?): { particles, constraints }",
+            "example": "const cloth = createCloth(100, 50, 20, 15, 10, true)"
+          },
+          {
+            "name": "step",
+            "signature": "step(world, dt, gravity, iterations): void",
+            "example": "step(world, 1/60, { x: 0, y: 980 }, 3)"
+          }
         ]
-      }
+      },
+      "creatorGithub": "FreeAgentStore"
     },
     {
       "id": "date-parser",
       "name": "Date Parser",
-      "description": "Parse any date or time string \u2014 'next tuesday', 'March 14, 2025', 'in 3 days', '2025-03-14T10:00Z'. 500+ formats.",
+      "description": "Parse any date or time string — 'next tuesday', 'March 14, 2025', 'in 3 days', '2025-03-14T10:00Z'. 500+ formats.",
       "task": "date-parsing",
       "category": "productivity",
-      "icon": "\ud83d\udcc5",
+      "icon": "📅",
       "iconBg": "#0284c7",
       "model": "None (heuristic)",
       "modelSize": "0MB",
@@ -816,7 +874,11 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
-      "evolution": { "versions": 1, "examples": 500, "accuracy": 92 },
+      "evolution": {
+        "versions": 1,
+        "examples": 500,
+        "accuracy": 92
+      },
       "api": {
         "imports": "import { parseDate, formatRelative } from '@freeagentstore/date-parser'",
         "functions": [
@@ -831,15 +893,16 @@
             "example": "formatRelative(new Date('2026-06-09')) // 'in 4 days'"
           }
         ]
-      }
+      },
+      "creatorGithub": "FreeAgentStore"
     },
     {
       "id": "emotion-detector",
       "name": "Emotion Detector",
-      "description": "Detect emotions in text \u2014 joy, anger, sadness, fear, surprise, disgust, trust, anticipation. Plutchik's 8 emotions, evolved scoring.",
+      "description": "Detect emotions in text — joy, anger, sadness, fear, surprise, disgust, trust, anticipation. Plutchik's 8 emotions, evolved scoring.",
       "task": "emotion-detection",
       "category": "text",
-      "icon": "\ud83c\udfad",
+      "icon": "🎭",
       "iconBg": "#c026d3",
       "model": "None (heuristic)",
       "modelSize": "0MB",
@@ -849,7 +912,11 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
-      "evolution": { "versions": 1, "examples": 1000, "accuracy": 82 },
+      "evolution": {
+        "versions": 1,
+        "examples": 1000,
+        "accuracy": 82
+      },
       "api": {
         "imports": "import { detectEmotions } from '@freeagentstore/emotion-detector'",
         "functions": [
@@ -859,7 +926,8 @@
             "example": "const result = detectEmotions('I am so happy today!')\n// { primary: 'joy', secondary: 'anticipation', compound: 'optimism', scores: { joy: 0.8, ... }, confidence: 0.85, valence: 0.7, arousal: 0.6 }"
           }
         ]
-      }
+      },
+      "creatorGithub": "FreeAgentStore"
     },
     {
       "id": "language-detector",
@@ -867,7 +935,7 @@
       "description": "Detect the language of any text. Character n-gram frequency analysis evolved from Wikipedia corpora. 30 languages, 95%+ accuracy.",
       "task": "language-detection",
       "category": "text",
-      "icon": "\ud83c\udf10",
+      "icon": "🌐",
       "iconBg": "#0369a1",
       "model": "None (heuristic)",
       "modelSize": "0MB",
@@ -877,7 +945,11 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
-      "evolution": { "versions": 1, "examples": 5000, "accuracy": 95 },
+      "evolution": {
+        "versions": 1,
+        "examples": 5000,
+        "accuracy": 95
+      },
       "api": {
         "imports": "import { detectLanguage } from '@freeagentstore/language-detector'",
         "functions": [
@@ -887,15 +959,16 @@
             "example": "const result = detectLanguage('Bonjour le monde')\n// { language: 'fr', languageName: 'French', confidence: 0.96, scores: [...] }"
           }
         ]
-      }
+      },
+      "creatorGithub": "FreeAgentStore"
     },
     {
       "id": "address-parser",
       "name": "Address Parser",
-      "description": "Parse any address into structured fields \u2014 street, unit, city, state, zip, country. US, UK, EU, Japanese formats.",
+      "description": "Parse any address into structured fields — street, unit, city, state, zip, country. US, UK, EU, Japanese formats.",
       "task": "address-parsing",
       "category": "productivity",
-      "icon": "\ud83c\udfe0",
+      "icon": "🏠",
       "iconBg": "#0284c7",
       "model": "None (heuristic)",
       "modelSize": "0MB",
@@ -905,7 +978,11 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
-      "evolution": { "versions": 1, "examples": 2000, "accuracy": 89 },
+      "evolution": {
+        "versions": 1,
+        "examples": 2000,
+        "accuracy": 89
+      },
       "api": {
         "imports": "import { parseAddress } from '@freeagentstore/address-parser'",
         "functions": [
@@ -915,15 +992,16 @@
             "example": "const result = parseAddress('123 Main St Apt 4B, San Francisco, CA 94102')\n// { street: '123 Main St', unit: 'Apt 4B', city: 'San Francisco', state: 'CA', zip: '94102', format: 'us' }"
           }
         ]
-      }
+      },
+      "creatorGithub": "FreeAgentStore"
     },
     {
       "id": "email-classifier",
       "name": "Email Classifier",
-      "description": "Classify emails \u2014 transactional, promotional, personal, notification, newsletter, spam. 200+ signal patterns.",
+      "description": "Classify emails — transactional, promotional, personal, notification, newsletter, spam. 200+ signal patterns.",
       "task": "email-classification",
       "category": "productivity",
-      "icon": "\ud83d\udce7",
+      "icon": "📧",
       "iconBg": "#7c3aed",
       "model": "None (heuristic)",
       "modelSize": "0MB",
@@ -933,7 +1011,11 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
-      "evolution": { "versions": 1, "examples": 3000, "accuracy": 87 },
+      "evolution": {
+        "versions": 1,
+        "examples": 3000,
+        "accuracy": 87
+      },
       "api": {
         "imports": "import { classifyEmail } from '@freeagentstore/email-classifier'",
         "functions": [
@@ -943,15 +1025,16 @@
             "example": "const result = classifyEmail('Your order has shipped', 'Tracking: 1Z999...')\n// { category: 'transactional', confidence: 0.94, signals: ['shipping', 'tracking'] }"
           }
         ]
-      }
+      },
+      "creatorGithub": "FreeAgentStore"
     },
     {
       "id": "name-parser",
       "name": "Name Parser",
-      "description": "Parse human names \u2014 prefix, first, middle, last, suffix. Western, Eastern, Hispanic, Arabic, mononym formats.",
+      "description": "Parse human names — prefix, first, middle, last, suffix. Western, Eastern, Hispanic, Arabic, mononym formats.",
       "task": "name-parsing",
       "category": "productivity",
-      "icon": "\ud83d\udc64",
+      "icon": "👤",
       "iconBg": "#0891b2",
       "model": "None (heuristic)",
       "modelSize": "0MB",
@@ -961,7 +1044,11 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
-      "evolution": { "versions": 1, "examples": 1500, "accuracy": 88 },
+      "evolution": {
+        "versions": 1,
+        "examples": 1500,
+        "accuracy": 88
+      },
       "api": {
         "imports": "import { parseName } from '@freeagentstore/name-parser'",
         "functions": [
@@ -971,7 +1058,8 @@
             "example": "const result = parseName('Dr. Maria Garcia-Lopez Jr.')\n// { prefix: 'Dr.', first: 'Maria', last: 'Garcia-Lopez', suffix: 'Jr.', format: 'hispanic' }"
           }
         ]
-      }
+      },
+      "creatorGithub": "FreeAgentStore"
     },
     {
       "id": "profanity-filter",
@@ -979,7 +1067,7 @@
       "description": "Context-aware profanity detection. Leetspeak, evasion patterns, severity levels. Distinguishes insults from innocent usage.",
       "task": "content-moderation",
       "category": "text",
-      "icon": "\ud83d\udee1\ufe0f",
+      "icon": "🛡️",
       "iconBg": "#dc2626",
       "model": "None (heuristic)",
       "modelSize": "0MB",
@@ -989,14 +1077,27 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
-      "evolution": { "versions": 1, "examples": 5000, "accuracy": 91 },
+      "evolution": {
+        "versions": 1,
+        "examples": 5000,
+        "accuracy": 91
+      },
       "api": {
         "imports": "import { checkProfanity, cleanText } from '@freeagentstore/profanity-filter'",
         "functions": [
-          { "name": "checkProfanity", "signature": "checkProfanity(text: string): FilterResult", "example": "const result = checkProfanity('What the hell')\n// { flagged: true, severity: 'mild', matches: [...], cleaned: 'What the ***' }" },
-          { "name": "cleanText", "signature": "cleanText(text: string): string", "example": "cleanText('What the hell') // 'What the ***'" }
+          {
+            "name": "checkProfanity",
+            "signature": "checkProfanity(text: string): FilterResult",
+            "example": "const result = checkProfanity('What the hell')\n// { flagged: true, severity: 'mild', matches: [...], cleaned: 'What the ***' }"
+          },
+          {
+            "name": "cleanText",
+            "signature": "cleanText(text: string): string",
+            "example": "cleanText('What the hell') // 'What the ***'"
+          }
         ]
-      }
+      },
+      "creatorGithub": "FreeAgentStore"
     },
     {
       "id": "name-generator",
@@ -1004,7 +1105,7 @@
       "description": "Fantasy, sci-fi, medieval, Japanese, Nordic character names. Markov chains per genre/race/gender. For games and fiction.",
       "task": "name-generation",
       "category": "game-ai",
-      "icon": "\u2728",
+      "icon": "✨",
       "iconBg": "#a855f7",
       "model": "None (Markov chains)",
       "modelSize": "0MB",
@@ -1014,14 +1115,26 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
-      "evolution": { "versions": 1, "examples": 10000 },
+      "evolution": {
+        "versions": 1,
+        "examples": 10000
+      },
       "api": {
         "imports": "import { generateName, generateBatch } from '@freeagentstore/name-generator'",
         "functions": [
-          { "name": "generateName", "signature": "generateName(options: GeneratorOptions): GeneratedName", "example": "const name = generateName({ genre: 'fantasy', race: 'elf', gender: 'female' })\n// { name: 'Aelindra', surname: 'Thornwhisper', full: 'Aelindra Thornwhisper', epithet: 'the Wise' }" },
-          { "name": "generateBatch", "signature": "generateBatch(options, count): GeneratedName[]", "example": "const names = generateBatch({ genre: 'scifi' }, 10)" }
+          {
+            "name": "generateName",
+            "signature": "generateName(options: GeneratorOptions): GeneratedName",
+            "example": "const name = generateName({ genre: 'fantasy', race: 'elf', gender: 'female' })\n// { name: 'Aelindra', surname: 'Thornwhisper', full: 'Aelindra Thornwhisper', epithet: 'the Wise' }"
+          },
+          {
+            "name": "generateBatch",
+            "signature": "generateBatch(options, count): GeneratedName[]",
+            "example": "const names = generateBatch({ genre: 'scifi' }, 10)"
+          }
         ]
-      }
+      },
+      "creatorGithub": "FreeAgentStore"
     },
     {
       "id": "code-detector",
@@ -1039,13 +1152,22 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
-      "evolution": { "versions": 1, "examples": 8000, "accuracy": 91 },
+      "evolution": {
+        "versions": 1,
+        "examples": 8000,
+        "accuracy": 91
+      },
       "api": {
         "imports": "import { detectLanguage } from '@freeagentstore/code-detector'",
         "functions": [
-          { "name": "detectLanguage", "signature": "detectLanguage(code: string): DetectionResult", "example": "const result = detectLanguage('const x: number = 42')\n// { language: 'TypeScript', languageId: 'typescript', confidence: 0.92, fileExtension: '.ts' }" }
+          {
+            "name": "detectLanguage",
+            "signature": "detectLanguage(code: string): DetectionResult",
+            "example": "const result = detectLanguage('const x: number = 42')\n// { language: 'TypeScript', languageId: 'typescript', confidence: 0.92, fileExtension: '.ts' }"
+          }
         ]
-      }
+      },
+      "creatorGithub": "FreeAgentStore"
     }
   ]
 }

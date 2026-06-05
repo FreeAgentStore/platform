@@ -132,7 +132,7 @@ function generateDetailPage(agent) {
           <div>
             <h1>${agent.name}</h1>
             <span class="cat${isHeuristic ? ' heuristic-cat' : ''}">${agent.category}${isHeuristic ? ' / heuristic' : ''}</span>
-            <div class="dev">by ${agent.developer}</div>
+            <div class="dev">by <a href="/developers/${(agent.developer ?? 'unknown').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}/" style="color:var(--muted);text-decoration:underline">${agent.developer}</a></div>
           </div>
         </div>
 
@@ -516,4 +516,116 @@ for (const agent of registry.agents) {
   console.log(`Generated: /agents/${agent.id}/`);
 }
 
-console.log(`Done. ${registry.agents.length} detail pages.`);
+// ── Developer pages ──────────────────────────────────────────────────
+const devMap = new Map();
+for (const agent of registry.agents) {
+  const dev = agent.developer ?? 'Unknown';
+  if (!devMap.has(dev)) devMap.set(dev, []);
+  devMap.get(dev).push(agent);
+}
+
+for (const [developer, agents] of devMap) {
+  const slug = developer.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const dir = path.join(outDir, 'developers', slug);
+  fs.mkdirSync(dir, { recursive: true });
+
+  const github = agents[0]?.creatorGithub ?? slug;
+  const agentCards = agents.map(a => {
+    const isHeuristic = a.type === 'heuristic';
+    const tagStyle = isHeuristic
+      ? 'background:rgba(217,119,6,0.15);color:#fbbf24'
+      : a.type === 'built-in-ai'
+      ? 'background:rgba(5,150,105,0.2);color:#34d399'
+      : '';
+    const tagLabel = isHeuristic ? 'Heuristic' : a.type === 'built-in-ai' ? 'Built-in AI' : a.type === 'model' ? 'Model' : a.type ?? '';
+    return `
+      <a href="/agents/${a.id}/" style="display:flex;align-items:center;gap:1rem;padding:1rem;border-radius:12px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--ink);transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--line)'">
+        <div style="width:48px;height:48px;border-radius:12px;background:${a.iconBg ?? 'var(--accent)'};display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">${a.icon ?? ''}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:0.95rem">${a.name}</div>
+          <div style="font-size:0.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.description}</div>
+          <div style="display:flex;gap:0.4rem;margin-top:0.3rem">
+            ${tagLabel ? `<span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;${tagStyle}">${tagLabel}</span>` : ''}
+            <span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:4px;background:var(--line);color:var(--muted)">${a.modelSize ?? '0MB'}</span>
+          </div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      </a>`;
+  }).join('\n');
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${developer} — FreeAgentStore Developer</title>
+  <meta name="description" content="${developer} has ${agents.length} agent${agents.length !== 1 ? 's' : ''} on FreeAgentStore.">
+  <link rel="canonical" href="https://freeagentstore.online/developers/${slug}/">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{--font-body:'Manrope',system-ui,sans-serif;--font-display:'Fraunces',Georgia,serif;--paper:#0a0a0a;--panel:#171717;--ink:#fafafa;--muted:#a3a3a3;--muted-soft:#737373;--accent:#7c3aed;--line:#262626;--radius:0.75rem}
+    body{font-family:var(--font-body);background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;min-height:100vh}
+    .container{max-width:800px;margin:0 auto;padding:0 1.5rem}
+    a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+    header{border-bottom:1px solid var(--line)}
+    header .container{display:flex;align-items:center;gap:1.25rem;padding-top:0.75rem;padding-bottom:0.75rem}
+    .brand{display:flex;align-items:center;gap:0.6rem;text-decoration:none;color:var(--ink)}
+    .brand-mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#a855f7);display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+    .brand-name{font-family:var(--font-display);font-size:1.15rem;font-weight:700}
+    nav{display:flex;gap:1.25rem;font-size:0.88rem;font-weight:600;margin-left:auto}
+    nav a{color:var(--muted);text-decoration:none}nav a:hover{color:var(--ink)}
+    footer{border-top:1px solid var(--line);padding:1.5rem 0;margin-top:2rem;text-align:center;font-size:0.8rem;color:var(--muted-soft)}
+    footer a{color:var(--muted)}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="https://freeagentstore.online" class="brand">
+        <span class="brand-mark">&#x1f916;</span>
+        <span class="brand-name">AgentStore</span>
+      </a>
+      <nav>
+        <a href="https://freeagentstore.online">Agents</a>
+        <a href="https://github.com/FreeAgentStore">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container" style="padding-top:2rem;padding-bottom:2rem">
+    <a href="https://freeagentstore.online" style="font-size:0.88rem;color:var(--muted);text-decoration:none">&larr; All agents</a>
+
+    <div style="display:flex;align-items:center;gap:1.25rem;margin:1.5rem 0">
+      <img src="https://github.com/${github}.png?size=96" alt="${developer}" style="width:72px;height:72px;border-radius:16px;border:2px solid var(--line)" onerror="this.style.display='none'" />
+      <div>
+        <h1 style="font-family:var(--font-display);font-size:1.5rem;font-weight:700">${developer}</h1>
+        <div style="display:flex;gap:0.75rem;margin-top:0.25rem;font-size:0.85rem;color:var(--muted)">
+          <span>${agents.length} agent${agents.length !== 1 ? 's' : ''}</span>
+          <a href="https://github.com/${github}" style="color:var(--muted)">GitHub &rarr;</a>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:0.75rem">
+      ${agentCards}
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <a href="https://freeagentstore.online">FreeAgentStore</a> &middot;
+      <a href="https://github.com/FreeAgentStore">GitHub</a>
+    </div>
+  </footer>
+</body>
+</html>`;
+
+  fs.writeFileSync(path.join(dir, 'index.html'), html);
+  console.log(`Generated developer: /developers/${slug}/ (${agents.length} agents)`);
+}
+
+// Update detail pages to link to developer
+console.log(`Done. ${registry.agents.length} detail pages + ${devMap.size} developer page(s).`);
