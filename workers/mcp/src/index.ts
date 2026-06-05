@@ -20,7 +20,7 @@ export interface McpProps extends Record<string, unknown> {
 
 // ── GitHub helpers ────────────────────────────────────────────
 
-async function ghApi(path: string, opts?: { method?: string; body?: unknown; token?: string }) {
+async function ghApi(path: string, opts?: { method?: string; body?: unknown; token?: string }): Promise<Record<string, any>> {
   const headers: Record<string, string> = {
     Accept: "application/vnd.github+json",
     "User-Agent": "freeagentstore-mcp",
@@ -53,12 +53,12 @@ async function getDeployStatus(org: string, agentId: string) {
 
 // ── FAS API helper ────────────────────────────────────────────
 
-async function fagsApi(apiBase: string, path: string, token?: string) {
+async function fagsApi(apiBase: string, path: string, token?: string): Promise<Record<string, any>> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (token) headers.Authorization = `Bearer ${token}`;
   const res = await fetch(`${apiBase}${path}`, { headers });
   if (!res.ok) return { error: `API ${res.status}: ${await res.text()}` };
-  return await res.json();
+  return await res.json() as Record<string, any>;
 }
 
 // ── MCP Agent ─────────────────────────────────────────────────
