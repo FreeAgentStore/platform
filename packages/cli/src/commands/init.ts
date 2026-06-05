@@ -1,33 +1,83 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { execSync } from 'node:child_process';
 
-const TEMPLATES: Record<string, string> = {
-  'agent-tts': 'template-agent-tts',
-  'agent-whisper': 'template-agent-whisper',
-  'agent-vision': 'template-agent-vision',
-  'agent-llm': 'template-agent-llm',
-  'agent-tools': 'template-agent-tools',
-};
+const TEMPLATE_DIR = 'template-agent-standalone';
 
-export async function init(agentId: string, templateName: string) {
-  const template = TEMPLATES[templateName];
-  if (!template) {
-    console.error(`Unknown template: ${templateName}`);
-    console.error(`Available: ${Object.keys(TEMPLATES).join(', ')}`);
-    process.exit(1);
-  }
-
+export async function init(agentId: string, _templateName: string) {
   const targetDir = path.resolve(agentId);
   if (fs.existsSync(targetDir)) {
     console.error(`Directory ${agentId} already exists.`);
     process.exit(1);
   }
 
-  // TODO: Download template from GitHub or local templates dir
-  console.log(`Scaffolding ${agentId} from ${template}...`);
-  console.log(`Template: ${template}`);
-  console.log(`Target: ${targetDir}`);
-  console.log('');
-  console.log('Template scaffolding will be implemented when templates are built (Phase 2).');
-  console.log('For now, copy a template manually from ~/dev/stores/fags/templates/');
+  // Find template: check local templates dir, then try npm package location
+  const localTemplate = findTemplate();
+  if (!localTemplate) {
+    console.error('Template not found. Make sure @freeagentstore/cli is installed correctly.');
+    process.exit(1);
+  }
+
+  console.log(`Scaffolding ${agentId} from ${TEMPLATE_DIR}...`);
+
+  // Copy template
+  copyDir(localTemplate, targetDir);
+
+  // Replace AGENTNAME placeholder in all files
+  replaceInDir(targetDir, 'AGENTNAME', agentId);
+
+  console.log(`\nCreated ${agentId}/`);
+  console.log(`\nNext steps:`);
+  console.log(`  cd ${agentId}`);
+  console.log(`  pnpm install`);
+  console.log(`  pnpm dev`);
+  console.log(`\nEdit web/src/App.tsx to build your agent.`);
+  console.log(`When ready: fags publish`);
+}
+
+function findTemplate(): string | null {
+  // Try relative to CLI package (when installed via npm)
+  const cliDir = path.dirname(new URL(import.meta.url).pathname);
+  const candidates = [
+    path.resolve(cliDir, '..', '..', '..', 'templates', TEMPLATE_DIR),
+    path.resolve(cliDir, '..', '..', 'templates', TEMPLATE_DIR),
+    // When running from the monorepo
+    path.resolve(process.cwd(), '..', 'templates', TEMPLATE_DIR),
+    path.resolve(process.cwd(), '..', '..', 'templates', TEMPLATE_DIR),
+  ];
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(path.join(candidate, 'agent.json'))) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
+function copyDir(src: string, dest: string) {
+  fs.mkdirSync(dest, { recursive: true });
+  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+    if (entry.name === 'node_modules' || entry.name === 'dist' || entry.name === '.git') continue;
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+    if (entry.isDirectory()) {
+      copyDir(srcPath, destPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
+}
+
+function replaceInDir(dir: string, search: string, replace: string) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      replaceInDir(fullPath, search, replace);
+    } else if (entry.name.match(/\.(json|ts|tsx|html|md|css|yaml|yml)$/)) {
+      const content = fs.readFileSync(fullPath, 'utf-8');
+      if (content.includes(search)) {
+        fs.writeFileSync(fullPath, content.replaceAll(search, replace));
+      }
+    }
+  }
 }
