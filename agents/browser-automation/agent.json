@@ -1,0 +1,17 @@
+{
+  "name": "Browser Automation",
+  "description": "Record browser actions, AI condenses them into deterministic JS, replay without AI. Like Playwright but in-browser.",
+  "version": "1.0.0",
+  "task": "browser-automation",
+  "category": "automation",
+  "models": [],
+  "estimatedDownload": "0MB",
+  "input": ["text/plain"],
+  "output": ["application/javascript"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "runtimeType": "built-in-ai"
+}
