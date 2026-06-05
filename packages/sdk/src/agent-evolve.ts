@@ -7,9 +7,9 @@
  * AI priority: Chrome built-in → Ollama → throws.
  */
 
-import type { AgentConfig, TrainingExample, EvolutionEntry } from './agent-config.js';
-import { buildEvolvePrompt, evaluateHeuristic, extractCode } from './heuristic.js';
+import type { AgentConfig, EvolutionEntry, TrainingExample } from './agent-config.js';
 import { smartPrompt } from './built-in-ai.js';
+import { buildEvolvePrompt, evaluateHeuristic, extractCode } from './heuristic.js';
 
 export interface EvolveResult {
   config: AgentConfig;
@@ -34,8 +34,24 @@ export async function evolveAgentConfig(
   // Evaluate current code against all examples
   const currentCode = config.evolvedCode ?? '';
   const currentEval = currentCode
-    ? evaluateHeuristic(currentCode, allExamples.map(e => ({ input: e.input, expectedOutput: e.expectedOutput, weight: e.weight })))
-    : { score: 0, passed: 0, total: allExamples.length, failures: allExamples.map(e => ({ input: e.input, expected: e.expectedOutput, actual: null })) };
+    ? evaluateHeuristic(
+        currentCode,
+        allExamples.map((e) => ({
+          input: e.input,
+          expectedOutput: e.expectedOutput,
+          weight: e.weight,
+        })),
+      )
+    : {
+        score: 0,
+        passed: 0,
+        total: allExamples.length,
+        failures: allExamples.map((e) => ({
+          input: e.input,
+          expected: e.expectedOutput,
+          actual: null,
+        })),
+      };
 
   const previousScore = currentEval.score;
 
@@ -44,9 +60,13 @@ export async function evolveAgentConfig(
     description: `Agent: ${config.baseAgent} — ${config.instanceName}`,
     inputType: 'unknown',
     outputType: 'unknown',
-    examples: allExamples.map(e => ({ input: e.input, expectedOutput: e.expectedOutput, weight: e.weight })),
+    examples: allExamples.map((e) => ({
+      input: e.input,
+      expectedOutput: e.expectedOutput,
+      weight: e.weight,
+    })),
     currentCode: currentCode || undefined,
-    history: (config.evolutionHistory ?? []).map(e => ({
+    history: (config.evolutionHistory ?? []).map((e) => ({
       version: e.version,
       code: '',
       score: e.score,
@@ -61,7 +81,8 @@ export async function evolveAgentConfig(
 
   // Use smart prompt (built-in AI → Ollama → throw)
   const { result: rawCode, source } = await smartPrompt(prompt, {
-    systemPrompt: 'You are an expert JavaScript developer. Write only the function body code, no explanation.',
+    systemPrompt:
+      'You are an expert JavaScript developer. Write only the function body code, no explanation.',
   });
 
   const newCode = extractCode(rawCode);
@@ -69,7 +90,11 @@ export async function evolveAgentConfig(
   // Evaluate the new code
   const newEval = evaluateHeuristic(
     newCode,
-    allExamples.map(e => ({ input: e.input, expectedOutput: e.expectedOutput, weight: e.weight })),
+    allExamples.map((e) => ({
+      input: e.input,
+      expectedOutput: e.expectedOutput,
+      weight: e.weight,
+    })),
   );
 
   // Only keep the new code if it's better (or if there was no previous code)

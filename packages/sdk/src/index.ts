@@ -2,6 +2,25 @@
 
 export type { FreeAgentStore } from './agent.js';
 export { initAgent } from './agent.js';
+export type {
+  AgentConfig,
+  AgentInstance,
+  EvolutionEntry,
+  FieldDef,
+  TrainingExample,
+} from './agent-config.js';
+// Agent config & instances — customizable, trainable agents
+export {
+  createAgentInstance,
+  createBlankConfig,
+  exportConfig,
+  importConfig,
+  loadAgentConfig,
+  saveAgentConfig,
+} from './agent-config.js';
+export type { EvolveResult } from './agent-evolve.js';
+// Agent evolution — train agents using built-in AI
+export { evolveAgentConfig } from './agent-evolve.js';
 // Core primitives (vendored from FAS pattern)
 export { Auth } from './auth.js';
 export type { BuiltInAvailability, BuiltInSession } from './built-in-ai.js';
@@ -34,16 +53,3 @@ export type {
   OllamaStatus,
 } from './types.js';
 export { WorkerBridge } from './worker-bridge.js';
-// Agent config & instances — customizable, trainable agents
-export {
-  createAgentInstance,
-  loadAgentConfig,
-  saveAgentConfig,
-  exportConfig,
-  importConfig,
-  createBlankConfig,
-} from './agent-config.js';
-export type { AgentConfig, AgentInstance, FieldDef, TrainingExample, EvolutionEntry } from './agent-config.js';
-// Agent evolution — train agents using built-in AI
-export { evolveAgentConfig } from './agent-evolve.js';
-export type { EvolveResult } from './agent-evolve.js';

@@ -134,11 +134,14 @@ export async function saveAgentConfig(
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  const res = await fetch(`${apiBase}/v1/agents/${config.baseAgent}/instances${instanceId ? `/${instanceId}` : ''}`, {
-    method: instanceId ? 'PUT' : 'POST',
-    headers,
-    body: JSON.stringify(config),
-  });
+  const res = await fetch(
+    `${apiBase}/v1/agents/${config.baseAgent}/instances${instanceId ? `/${instanceId}` : ''}`,
+    {
+      method: instanceId ? 'PUT' : 'POST',
+      headers,
+      body: JSON.stringify(config),
+    },
+  );
   if (!res.ok) throw new Error(`Failed to save config: ${res.status}`);
   return res.json();
 }
@@ -164,7 +167,11 @@ export function importConfig(json: string): AgentConfig {
 /**
  * Create a blank config for a base agent.
  */
-export function createBlankConfig(baseAgent: string, baseVersion: string, instanceName: string): AgentConfig {
+export function createBlankConfig(
+  baseAgent: string,
+  baseVersion: string,
+  instanceName: string,
+): AgentConfig {
   return {
     baseAgent,
     baseVersion,
