@@ -261,6 +261,11 @@ function generateDetailPage(agent) {
 }
 
 function generateSandbox(agent) {
+  // Config-driven sandbox (presets with structured output)
+  if (agent.sandbox?.type === 'config-driven') {
+    return generateConfigSandbox(agent);
+  }
+
   if (!agent.sandbox?.methods?.length) {
     return `<p style="color:var(--muted);font-size:0.85rem">Sandbox coming soon. <a href="${agent.agentUrl}">Try the full app</a>.</p>`;
   }
@@ -356,6 +361,102 @@ function generateSandbox(agent) {
   }
 
   return html;
+}
+
+function generateConfigSandbox(agent) {
+  const presets = agent.sandbox.presets ?? [];
+  const defaultText = agent.sandbox.defaultText ?? '';
+
+  const presetButtons = presets.map((p, i) =>
+    `<button onclick="selectPreset(${i})" id="preset-${i}" style="padding:0.35rem 0.75rem;border-radius:8px;border:1px solid var(--line);background:${i === 0 ? 'var(--accent)' : 'transparent'};color:${i === 0 ? '#fff' : 'var(--muted)'};font-size:0.78rem;font-weight:600;cursor:pointer;font-family:inherit">${p.name}</button>`
+  ).join('\n      ');
+
+  const presetsJson = JSON.stringify(presets).replace(/'/g, "\\'").replace(/<\//g, '<\\/');
+
+  return `
+    <div style="margin-bottom:0.5rem">
+      <div style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.75rem">
+        ${presetButtons}
+      </div>
+      <div id="preset-info" style="font-size:0.72rem;color:var(--muted-soft);margin-bottom:0.5rem">
+        ${presets[0]?.fields?.length ? `Extracts: ${presets[0].fields.join(', ')}` : presets[0]?.format ?? ''}
+      </div>
+    </div>
+
+    <textarea id="sandbox-input" rows="5" style="width:100%;padding:0.6rem;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-family:inherit;font-size:0.82rem;resize:vertical;margin-bottom:0.5rem">${defaultText}</textarea>
+
+    <button onclick="runConfigSandbox()" id="sandbox-run" style="width:100%;padding:0.6rem;border-radius:10px;border:none;background:var(--accent);color:white;font-weight:600;font-size:0.88rem;cursor:pointer;margin-bottom:0.75rem">Summarize</button>
+
+    <div id="sandbox-result" style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:0.75rem;font-size:0.82rem;min-height:3rem;white-space:pre-wrap;word-break:break-word;color:var(--muted)">Select a preset and click Summarize</div>
+
+    <div id="sandbox-source" style="font-size:0.68rem;color:var(--muted-soft);margin-top:0.35rem;text-align:right"></div>
+
+    <script>
+      var _presets = JSON.parse('${presetsJson}');
+      var _activePreset = 0;
+
+      function selectPreset(i) {
+        _activePreset = i;
+        for (var j = 0; j < _presets.length; j++) {
+          var b = document.getElementById('preset-' + j);
+          if (b) { b.style.background = j === i ? 'var(--accent)' : 'transparent'; b.style.color = j === i ? '#fff' : 'var(--muted)'; }
+        }
+        var info = document.getElementById('preset-info');
+        var p = _presets[i];
+        info.textContent = p.fields && p.fields.length ? 'Extracts: ' + p.fields.join(', ') + ' (' + p.format + ')' : p.format || '';
+      }
+
+      async function runConfigSandbox() {
+        var input = document.getElementById('sandbox-input').value;
+        var out = document.getElementById('sandbox-result');
+        var src = document.getElementById('sandbox-source');
+        if (!input.trim()) return;
+        out.style.color = 'var(--ink)';
+        out.textContent = 'Running...';
+        src.textContent = '';
+
+        var preset = _presets[_activePreset];
+        var prompt = preset.systemPrompt + '\\n';
+        if (preset.fields && preset.fields.length) {
+          prompt += '\\nExtract these fields:\\n';
+          for (var k = 0; k < preset.fields.length; k++) prompt += '- ' + preset.fields[k] + '\\n';
+          prompt += '\\nFormat: Use field names as headers.\\n';
+        }
+        prompt += '\\nText:\\n' + input;
+
+        // Try built-in AI
+        try {
+          var g = globalThis;
+          var LM = g.LanguageModel || (g.ai && g.ai.languageModel);
+          if (LM && LM.create) {
+            var session = await LM.create({ systemPrompt: preset.systemPrompt });
+            out.textContent = await session.prompt(prompt);
+            session.destroy && session.destroy();
+            src.textContent = 'via Chrome Built-in AI · ' + preset.name + ' config';
+            return;
+          }
+        } catch(e) {}
+
+        // Try Ollama
+        try {
+          var r = await fetch('http://localhost:11434/api/generate', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ model: 'llama3.2', prompt: prompt, stream: false })
+          });
+          if (r.ok) {
+            out.textContent = (await r.json()).response;
+            src.textContent = 'via Ollama · ' + preset.name + ' config';
+            return;
+          }
+        } catch(e) {}
+
+        // Heuristic fallback
+        var sentences = input.match(/[^.!?]+[.!?]+/g) || [input];
+        var top = sentences.slice(0, Math.min(4, sentences.length));
+        out.textContent = top.map(function(s) { return '• ' + s.trim(); }).join('\\n');
+        src.textContent = 'via Heuristic fallback (no AI available) · ' + preset.name;
+      }
+    <\/script>`;
 }
 
 // Generate

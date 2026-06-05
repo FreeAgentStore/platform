@@ -218,22 +218,43 @@
       "backends": [],
       "type": "built-in-ai",
       "sandbox": {
-        "methods": [
+        "type": "config-driven",
+        "presets": [
           {
-            "name": "summarize",
-            "label": "Summarize",
-            "builtInAI": true,
-            "systemPrompt": "Summarize the following text concisely.",
-            "params": [
-              {
-                "name": "text",
-                "type": "text",
-                "placeholder": "Paste text to summarize...",
-                "default": "Artificial intelligence (AI) is intelligence demonstrated by machines, as opposed to natural intelligence displayed by animals including humans. AI research has been defined as the field of study of intelligent agents, which refers to any system that perceives its environment and takes actions that maximize its chance of achieving its goals."
-              }
-            ]
+            "name": "Meeting Notes",
+            "systemPrompt": "Extract structured meeting notes. Focus on decisions, action items with owners, and key points. Skip small talk.",
+            "fields": [
+              "decisions",
+              "actionItems",
+              "keyPoints"
+            ],
+            "format": "structured"
+          },
+          {
+            "name": "Research Paper",
+            "systemPrompt": "Summarize this research. Extract hypothesis, method, findings, and limitations. Use precise language.",
+            "fields": [
+              "hypothesis",
+              "method",
+              "findings",
+              "limitations"
+            ],
+            "format": "structured"
+          },
+          {
+            "name": "TL;DR",
+            "systemPrompt": "Give a 2-sentence TL;DR of the following text.",
+            "fields": [],
+            "format": "paragraph"
+          },
+          {
+            "name": "Key Points",
+            "systemPrompt": "Extract 3-5 key points as bullet points. Be concise.",
+            "fields": [],
+            "format": "bullets"
           }
-        ]
+        ],
+        "defaultText": "We met on Tuesday to discuss the Q3 roadmap. Sarah presented the new analytics dashboard \u2014 the team agreed to ship it by August 15. John raised concerns about the API migration timeline. We decided to push the migration to Q4. Action items: Sarah to finalize dashboard specs by Friday, John to draft the migration plan, and Alex to update the project board. Next meeting is Thursday at 2pm."
       }
     },
     {
