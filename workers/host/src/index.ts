@@ -55,6 +55,25 @@ export default {
     // Everything below is on the apex: freeagentstore.online
     const pathname = url.pathname;
 
+    // ── /pkg/{agent}/ → serve ESM packages with CORS ─────────
+    if (pathname.startsWith('/pkg/')) {
+      let pkgKey = pathname.slice(1); // remove leading /
+      if (pkgKey.endsWith('/')) pkgKey += 'index.js';
+      if (!pkgKey.split('/').pop()?.includes('.')) pkgKey += '/index.js';
+
+      const object = await env.AGENTS.get(pkgKey);
+      if (!object) return new Response('Package not found', { status: 404 });
+
+      const headers = new Headers();
+      headers.set('Content-Type', contentType(pkgKey));
+      headers.set('ETag', object.httpEtag);
+      headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+      headers.set('Access-Control-Allow-Origin', '*');
+      headers.set('Access-Control-Allow-Methods', 'GET, HEAD');
+      headers.set('X-Content-Type-Options', 'nosniff');
+      return new Response(object.body, { headers });
+    }
+
     // ── /a/{slug}/ → serve agent from R2 ──────────────────────
     const agentMatch = pathname.match(/^\/a\/([a-z0-9-]+)(\/.*)?$/);
     if (agentMatch) {

@@ -11,11 +11,18 @@
       "model": "Kokoro 82M",
       "modelSize": "160MB",
       "agentUrl": "https://freeagentstore.online/a/tts/",
+      "npmPkg": "@freeagentstore/tts",
+      "esmUrl": "https://freeagentstore.online/pkg/tts/index.js",
       "developer": "FreeAgentStore",
       "desktopOnly": true,
       "offlineCapable": true,
       "backends": ["webgpu", "wasm"],
-      "type": "model"
+      "type": "model",
+      "sandbox": {
+        "methods": [
+          { "name": "generate", "label": "Generate Speech", "params": [{ "name": "text", "type": "text", "placeholder": "Hello world!", "default": "The quick brown fox jumps over the lazy dog." }, { "name": "voice", "type": "select", "options": ["af_heart", "af_bella", "am_adam", "bm_george"], "default": "af_heart" }], "note": "Requires 160MB model download" }
+        ]
+      }
     },
     {
       "id": "transcriber",
@@ -28,11 +35,18 @@
       "model": "Whisper Small",
       "modelSize": "244MB",
       "agentUrl": "https://freeagentstore.online/a/transcriber/",
+      "npmPkg": "@freeagentstore/transcriber",
+      "esmUrl": "https://freeagentstore.online/pkg/transcriber/index.js",
       "developer": "FreeAgentStore",
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": ["webgpu", "wasm"],
-      "type": "model"
+      "type": "model",
+      "sandbox": {
+        "methods": [
+          { "name": "transcribe", "label": "Transcribe Audio", "params": [{ "name": "audio", "type": "file", "accept": "audio/*" }], "note": "Requires 244MB model download" }
+        ]
+      }
     },
     {
       "id": "bg-remover",
@@ -45,11 +59,18 @@
       "model": "RMBG 1.4",
       "modelSize": "176MB",
       "agentUrl": "https://freeagentstore.online/a/bg-remover/",
+      "npmPkg": "@freeagentstore/bg-remover",
+      "esmUrl": "https://freeagentstore.online/pkg/bg-remover/index.js",
       "developer": "FreeAgentStore",
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": ["webgpu", "wasm"],
-      "type": "model"
+      "type": "model",
+      "sandbox": {
+        "methods": [
+          { "name": "removeBackground", "label": "Remove Background", "params": [{ "name": "image", "type": "file", "accept": "image/*" }], "note": "Requires 176MB model download" }
+        ]
+      }
     },
     {
       "id": "sentiment",
@@ -62,11 +83,18 @@
       "model": "None (heuristic)",
       "modelSize": "0MB",
       "agentUrl": "https://freeagentstore.online/a/sentiment/",
+      "npmPkg": "@freeagentstore/sentiment",
+      "esmUrl": "https://freeagentstore.online/pkg/sentiment/index.js",
       "developer": "FreeAgentStore",
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
-      "type": "heuristic"
+      "type": "heuristic",
+      "sandbox": {
+        "methods": [
+          { "name": "analyzeSentiment", "label": "Analyze Sentiment", "params": [{ "name": "text", "type": "text", "placeholder": "This product is amazing!", "default": "I love this product, it works great!" }] }
+        ]
+      }
     },
     {
       "id": "unit-converter",
@@ -79,11 +107,18 @@
       "model": "None (heuristic)",
       "modelSize": "0MB",
       "agentUrl": "https://freeagentstore.online/a/unit-converter/",
+      "npmPkg": "@freeagentstore/unit-converter",
+      "esmUrl": "https://freeagentstore.online/pkg/unit-converter/index.js",
       "developer": "FreeAgentStore",
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
-      "type": "heuristic"
+      "type": "heuristic",
+      "sandbox": {
+        "methods": [
+          { "name": "convert", "label": "Convert Units", "params": [{ "name": "value", "type": "number", "placeholder": "100", "default": "100" }, { "name": "from", "type": "text", "placeholder": "km", "default": "km" }, { "name": "to", "type": "text", "placeholder": "mi", "default": "mi" }] }
+        ]
+      }
     }
   ]
 }

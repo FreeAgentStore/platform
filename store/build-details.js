@@ -185,46 +185,55 @@ function generateDetailPage(agent) {
           <a href="https://console.freeagentstore.online" class="btn-secondary">Console</a>
         </div>
 
+        <!-- Use this agent -->
+        <div class="section">
+          <h2>Use this agent</h2>
+          <p style="margin-bottom:0.75rem">Add to any app via npm or import directly from URL — no install needed.</p>
+          <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1rem;font-family:monospace;font-size:0.82rem;overflow-x:auto">
+            <div style="color:var(--muted-soft);margin-bottom:0.5rem"># npm / pnpm</div>
+            <div>pnpm add ${agent.npmPkg ?? '@freeagentstore/' + agent.id}</div>
+            <div style="color:var(--muted-soft);margin-top:0.75rem"># or import directly (zero install)</div>
+            <div style="color:#a78bfa">import { ... } from '${agent.esmUrl ?? 'https://freeagentstore.online/pkg/' + agent.id + '/index.js'}'</div>
+          </div>
+        </div>
+
+        <!-- Apps using this agent -->
+        <div class="section">
+          <h2>Apps using this agent</h2>
+          <p style="color:var(--muted)">No apps yet. <a href="https://freeappstore.online">Build one on FreeAppStore</a> and import <code style="background:var(--panel);padding:0.1rem 0.4rem;border-radius:4px;font-size:0.82rem">${agent.npmPkg ?? '@freeagentstore/' + agent.id}</code>.</p>
+        </div>
+
         <!-- About -->
         <div class="section">
-          <h2>About</h2>
-          <p>${agent.description}</p>
-          <p style="margin-top:0.5rem">
-            ${isHeuristic
-              ? 'This is a <strong>heuristic agent</strong> — pure JavaScript code evolved by an LLM from examples. No AI model needed at runtime. Instant results, zero download.'
-              : `This agent uses the <strong>${agent.model}</strong> model (${agent.modelSize}). The model downloads once and is cached in your browser — subsequent uses are instant.`
-            }
-          </p>
-          ${!isHeuristic ? `<p style="margin-top:0.5rem">Inference runs in a Web Worker via ${backends.includes('WEBGPU') ? 'WebGPU (GPU-accelerated) with WASM fallback' : 'WASM'}. Your main thread stays responsive.</p>` : ''}
+          <h2>How it works</h2>
+          ${isHeuristic
+            ? '<p>This is a <strong>heuristic agent</strong> — pure JavaScript code evolved by an LLM from examples. No AI model at runtime. Instant results, zero download, works offline.</p>'
+            : `<p>Uses the <strong>${agent.model}</strong> model (${agent.modelSize}). Downloads once, cached in Cache Storage forever. Inference runs in a Web Worker via ${backends.includes('WEBGPU') ? 'WebGPU with WASM fallback' : 'WASM'}.</p>`
+          }
+          <p style="margin-top:0.5rem">100% private — no data leaves your browser. Open source (MIT). <a href="https://github.com/${repoPath}">View source</a>.</p>
         </div>
 
-        <!-- Privacy -->
-        <div class="section">
-          <h2>Privacy</h2>
-          <p>${agent.name} processes everything locally in your browser. No data is sent to any server. No analytics, no tracking, no cookies. ${isHeuristic ? 'No AI model is downloaded.' : 'The AI model is downloaded from HuggingFace CDN and cached locally.'}</p>
-        </div>
-
-        <!-- Open Source -->
-        <div class="section">
-          <h2>Open Source</h2>
-          <p>Fully open source under the MIT license. Inspect the code, report bugs, or contribute improvements.</p>
-          <p style="margin-top:0.5rem"><a href="https://github.com/${repoPath}">View source on GitHub &rarr;</a></p>
-        </div>
-
-        <!-- Pro upgrade path -->
         ${!isHeuristic ? `
         <div class="section">
-          <h2>Need more power?</h2>
-          <p><a href="https://proagentstore.online">ProAgentStore</a> offers server-side compute: run larger models, batch processing, scheduled jobs, and API access. $9/mo for everything.</p>
+          <h2>Need server-side?</h2>
+          <p><a href="https://proagentstore.online">ProAgentStore</a> — larger models, batch processing, cron, API access. $9/mo.</p>
         </div>` : ''}
       </div>
 
-      <!-- Phone frame preview -->
+      <!-- Sandbox -->
       <aside>
-        <div class="phone-frame">
-          <iframe src="${agent.agentUrl}" title="${agent.name} live preview" loading="lazy" sandbox="allow-scripts allow-same-origin allow-popups" referrerpolicy="no-referrer"></iframe>
+        <div style="background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden">
+          <div style="padding:0.75rem 1rem;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:0.5rem">
+            <span style="font-size:0.85rem;font-weight:600">Sandbox</span>
+            <span style="font-size:0.72rem;color:var(--muted)">Try it live</span>
+          </div>
+          <div id="sandbox" style="padding:1rem">
+            ${generateSandbox(agent)}
+          </div>
+          <div style="padding:0.5rem 1rem;border-top:1px solid var(--line);font-size:0.72rem;color:var(--muted-soft);text-align:center">
+            <a href="${agent.agentUrl}" style="color:var(--muted)">Open full app &rarr;</a>
+          </div>
         </div>
-        <p class="preview-note">Live preview. <a href="${agent.agentUrl}" target="_blank">Open in new tab</a> for full experience.</p>
       </aside>
     </div>
   </main>
@@ -239,6 +248,74 @@ function generateDetailPage(agent) {
   </footer>
 </body>
 </html>`;
+}
+
+function generateSandbox(agent) {
+  if (!agent.sandbox?.methods?.length) {
+    return `<p style="color:var(--muted);font-size:0.85rem">Sandbox coming soon. <a href="${agent.agentUrl}">Try the full app</a>.</p>`;
+  }
+
+  const methods = agent.sandbox.methods;
+  let html = '';
+
+  for (const method of methods) {
+    const paramInputs = (method.params ?? []).map((p, i) => {
+      if (p.type === 'text' || p.type === 'number') {
+        return `<div style="margin-bottom:0.5rem">
+          <label style="font-size:0.72rem;color:var(--muted-soft);display:block;margin-bottom:0.2rem">${p.name}</label>
+          <input type="${p.type === 'number' ? 'number' : 'text'}" id="param-${method.name}-${i}" value="${p.default ?? ''}" placeholder="${p.placeholder ?? ''}"
+            style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-family:monospace;font-size:0.85rem" />
+        </div>`;
+      }
+      if (p.type === 'select') {
+        const opts = (p.options ?? []).map(o => `<option value="${o}"${o === p.default ? ' selected' : ''}>${o}</option>`).join('');
+        return `<div style="margin-bottom:0.5rem">
+          <label style="font-size:0.72rem;color:var(--muted-soft);display:block;margin-bottom:0.2rem">${p.name}</label>
+          <select id="param-${method.name}-${i}" style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:0.85rem">${opts}</select>
+        </div>`;
+      }
+      if (p.type === 'file') {
+        return `<div style="margin-bottom:0.5rem">
+          <label style="font-size:0.72rem;color:var(--muted-soft);display:block;margin-bottom:0.2rem">${p.name}</label>
+          <input type="file" id="param-${method.name}-${i}" accept="${p.accept ?? '*/*'}"
+            style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:0.85rem" />
+        </div>`;
+      }
+      return '';
+    }).join('');
+
+    const paramGatherer = (method.params ?? []).map((p, i) => {
+      if (p.type === 'number') return `Number(document.getElementById('param-${method.name}-${i}').value)`;
+      if (p.type === 'file') return `null /* file handling TODO */`;
+      return `document.getElementById('param-${method.name}-${i}').value`;
+    }).join(', ');
+
+    if (method.note) {
+      html += `<p style="font-size:0.75rem;color:var(--muted-soft);margin-bottom:0.5rem">${method.note}</p>`;
+    }
+
+    html += `${paramInputs}
+    <button onclick="runSandbox_${method.name}()" style="width:100%;padding:0.6rem;border-radius:10px;border:none;background:var(--accent);color:white;font-weight:600;font-size:0.88rem;cursor:pointer;margin-bottom:0.75rem">${method.label}</button>
+    <div id="result-${method.name}" style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:0.75rem;font-family:monospace;font-size:0.82rem;min-height:2.5rem;white-space:pre-wrap;word-break:break-all;color:var(--muted)">Click "${method.label}" to try</div>
+
+    <script type="module">
+      import * as mod from '${agent.esmUrl ?? 'https://freeagentstore.online/pkg/' + agent.id + '/index.js'}';
+      window.runSandbox_${method.name} = async function() {
+        const out = document.getElementById('result-${method.name}');
+        out.style.color = 'var(--ink)';
+        out.textContent = 'Running...';
+        try {
+          const result = mod.${method.name}(${paramGatherer});
+          out.textContent = JSON.stringify(result, null, 2);
+        } catch(e) {
+          out.style.color = '#f87171';
+          out.textContent = 'Error: ' + e.message;
+        }
+      };
+    <\/script>`;
+  }
+
+  return html;
 }
 
 // Generate
