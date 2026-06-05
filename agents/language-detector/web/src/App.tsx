@@ -1,25 +1,60 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { detectLanguage, getFlag, type DetectionResult } from './detector';
 
-const SAMPLES: { label: string; text: string }[] = [
-  { label: 'English', text: 'The quick brown fox jumps over the lazy dog. This is a sample English text for language detection testing purposes.' },
-  { label: 'French', text: "Le petit prince est un roman de l'ecrivain et aviateur francais Antoine de Saint-Exupery. C'est une oeuvre poetique et philosophique." },
-  { label: 'Spanish', text: 'El ingenioso hidalgo don Quijote de la Mancha es una novela escrita por el espanol Miguel de Cervantes Saavedra.' },
-  { label: 'German', text: 'Die Bundesrepublik Deutschland ist ein demokratischer und sozialer Bundesstaat. Die Hauptstadt und der Regierungssitz ist Berlin.' },
-  { label: 'Japanese', text: '\u6771\u4EAC\u306F\u65E5\u672C\u306E\u9996\u90FD\u3067\u3042\u308A\u3001\u4E16\u754C\u6700\u5927\u306E\u90FD\u5E02\u570F\u306E\u4E00\u3064\u3067\u3059\u3002\u591A\u304F\u306E\u6587\u5316\u7684\u306A\u540D\u6240\u304C\u3042\u308A\u307E\u3059\u3002' },
-  { label: 'Arabic', text: '\u0627\u0644\u0644\u063A\u0629 \u0627\u0644\u0639\u0631\u0628\u064A\u0629 \u0647\u064A \u0623\u0643\u062B\u0631 \u0627\u0644\u0644\u063A\u0627\u062A \u0627\u0644\u0633\u0627\u0645\u064A\u0629 \u062A\u062D\u062F\u062B\u0627\u064B \u0648\u0625\u062D\u062F\u0649 \u0623\u0643\u062B\u0631 \u0627\u0644\u0644\u063A\u0627\u062A \u0627\u0646\u062A\u0634\u0627\u0631\u0627\u064B \u0641\u064A \u0627\u0644\u0639\u0627\u0644\u0645' },
-  { label: 'Russian', text: '\u0420\u043E\u0441\u0441\u0438\u044F \u2014 \u0441\u0430\u043C\u0430\u044F \u0431\u043E\u043B\u044C\u0448\u0430\u044F \u0441\u0442\u0440\u0430\u043D\u0430 \u0432 \u043C\u0438\u0440\u0435 \u043F\u043E \u043F\u043B\u043E\u0449\u0430\u0434\u0438 \u0442\u0435\u0440\u0440\u0438\u0442\u043E\u0440\u0438\u0438.' },
-  { label: 'Korean', text: '\uB300\uD55C\uBBFC\uAD6D\uC740 \uB3D9\uC544\uC2DC\uC544\uC758 \uD55C\uBC18\uB3C4\uC5D0 \uC704\uCE58\uD55C \uB098\uB77C\uC785\uB2C8\uB2E4. \uC218\uB3C4\uB294 \uC11C\uC6B8\uC785\uB2C8\uB2E4.' },
-  { label: 'Portuguese', text: 'O Brasil e o maior pais da America do Sul e o quinto maior do mundo em area territorial e em populacao.' },
-  { label: 'Italian', text: "L'Italia e una repubblica parlamentare situata nell'Europa meridionale. La sua capitale e Roma, citta ricca di storia." },
-  { label: 'Dutch', text: 'Nederland is een land in West-Europa met een rijke geschiedenis en cultuur. De hoofdstad is Amsterdam.' },
-  { label: 'Turkish', text: 'Istanbul, Turkiyenin en buyuk sehridir. Asya ve Avrupa kitalarini birlestiren bu sehir tarihi zenginlikleriyle unludur.' },
+const SAMPLES: { label: string; flag: string; text: string }[] = [
+  // Latin script — Western European
+  { label: 'English', flag: '🇬🇧', text: 'The quick brown fox jumps over the lazy dog. This is a sample English text for language detection testing purposes.' },
+  { label: 'French', flag: '🇫🇷', text: "Le petit prince est un roman de l'écrivain et aviateur français Antoine de Saint-Exupéry. C'est une œuvre poétique et philosophique." },
+  { label: 'Spanish', flag: '🇪🇸', text: 'El ingenioso hidalgo don Quijote de la Mancha es una novela escrita por el español Miguel de Cervantes Saavedra.' },
+  { label: 'Portuguese', flag: '🇧🇷', text: 'O Brasil é o maior país da América do Sul e o quinto maior do mundo em área territorial e em população.' },
+  { label: 'Italian', flag: '🇮🇹', text: "L'Italia è una repubblica parlamentare situata nell'Europa meridionale. La sua capitale è Roma, città ricca di storia." },
+  { label: 'German', flag: '🇩🇪', text: 'Die Bundesrepublik Deutschland ist ein demokratischer und sozialer Bundesstaat. Die Hauptstadt und der Regierungssitz ist Berlin.' },
+  { label: 'Dutch', flag: '🇳🇱', text: 'Nederland is een land in West-Europa met een rijke geschiedenis en cultuur. De hoofdstad is Amsterdam.' },
+  { label: 'Romanian', flag: '🇷🇴', text: 'România este o țară situată în sud-estul Europei. Capitala și cel mai mare oraș este București.' },
+  // Latin script — Nordic
+  { label: 'Swedish', flag: '🇸🇪', text: 'Sverige är ett nordiskt land på Skandinaviska halvön. Huvudstaden Stockholm är landets största stad.' },
+  { label: 'Norwegian', flag: '🇳🇴', text: 'Norge er et land i Nord-Europa som ligger på den vestlige delen av den skandinaviske halvøy.' },
+  { label: 'Danish', flag: '🇩🇰', text: 'Danmark er et land i Nordeuropa. Landet består af halvøen Jylland og en række øer i Østersøen.' },
+  { label: 'Finnish', flag: '🇫🇮', text: 'Suomi on pohjoiseurooppalainen valtio. Maan pääkaupunki ja suurin kaupunki on Helsinki.' },
+  // Latin script — Central/Eastern European
+  { label: 'Polish', flag: '🇵🇱', text: 'Polska jest krajem w Europie Środkowej. Stolica i największe miasto to Warszawa.' },
+  { label: 'Czech', flag: '🇨🇿', text: 'Česká republika je vnitrozemský stát ve střední Evropě. Hlavním městem je Praha.' },
+  { label: 'Hungarian', flag: '🇭🇺', text: 'Magyarország egy közép-európai ország. Fővárosa és legnagyobb városa Budapest.' },
+  { label: 'Turkish', flag: '🇹🇷', text: 'İstanbul, Türkiyenin en büyük şehridir. Asya ve Avrupa kıtalarını birleştiren bu şehir tarihi zenginlikleriyle ünlüdür.' },
+  // Latin script — Southeast Asian
+  { label: 'Indonesian', flag: '🇮🇩', text: 'Indonesia adalah negara kepulauan terbesar di dunia. Ibu kota negara ini adalah Jakarta.' },
+  { label: 'Malay', flag: '🇲🇾', text: 'Malaysia adalah sebuah negara persekutuan yang terletak di Asia Tenggara. Kuala Lumpur adalah ibu kota negara.' },
+  { label: 'Tagalog', flag: '🇵🇭', text: 'Ang Pilipinas ay isang bansang archipelago sa Timog-Silangang Asya. Ang kabisera nito ay Maynila.' },
+  { label: 'Vietnamese', flag: '🇻🇳', text: 'Việt Nam là một quốc gia nằm ở phía đông bán đảo Đông Dương thuộc khu vực Đông Nam Á.' },
+  // Latin script — African
+  { label: 'Swahili', flag: '🇰🇪', text: 'Kenya ni nchi iliyoko Afrika Mashariki. Nairobi ndio mji mkuu na jiji kubwa zaidi nchini.' },
+  // Cyrillic script
+  { label: 'Russian', flag: '🇷🇺', text: 'Россия — самая большая страна в мире по площади территории. Столица — Москва.' },
+  { label: 'Ukrainian', flag: '🇺🇦', text: 'Україна є державою у Східній Європі. Столиця та найбільше місто — Київ.' },
+  // Greek script
+  { label: 'Greek', flag: '🇬🇷', text: 'Η Ελλάδα είναι χώρα στη νοτιοανατολική Ευρώπη. Η πρωτεύουσα και μεγαλύτερη πόλη της είναι η Αθήνα.' },
+  // Arabic script
+  { label: 'Arabic', flag: '🇸🇦', text: 'اللغة العربية هي أكثر اللغات السامية تحدثاً وإحدى أكثر اللغات انتشاراً في العالم.' },
+  // Devanagari script
+  { label: 'Hindi', flag: '🇮🇳', text: 'भारत दक्षिण एशिया में स्थित एक देश है। इसकी राजधानी नई दिल्ली है।' },
+  // Thai script
+  { label: 'Thai', flag: '🇹🇭', text: 'ประเทศไทยเป็นประเทศในภูมิภาคเอเชียตะวันออกเฉียงใต้ มีกรุงเทพมหานครเป็นเมืองหลวง' },
+  // CJK
+  { label: 'Chinese', flag: '🇨🇳', text: '中华人民共和国是位于东亚的社会主义国家。首都为北京，是世界上人口最多的国家之一。' },
+  { label: 'Japanese', flag: '🇯🇵', text: '東京は日本の首都であり、世界最大の都市圏の一つです。多くの文化的な名所があります。' },
+  { label: 'Korean', flag: '🇰🇷', text: '대한민국은 동아시아의 한반도에 위치한 나라입니다. 수도는 서울입니다.' },
 ];
 
 export default function App() {
   const [text, setText] = useState('');
   const [result, setResult] = useState<DetectionResult | null>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const [showAll, setShowAll] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const visibleSamples = useMemo(
+    () => showAll ? SAMPLES : SAMPLES.slice(0, 12),
+    [showAll],
+  );
 
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -65,17 +100,25 @@ export default function App() {
           className="w-full h-40 p-4 rounded-lg bg-neutral-900 border border-neutral-800 resize-none focus:outline-none focus:border-neutral-600 text-neutral-100 placeholder:text-neutral-600"
         />
 
-        {/* Sample buttons */}
-        <div className="flex flex-wrap gap-2">
-          {SAMPLES.map((s) => (
+        {/* Sample buttons — all 30 languages */}
+        <div className="flex flex-wrap gap-1.5">
+          {visibleSamples.map((s) => (
             <button
               key={s.label}
               onClick={() => setText(s.text)}
-              className="px-3 py-1.5 rounded-full text-xs font-medium bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-neutral-200 hover:border-neutral-600 transition-colors"
+              className="px-2.5 py-1 rounded-full text-xs font-medium bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-neutral-200 hover:border-neutral-600 transition-colors flex items-center gap-1"
             >
-              {s.label}
+              <span>{s.flag}</span> {s.label}
             </button>
           ))}
+          {!showAll && (
+            <button
+              onClick={() => setShowAll(true)}
+              className="px-2.5 py-1 rounded-full text-xs font-medium bg-violet-900/30 border border-violet-800/50 text-violet-400 hover:text-violet-300 transition-colors"
+            >
+              +{SAMPLES.length - 12} more languages
+            </button>
+          )}
         </div>
 
         {/* Stats */}
@@ -167,7 +210,7 @@ export default function App() {
 
         <p className="text-xs text-neutral-600">
           This agent uses heuristic code — no AI model, no download, instant results.
-          Character trigram frequency profiles evolved from Wikipedia corpora. Supports 30 languages.
+          Character trigram frequency profiles evolved from Wikipedia corpora. Supports 30 languages across Latin, Cyrillic, Greek, Arabic, Devanagari, Thai, CJK scripts.
         </p>
       </main>
 
