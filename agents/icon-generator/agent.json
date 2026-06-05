@@ -1,0 +1,17 @@
+{
+  "name": "Icon Generator",
+  "description": "Describe an icon and get SVG code — logos, emojis, UI icons. Chrome Built-in AI writes the SVG. Zero download, instant.",
+  "version": "1.0.0",
+  "task": "icon-generation",
+  "category": "creative",
+  "models": [],
+  "estimatedDownload": "0MB",
+  "input": ["text/plain"],
+  "output": ["image/svg+xml"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "runtimeType": "built-in-ai"
+}

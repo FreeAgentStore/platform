@@ -1,0 +1,17 @@
+{
+  "name": "Voice Notes",
+  "description": "Speak and get a structured note — title, key points, action items. Uses Web Speech API + Chrome Built-in AI. Zero download.",
+  "version": "1.0.0",
+  "task": "voice-to-notes",
+  "category": "productivity",
+  "models": [],
+  "estimatedDownload": "0MB",
+  "input": ["audio/webm"],
+  "output": ["text/markdown"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": false,
+  "desktopOnly": false,
+  "runtimeType": "built-in-ai"
+}

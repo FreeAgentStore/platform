@@ -1,0 +1,17 @@
+{
+  "name": "Mood Palette",
+  "description": "Upload a photo or describe a mood — get a color palette with names. Extract colors from images or generate from text. Pure JS + Chrome Built-in AI.",
+  "version": "1.0.0",
+  "task": "color-palette",
+  "category": "creative",
+  "models": [],
+  "estimatedDownload": "0MB",
+  "input": ["image/jpeg", "text/plain"],
+  "output": ["application/json"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "runtimeType": "built-in-ai"
+}

@@ -1,0 +1,17 @@
+{
+  "name": "Avatar Maker",
+  "description": "Upload a photo, get a stylized avatar. MediaPipe face detection + Canvas rendering. Choose from geometric, cartoon, or pixel art styles.",
+  "version": "1.0.0",
+  "task": "avatar-generation",
+  "category": "creative",
+  "models": [],
+  "estimatedDownload": "5MB",
+  "input": ["image/jpeg", "image/png"],
+  "output": ["image/png"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "runtimeType": "heuristic"
+}
