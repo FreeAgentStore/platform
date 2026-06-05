@@ -21,6 +21,10 @@
         "wasm"
       ],
       "type": "model",
+      "api": {
+        "imports": "import { ... } from '@freeagentstore/tts'",
+        "note": "This agent requires the full UI. Use it at freeagentstore.online/a/tts/ or embed via iframe."
+      },
       "sandbox": {
         "methods": [
           {
@@ -71,6 +75,10 @@
         "wasm"
       ],
       "type": "model",
+      "api": {
+        "imports": "import { ... } from '@freeagentstore/transcriber'",
+        "note": "This agent requires the full UI. Use it at freeagentstore.online/a/transcriber/ or embed via iframe."
+      },
       "sandbox": {
         "methods": [
           {
@@ -109,6 +117,10 @@
         "wasm"
       ],
       "type": "model",
+      "api": {
+        "imports": "import { ... } from '@freeagentstore/bg-remover'",
+        "note": "This agent requires the full UI. Use it at freeagentstore.online/a/bg-remover/ or embed via iframe."
+      },
       "sandbox": {
         "methods": [
           {
@@ -144,6 +156,16 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
+      "api": {
+        "imports": "import { analyzeSentiment } from '@freeagentstore/sentiment'",
+        "functions": [
+          {
+            "name": "analyzeSentiment",
+            "signature": "analyzeSentiment(text: string): { sentiment: 'positive' | 'negative' | 'neutral', score: number, confidence: number }",
+            "example": "const result = analyzeSentiment('This product is amazing!')\n// { sentiment: 'positive', score: 0.85, confidence: 0.9 }"
+          }
+        ]
+      },
       "sandbox": {
         "methods": [
           {
@@ -184,6 +206,16 @@
         "examples": 500,
         "accuracy": 94
       },
+      "api": {
+        "imports": "import { parseResume } from '@freeagentstore/resume-parser'",
+        "functions": [
+          {
+            "name": "parseResume",
+            "signature": "parseResume(text: string): ParsedResume",
+            "example": "const result = parseResume('John Smith\\njohn@email.com\\n\\nExperience...')\n// { name: 'John Smith', email: 'john@email.com', skills: [...], experience: [...] }"
+          }
+        ]
+      },
       "sandbox": {
         "methods": [
           {
@@ -217,6 +249,10 @@
       "offlineCapable": true,
       "backends": [],
       "type": "built-in-ai",
+      "api": {
+        "imports": "import { ... } from '@freeagentstore/summarizer'",
+        "note": "This agent requires the full UI. Use it at freeagentstore.online/a/summarizer/ or embed via iframe."
+      },
       "sandbox": {
         "type": "config-driven",
         "presets": [
@@ -273,6 +309,10 @@
       "offlineCapable": true,
       "backends": [],
       "type": "built-in-ai",
+      "api": {
+        "imports": "import { ... } from '@freeagentstore/writing-assistant'",
+        "note": "This agent requires the full UI. Use it at freeagentstore.online/a/writing-assistant/ or embed via iframe."
+      },
       "sandbox": {
         "methods": [
           {
@@ -316,6 +356,10 @@
       "offlineCapable": true,
       "backends": [],
       "type": "built-in-ai",
+      "api": {
+        "imports": "import { ... } from '@freeagentstore/code-explainer'",
+        "note": "This agent requires the full UI. Use it at freeagentstore.online/a/code-explainer/ or embed via iframe."
+      },
       "sandbox": {
         "methods": [
           {
@@ -350,7 +394,11 @@
       "desktopOnly": false,
       "offlineCapable": false,
       "backends": [],
-      "type": "built-in-ai"
+      "type": "built-in-ai",
+      "api": {
+        "imports": "import { ... } from '@freeagentstore/voice-notes'",
+        "note": "This agent requires the full UI. Use it at freeagentstore.online/a/voice-notes/ or embed via iframe."
+      }
     },
     {
       "id": "icon-generator",
@@ -367,7 +415,11 @@
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
-      "type": "heuristic"
+      "type": "heuristic",
+      "api": {
+        "imports": "import { ... } from '@freeagentstore/icon-generator'",
+        "note": "This agent requires the full UI. Use it at freeagentstore.online/a/icon-generator/ or embed via iframe."
+      }
     },
     {
       "id": "browser-automation",
@@ -377,7 +429,11 @@
       "icon": "\ud83e\udd16",
       "iconBg": "#f59e0b",
       "type": "built-in-ai",
-      "modelSize": "0MB"
+      "modelSize": "0MB",
+      "api": {
+        "imports": "import { ... } from '@freeagentstore/browser-automation'",
+        "note": "This agent requires the full UI. Use it at freeagentstore.online/a/browser-automation/ or embed via iframe."
+      }
     },
     {
       "id": "unit-converter",
@@ -395,6 +451,21 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
+      "api": {
+        "imports": "import { convert, getCategories } from '@freeagentstore/unit-converter'",
+        "functions": [
+          {
+            "name": "convert",
+            "signature": "convert(value: number, from: string, to: string): { result: number, formatted: string } | { error: string }",
+            "example": "const result = convert(100, 'km', 'mi')\n// { result: 62.137119, formatted: '100 Kilometers = 62.137119 Miles' }"
+          },
+          {
+            "name": "getCategories",
+            "signature": "getCategories(): { category: string, units: { code: string, label: string }[] }[]",
+            "example": "const cats = getCategories()\n// [{ category: 'length', units: [{ code: 'm', label: 'Meters' }, ...] }, ...]"
+          }
+        ]
+      },
       "sandbox": {
         "methods": [
           {
@@ -440,6 +511,10 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
+      "api": {
+        "imports": "import { ... } from '@freeagentstore/avatar-maker'",
+        "note": "This agent requires the full UI. Use it at freeagentstore.online/a/avatar-maker/ or embed via iframe."
+      },
       "sandbox": {
         "methods": [
           {
@@ -478,6 +553,10 @@
       "offlineCapable": true,
       "backends": [],
       "type": "built-in-ai",
+      "api": {
+        "imports": "import { ... } from '@freeagentstore/mood-palette'",
+        "note": "This agent requires the full UI. Use it at freeagentstore.online/a/mood-palette/ or embed via iframe."
+      },
       "sandbox": {
         "methods": [
           {
@@ -521,7 +600,27 @@
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
-      "type": "heuristic"
+      "type": "heuristic",
+      "api": {
+        "imports": "import { matchPattern, buildFromDescription, PATTERNS } from '@freeagentstore/regex-builder'",
+        "functions": [
+          {
+            "name": "matchPattern",
+            "signature": "matchPattern(query: string): Pattern[]",
+            "example": "const results = matchPattern('email')\n// [{ name: 'Email', regex: '[a-zA-Z0-9._%+-]+@...', flags: 'g', examples: [...] }]"
+          },
+          {
+            "name": "buildFromDescription",
+            "signature": "buildFromDescription(query: string): string | null",
+            "example": "const regex = buildFromDescription('starts with A, 3 digits, ends with Z')\n// '^A\\\\d{3}Z$'"
+          },
+          {
+            "name": "PATTERNS",
+            "signature": "PATTERNS: Pattern[] (30+ built-in patterns)",
+            "example": "PATTERNS.forEach(p => console.log(p.name, p.regex))\n// Email, URL, Phone (US), IPv4, UUID, ..."
+          }
+        ]
+      }
     },
     {
       "id": "json-formatter",
@@ -538,7 +637,42 @@
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
-      "type": "heuristic"
+      "type": "heuristic",
+      "api": {
+        "imports": "import { formatJson, minifyJson, validateJson, queryJson, diffJson, jsonToTypes } from '@freeagentstore/json-formatter'",
+        "functions": [
+          {
+            "name": "formatJson",
+            "signature": "formatJson(input: string, indent?: number): { result: string, error?: string }",
+            "example": "const { result } = formatJson('{\"a\":1}')\n// '{\\n  \"a\": 1\\n}'"
+          },
+          {
+            "name": "minifyJson",
+            "signature": "minifyJson(input: string): { result: string, error?: string }",
+            "example": "const { result } = minifyJson('{  \"a\":  1  }')\n// '{\"a\":1}'"
+          },
+          {
+            "name": "validateJson",
+            "signature": "validateJson(input: string): { valid: boolean, error?: string, line?: number, col?: number }",
+            "example": "validateJson('{\"a\": 1}') // { valid: true }\nvalidateJson('{bad}')    // { valid: false, error: '...' }"
+          },
+          {
+            "name": "queryJson",
+            "signature": "queryJson(data: any, path: string): any",
+            "example": "queryJson({ users: [{ name: 'Alice' }] }, 'users[0].name')\n// 'Alice'"
+          },
+          {
+            "name": "diffJson",
+            "signature": "diffJson(a: string, b: string): DiffLine[]",
+            "example": "const diff = diffJson('{\"a\":1}', '{\"a\":2}')\n// [{ type: 'removed', text: '  \"a\": 1' }, { type: 'added', text: '  \"a\": 2' }]"
+          },
+          {
+            "name": "jsonToTypes",
+            "signature": "jsonToTypes(data: any, name?: string): string",
+            "example": "jsonToTypes({ id: 1, name: 'Alice' })\n// 'interface Root {\\n  id: number;\\n  name: string;\\n}'"
+          }
+        ]
+      }
     },
     {
       "id": "hash-generator",
@@ -555,7 +689,42 @@
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
-      "type": "heuristic"
+      "type": "heuristic",
+      "api": {
+        "imports": "import { sha256, md5, hmacSha256, base64Encode, base64Decode, generateUuid, generatePassword, decodeJwt } from '@freeagentstore/hash-generator'",
+        "functions": [
+          {
+            "name": "sha256",
+            "signature": "sha256(input: string): Promise<string>",
+            "example": "const hash = await sha256('hello world')\n// 'b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9'"
+          },
+          {
+            "name": "md5",
+            "signature": "md5(input: string): string",
+            "example": "const hash = md5('hello world')\n// '5eb63bbbe01eeed093cb22bb8f5acdc3'"
+          },
+          {
+            "name": "hmacSha256",
+            "signature": "hmacSha256(key: string, message: string): Promise<string>",
+            "example": "const sig = await hmacSha256('secret', 'message')\n// '8b5f48702995c1598c573db1e21866a9b825d4a794d169d7060a03605796360b'"
+          },
+          {
+            "name": "generateUuid",
+            "signature": "generateUuid(): string",
+            "example": "const id = generateUuid()\n// '550e8400-e29b-41d4-a716-446655440000'"
+          },
+          {
+            "name": "generatePassword",
+            "signature": "generatePassword(length: number, options: PasswordOptions): string",
+            "example": "const pw = generatePassword(16, { uppercase: true, lowercase: true, digits: true, symbols: true })\n// 'aB3$kL9!mN2@pQ7&'"
+          },
+          {
+            "name": "decodeJwt",
+            "signature": "decodeJwt(token: string): { header: any, payload: any, signature: string } | null",
+            "example": "const jwt = decodeJwt('eyJhbG...')\n// { header: { alg: 'HS256' }, payload: { sub: '1234' }, signature: '...' }"
+          }
+        ]
+      }
     },
     {
       "id": "steering",
@@ -572,7 +741,16 @@
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
-      "type": "heuristic"
+      "type": "heuristic",
+      "api": {
+        "imports": "import { createAgent, seek, flee, flock, applyForce } from '@freeagentstore/steering'",
+        "functions": [
+          { "name": "seek", "signature": "seek(agent: Agent, target: Vec2): Vec2", "example": "const force = seek(agent, { x: 100, y: 200 })\napplyForce(agent, force, dt)" },
+          { "name": "flee", "signature": "flee(agent: Agent, target: Vec2, range?: number): Vec2", "example": "const force = flee(agent, predatorPos, 150)" },
+          { "name": "flock", "signature": "flock(agent: Agent, neighbors: Agent[], weights?): Vec2", "example": "const neighbors = getNeighbors(agent, allAgents, 100)\nconst force = flock(agent, neighbors)" },
+          { "name": "createAgent", "signature": "createAgent(x, y, maxSpeed?, maxForce?): Agent", "example": "const boid = createAgent(50, 50, 3, 0.1)" }
+        ]
+      }
     },
     {
       "id": "behavior-tree",
@@ -589,7 +767,13 @@
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
-      "type": "heuristic"
+      "type": "heuristic",
+      "api": {
+        "imports": "import { BT, Sequence, Selector, Wait, MoveTo } from '@freeagentstore/behavior-tree'",
+        "functions": [
+          { "name": "BT.selector", "signature": "BT.selector(name): Builder", "example": "const tree = BT.selector('root')\n  .sequence('attack')\n    .leaf('inRange', IsInRange('player', 50))\n    .leaf('attack', PlayAnimation('attack'))\n  .end()\n  .leaf('patrol', Patrol())\n.build()" }
+        ]
+      }
     },
     {
       "id": "physics-sim",
@@ -606,7 +790,15 @@
       "desktopOnly": false,
       "offlineCapable": true,
       "backends": [],
-      "type": "heuristic"
+      "type": "heuristic",
+      "api": {
+        "imports": "import { createWorld, createCloth, step } from '@freeagentstore/physics-sim'",
+        "functions": [
+          { "name": "createWorld", "signature": "createWorld(): PhysicsWorld", "example": "const world = createWorld()" },
+          { "name": "createCloth", "signature": "createCloth(x, y, cols, rows, spacing, pinTop?): { particles, constraints }", "example": "const cloth = createCloth(100, 50, 20, 15, 10, true)" },
+          { "name": "step", "signature": "step(world, dt, gravity, iterations): void", "example": "step(world, 1/60, { x: 0, y: 980 }, 3)" }
+        ]
+      }
     },
     {
       "id": "date-parser",
@@ -624,7 +816,22 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
-      "evolution": { "versions": 1, "examples": 500, "accuracy": 92 }
+      "evolution": { "versions": 1, "examples": 500, "accuracy": 92 },
+      "api": {
+        "imports": "import { parseDate, formatRelative } from '@freeagentstore/date-parser'",
+        "functions": [
+          {
+            "name": "parseDate",
+            "signature": "parseDate(input: string, now?: Date): ParsedDate | null",
+            "example": "const d = parseDate('next tuesday')\n// { date: Date, iso: '2026-06-09', formatted: 'Tuesday, June 9, 2026', relative: 'in 4 days', confidence: 0.95 }"
+          },
+          {
+            "name": "formatRelative",
+            "signature": "formatRelative(date: Date, now?: Date): string",
+            "example": "formatRelative(new Date('2026-06-09')) // 'in 4 days'"
+          }
+        ]
+      }
     },
     {
       "id": "emotion-detector",
@@ -642,7 +849,17 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
-      "evolution": { "versions": 1, "examples": 1000, "accuracy": 82 }
+      "evolution": { "versions": 1, "examples": 1000, "accuracy": 82 },
+      "api": {
+        "imports": "import { detectEmotions } from '@freeagentstore/emotion-detector'",
+        "functions": [
+          {
+            "name": "detectEmotions",
+            "signature": "detectEmotions(text: string): EmotionResult",
+            "example": "const result = detectEmotions('I am so happy today!')\n// { primary: 'joy', secondary: 'anticipation', compound: 'optimism', scores: { joy: 0.8, ... }, confidence: 0.85, valence: 0.7, arousal: 0.6 }"
+          }
+        ]
+      }
     },
     {
       "id": "language-detector",
@@ -660,7 +877,17 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
-      "evolution": { "versions": 1, "examples": 5000, "accuracy": 95 }
+      "evolution": { "versions": 1, "examples": 5000, "accuracy": 95 },
+      "api": {
+        "imports": "import { detectLanguage } from '@freeagentstore/language-detector'",
+        "functions": [
+          {
+            "name": "detectLanguage",
+            "signature": "detectLanguage(text: string): DetectionResult",
+            "example": "const result = detectLanguage('Bonjour le monde')\n// { language: 'fr', languageName: 'French', confidence: 0.96, scores: [...] }"
+          }
+        ]
+      }
     },
     {
       "id": "address-parser",
@@ -678,7 +905,17 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
-      "evolution": { "versions": 1, "examples": 2000, "accuracy": 89 }
+      "evolution": { "versions": 1, "examples": 2000, "accuracy": 89 },
+      "api": {
+        "imports": "import { parseAddress } from '@freeagentstore/address-parser'",
+        "functions": [
+          {
+            "name": "parseAddress",
+            "signature": "parseAddress(input: string): ParsedAddress | null",
+            "example": "const result = parseAddress('123 Main St Apt 4B, San Francisco, CA 94102')\n// { street: '123 Main St', unit: 'Apt 4B', city: 'San Francisco', state: 'CA', zip: '94102', format: 'us' }"
+          }
+        ]
+      }
     },
     {
       "id": "email-classifier",
@@ -696,7 +933,17 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
-      "evolution": { "versions": 1, "examples": 3000, "accuracy": 87 }
+      "evolution": { "versions": 1, "examples": 3000, "accuracy": 87 },
+      "api": {
+        "imports": "import { classifyEmail } from '@freeagentstore/email-classifier'",
+        "functions": [
+          {
+            "name": "classifyEmail",
+            "signature": "classifyEmail(subject: string, body: string): ClassificationResult",
+            "example": "const result = classifyEmail('Your order has shipped', 'Tracking: 1Z999...')\n// { category: 'transactional', confidence: 0.94, signals: ['shipping', 'tracking'] }"
+          }
+        ]
+      }
     },
     {
       "id": "name-parser",
@@ -714,7 +961,17 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
-      "evolution": { "versions": 1, "examples": 1500, "accuracy": 88 }
+      "evolution": { "versions": 1, "examples": 1500, "accuracy": 88 },
+      "api": {
+        "imports": "import { parseName } from '@freeagentstore/name-parser'",
+        "functions": [
+          {
+            "name": "parseName",
+            "signature": "parseName(input: string): ParsedName",
+            "example": "const result = parseName('Dr. Maria Garcia-Lopez Jr.')\n// { prefix: 'Dr.', first: 'Maria', last: 'Garcia-Lopez', suffix: 'Jr.', format: 'hispanic' }"
+          }
+        ]
+      }
     },
     {
       "id": "profanity-filter",
@@ -732,7 +989,14 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
-      "evolution": { "versions": 1, "examples": 5000, "accuracy": 91 }
+      "evolution": { "versions": 1, "examples": 5000, "accuracy": 91 },
+      "api": {
+        "imports": "import { checkProfanity, cleanText } from '@freeagentstore/profanity-filter'",
+        "functions": [
+          { "name": "checkProfanity", "signature": "checkProfanity(text: string): FilterResult", "example": "const result = checkProfanity('What the hell')\n// { flagged: true, severity: 'mild', matches: [...], cleaned: 'What the ***' }" },
+          { "name": "cleanText", "signature": "cleanText(text: string): string", "example": "cleanText('What the hell') // 'What the ***'" }
+        ]
+      }
     },
     {
       "id": "name-generator",
@@ -750,7 +1014,14 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
-      "evolution": { "versions": 1, "examples": 10000 }
+      "evolution": { "versions": 1, "examples": 10000 },
+      "api": {
+        "imports": "import { generateName, generateBatch } from '@freeagentstore/name-generator'",
+        "functions": [
+          { "name": "generateName", "signature": "generateName(options: GeneratorOptions): GeneratedName", "example": "const name = generateName({ genre: 'fantasy', race: 'elf', gender: 'female' })\n// { name: 'Aelindra', surname: 'Thornwhisper', full: 'Aelindra Thornwhisper', epithet: 'the Wise' }" },
+          { "name": "generateBatch", "signature": "generateBatch(options, count): GeneratedName[]", "example": "const names = generateBatch({ genre: 'scifi' }, 10)" }
+        ]
+      }
     },
     {
       "id": "code-detector",
@@ -768,7 +1039,13 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
-      "evolution": { "versions": 1, "examples": 8000, "accuracy": 91 }
+      "evolution": { "versions": 1, "examples": 8000, "accuracy": 91 },
+      "api": {
+        "imports": "import { detectLanguage } from '@freeagentstore/code-detector'",
+        "functions": [
+          { "name": "detectLanguage", "signature": "detectLanguage(code: string): DetectionResult", "example": "const result = detectLanguage('const x: number = 42')\n// { language: 'TypeScript', languageId: 'typescript', confidence: 0.92, fileExtension: '.ts' }" }
+        ]
+      }
     }
   ]
 }

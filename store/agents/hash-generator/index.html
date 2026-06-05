@@ -160,12 +160,57 @@
         <!-- Use this agent -->
         <div class="section">
           <h2>Use this agent</h2>
-          <p style="margin-bottom:0.75rem">Add to any app via npm or import directly from URL — no install needed.</p>
-          <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1rem;font-family:monospace;font-size:0.82rem;overflow-x:auto">
-            <div style="color:var(--muted-soft);margin-bottom:0.5rem"># npm / pnpm</div>
-            <div>pnpm add @freeagentstore/hash-generator</div>
-            <div style="color:var(--muted-soft);margin-top:0.75rem"># or import directly (zero install)</div>
-            <div style="color:#a78bfa">import { ... } from 'https://freeagentstore.online/pkg/hash-generator/index.js'</div>
+          <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1rem;font-family:monospace;font-size:0.82rem;overflow-x:auto;margin-bottom:1rem">
+            <div style="color:#a78bfa">import { sha256, md5, hmacSha256, base64Encode, base64Decode, generateUuid, generatePassword, decodeJwt } from '@freeagentstore/hash-generator'</div>
+          </div>
+          <div style="margin-bottom:1.25rem">
+            <h3 style="font-family:var(--font-body);font-size:0.9rem;font-weight:600;margin-bottom:0.4rem;color:var(--ink)">sha256</h3>
+            <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0.75rem;font-family:monospace;font-size:0.8rem;overflow-x:auto;margin-bottom:0.35rem">
+              <div style="color:var(--muted)">sha256(input: string): Promise<string></div>
+            </div>
+            <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0.75rem;font-family:monospace;font-size:0.8rem;overflow-x:auto;white-space:pre-wrap">const hash = await sha256('hello world')
+// 'b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9'</div>
+          </div><div style="margin-bottom:1.25rem">
+            <h3 style="font-family:var(--font-body);font-size:0.9rem;font-weight:600;margin-bottom:0.4rem;color:var(--ink)">md5</h3>
+            <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0.75rem;font-family:monospace;font-size:0.8rem;overflow-x:auto;margin-bottom:0.35rem">
+              <div style="color:var(--muted)">md5(input: string): string</div>
+            </div>
+            <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0.75rem;font-family:monospace;font-size:0.8rem;overflow-x:auto;white-space:pre-wrap">const hash = md5('hello world')
+// '5eb63bbbe01eeed093cb22bb8f5acdc3'</div>
+          </div><div style="margin-bottom:1.25rem">
+            <h3 style="font-family:var(--font-body);font-size:0.9rem;font-weight:600;margin-bottom:0.4rem;color:var(--ink)">hmacSha256</h3>
+            <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0.75rem;font-family:monospace;font-size:0.8rem;overflow-x:auto;margin-bottom:0.35rem">
+              <div style="color:var(--muted)">hmacSha256(key: string, message: string): Promise<string></div>
+            </div>
+            <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0.75rem;font-family:monospace;font-size:0.8rem;overflow-x:auto;white-space:pre-wrap">const sig = await hmacSha256('secret', 'message')
+// '8b5f48702995c1598c573db1e21866a9b825d4a794d169d7060a03605796360b'</div>
+          </div><div style="margin-bottom:1.25rem">
+            <h3 style="font-family:var(--font-body);font-size:0.9rem;font-weight:600;margin-bottom:0.4rem;color:var(--ink)">generateUuid</h3>
+            <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0.75rem;font-family:monospace;font-size:0.8rem;overflow-x:auto;margin-bottom:0.35rem">
+              <div style="color:var(--muted)">generateUuid(): string</div>
+            </div>
+            <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0.75rem;font-family:monospace;font-size:0.8rem;overflow-x:auto;white-space:pre-wrap">const id = generateUuid()
+// '550e8400-e29b-41d4-a716-446655440000'</div>
+          </div><div style="margin-bottom:1.25rem">
+            <h3 style="font-family:var(--font-body);font-size:0.9rem;font-weight:600;margin-bottom:0.4rem;color:var(--ink)">generatePassword</h3>
+            <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0.75rem;font-family:monospace;font-size:0.8rem;overflow-x:auto;margin-bottom:0.35rem">
+              <div style="color:var(--muted)">generatePassword(length: number, options: PasswordOptions): string</div>
+            </div>
+            <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0.75rem;font-family:monospace;font-size:0.8rem;overflow-x:auto;white-space:pre-wrap">const pw = generatePassword(16, { uppercase: true, lowercase: true, digits: true, symbols: true })
+// 'aB3$kL9!mN2@pQ7&'</div>
+          </div><div style="margin-bottom:1.25rem">
+            <h3 style="font-family:var(--font-body);font-size:0.9rem;font-weight:600;margin-bottom:0.4rem;color:var(--ink)">decodeJwt</h3>
+            <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0.75rem;font-family:monospace;font-size:0.8rem;overflow-x:auto;margin-bottom:0.35rem">
+              <div style="color:var(--muted)">decodeJwt(token: string): { header: any, payload: any, signature: string } | null</div>
+            </div>
+            <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0.75rem;font-family:monospace;font-size:0.8rem;overflow-x:auto;white-space:pre-wrap">const jwt = decodeJwt('eyJhbG...')
+// { header: { alg: 'HS256' }, payload: { sub: '1234' }, signature: '...' }</div>
+          </div>
+          <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0.75rem;font-family:monospace;font-size:0.78rem;overflow-x:auto;color:var(--muted-soft)">
+            <div style="margin-bottom:0.35rem"># npm / pnpm</div>
+            <div style="color:var(--muted)">pnpm add @freeagentstore/hash-generator</div>
+            <div style="margin-top:0.5rem"># or import directly (zero install)</div>
+            <div style="color:var(--muted)">import { ... } from 'https://freeagentstore.online/pkg/hash-generator/index.js'</div>
           </div>
         </div>
 

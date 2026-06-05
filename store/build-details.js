@@ -188,13 +188,39 @@ function generateDetailPage(agent) {
         <!-- Use this agent -->
         <div class="section">
           <h2>Use this agent</h2>
-          <p style="margin-bottom:0.75rem">Add to any app via npm or import directly from URL — no install needed.</p>
+          ${agent.api?.functions?.length
+            ? `<div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1rem;font-family:monospace;font-size:0.82rem;overflow-x:auto;margin-bottom:1rem">
+            <div style="color:#a78bfa">${agent.api.imports}</div>
+          </div>
+          ${agent.api.functions.map(fn => `<div style="margin-bottom:1.25rem">
+            <h3 style="font-family:var(--font-body);font-size:0.9rem;font-weight:600;margin-bottom:0.4rem;color:var(--ink)">${fn.name}</h3>
+            <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0.75rem;font-family:monospace;font-size:0.8rem;overflow-x:auto;margin-bottom:0.35rem">
+              <div style="color:var(--muted)">${fn.signature}</div>
+            </div>
+            <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0.75rem;font-family:monospace;font-size:0.8rem;overflow-x:auto;white-space:pre-wrap">${fn.example}</div>
+          </div>`).join('')}
+          <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0.75rem;font-family:monospace;font-size:0.78rem;overflow-x:auto;color:var(--muted-soft)">
+            <div style="margin-bottom:0.35rem"># npm / pnpm</div>
+            <div style="color:var(--muted)">pnpm add ${agent.npmPkg ?? '@freeagentstore/' + agent.id}</div>
+            <div style="margin-top:0.5rem"># or import directly (zero install)</div>
+            <div style="color:var(--muted)">import { ... } from '${agent.esmUrl ?? 'https://freeagentstore.online/pkg/' + agent.id + '/index.js'}'</div>
+          </div>`
+            : agent.api?.note
+            ? `<p style="color:var(--muted);margin-bottom:0.75rem">${agent.api.note}</p>
+          <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0.75rem;font-family:monospace;font-size:0.78rem;overflow-x:auto;color:var(--muted-soft)">
+            <div style="margin-bottom:0.35rem"># npm / pnpm</div>
+            <div style="color:var(--muted)">pnpm add ${agent.npmPkg ?? '@freeagentstore/' + agent.id}</div>
+            <div style="margin-top:0.5rem"># or import directly (zero install)</div>
+            <div style="color:var(--muted)">import { ... } from '${agent.esmUrl ?? 'https://freeagentstore.online/pkg/' + agent.id + '/index.js'}'</div>
+          </div>`
+            : `<p style="margin-bottom:0.75rem">Add to any app via npm or import directly from URL — no install needed.</p>
           <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1rem;font-family:monospace;font-size:0.82rem;overflow-x:auto">
             <div style="color:var(--muted-soft);margin-bottom:0.5rem"># npm / pnpm</div>
             <div>pnpm add ${agent.npmPkg ?? '@freeagentstore/' + agent.id}</div>
             <div style="color:var(--muted-soft);margin-top:0.75rem"># or import directly (zero install)</div>
             <div style="color:#a78bfa">import { ... } from '${agent.esmUrl ?? 'https://freeagentstore.online/pkg/' + agent.id + '/index.js'}'</div>
-          </div>
+          </div>`
+          }
         </div>
 
         <!-- Apps using this agent -->

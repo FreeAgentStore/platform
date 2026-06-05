@@ -160,12 +160,57 @@
         <!-- Use this agent -->
         <div class="section">
           <h2>Use this agent</h2>
-          <p style="margin-bottom:0.75rem">Add to any app via npm or import directly from URL — no install needed.</p>
-          <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1rem;font-family:monospace;font-size:0.82rem;overflow-x:auto">
-            <div style="color:var(--muted-soft);margin-bottom:0.5rem"># npm / pnpm</div>
-            <div>pnpm add @freeagentstore/json-formatter</div>
-            <div style="color:var(--muted-soft);margin-top:0.75rem"># or import directly (zero install)</div>
-            <div style="color:#a78bfa">import { ... } from 'https://freeagentstore.online/pkg/json-formatter/index.js'</div>
+          <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1rem;font-family:monospace;font-size:0.82rem;overflow-x:auto;margin-bottom:1rem">
+            <div style="color:#a78bfa">import { formatJson, minifyJson, validateJson, queryJson, diffJson, jsonToTypes } from '@freeagentstore/json-formatter'</div>
+          </div>
+          <div style="margin-bottom:1.25rem">
+            <h3 style="font-family:var(--font-body);font-size:0.9rem;font-weight:600;margin-bottom:0.4rem;color:var(--ink)">formatJson</h3>
+            <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0.75rem;font-family:monospace;font-size:0.8rem;overflow-x:auto;margin-bottom:0.35rem">
+              <div style="color:var(--muted)">formatJson(input: string, indent?: number): { result: string, error?: string }</div>
+            </div>
+            <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0.75rem;font-family:monospace;font-size:0.8rem;overflow-x:auto;white-space:pre-wrap">const { result } = formatJson('{"a":1}')
+// '{\n  "a": 1\n}'</div>
+          </div><div style="margin-bottom:1.25rem">
+            <h3 style="font-family:var(--font-body);font-size:0.9rem;font-weight:600;margin-bottom:0.4rem;color:var(--ink)">minifyJson</h3>
+            <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0.75rem;font-family:monospace;font-size:0.8rem;overflow-x:auto;margin-bottom:0.35rem">
+              <div style="color:var(--muted)">minifyJson(input: string): { result: string, error?: string }</div>
+            </div>
+            <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0.75rem;font-family:monospace;font-size:0.8rem;overflow-x:auto;white-space:pre-wrap">const { result } = minifyJson('{  "a":  1  }')
+// '{"a":1}'</div>
+          </div><div style="margin-bottom:1.25rem">
+            <h3 style="font-family:var(--font-body);font-size:0.9rem;font-weight:600;margin-bottom:0.4rem;color:var(--ink)">validateJson</h3>
+            <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0.75rem;font-family:monospace;font-size:0.8rem;overflow-x:auto;margin-bottom:0.35rem">
+              <div style="color:var(--muted)">validateJson(input: string): { valid: boolean, error?: string, line?: number, col?: number }</div>
+            </div>
+            <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0.75rem;font-family:monospace;font-size:0.8rem;overflow-x:auto;white-space:pre-wrap">validateJson('{"a": 1}') // { valid: true }
+validateJson('{bad}')    // { valid: false, error: '...' }</div>
+          </div><div style="margin-bottom:1.25rem">
+            <h3 style="font-family:var(--font-body);font-size:0.9rem;font-weight:600;margin-bottom:0.4rem;color:var(--ink)">queryJson</h3>
+            <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0.75rem;font-family:monospace;font-size:0.8rem;overflow-x:auto;margin-bottom:0.35rem">
+              <div style="color:var(--muted)">queryJson(data: any, path: string): any</div>
+            </div>
+            <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0.75rem;font-family:monospace;font-size:0.8rem;overflow-x:auto;white-space:pre-wrap">queryJson({ users: [{ name: 'Alice' }] }, 'users[0].name')
+// 'Alice'</div>
+          </div><div style="margin-bottom:1.25rem">
+            <h3 style="font-family:var(--font-body);font-size:0.9rem;font-weight:600;margin-bottom:0.4rem;color:var(--ink)">diffJson</h3>
+            <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0.75rem;font-family:monospace;font-size:0.8rem;overflow-x:auto;margin-bottom:0.35rem">
+              <div style="color:var(--muted)">diffJson(a: string, b: string): DiffLine[]</div>
+            </div>
+            <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0.75rem;font-family:monospace;font-size:0.8rem;overflow-x:auto;white-space:pre-wrap">const diff = diffJson('{"a":1}', '{"a":2}')
+// [{ type: 'removed', text: '  "a": 1' }, { type: 'added', text: '  "a": 2' }]</div>
+          </div><div style="margin-bottom:1.25rem">
+            <h3 style="font-family:var(--font-body);font-size:0.9rem;font-weight:600;margin-bottom:0.4rem;color:var(--ink)">jsonToTypes</h3>
+            <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0.75rem;font-family:monospace;font-size:0.8rem;overflow-x:auto;margin-bottom:0.35rem">
+              <div style="color:var(--muted)">jsonToTypes(data: any, name?: string): string</div>
+            </div>
+            <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0.75rem;font-family:monospace;font-size:0.8rem;overflow-x:auto;white-space:pre-wrap">jsonToTypes({ id: 1, name: 'Alice' })
+// 'interface Root {\n  id: number;\n  name: string;\n}'</div>
+          </div>
+          <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0.75rem;font-family:monospace;font-size:0.78rem;overflow-x:auto;color:var(--muted-soft)">
+            <div style="margin-bottom:0.35rem"># npm / pnpm</div>
+            <div style="color:var(--muted)">pnpm add @freeagentstore/json-formatter</div>
+            <div style="margin-top:0.5rem"># or import directly (zero install)</div>
+            <div style="color:var(--muted)">import { ... } from 'https://freeagentstore.online/pkg/json-formatter/index.js'</div>
           </div>
         </div>
 
