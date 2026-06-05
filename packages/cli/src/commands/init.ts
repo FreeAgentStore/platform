@@ -1,15 +1,15 @@
+import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { execSync } from 'node:child_process';
 
 const TEMPLATES: Record<string, string> = {
   standalone: 'template-agent-standalone',
-  heuristic: 'template-agent-standalone',    // alias
+  heuristic: 'template-agent-standalone', // alias
   'built-in-ai': 'template-agent-builtin-ai',
   'builtin-ai': 'template-agent-builtin-ai', // alias
-  nano: 'template-agent-builtin-ai',          // alias
+  nano: 'template-agent-builtin-ai', // alias
   model: 'template-agent-model',
-  onnx: 'template-agent-model',               // alias
+  onnx: 'template-agent-model', // alias
 };
 
 export async function init(agentId: string, _templateName: string) {
@@ -17,7 +17,11 @@ export async function init(agentId: string, _templateName: string) {
   const TEMPLATE_DIR = TEMPLATES[templateKey];
   if (!TEMPLATE_DIR) {
     console.error(`Unknown template: ${_templateName}`);
-    console.error(`Available: ${Object.keys(TEMPLATES).filter(k => !k.includes('-')).join(', ')}`);
+    console.error(
+      `Available: ${Object.keys(TEMPLATES)
+        .filter((k) => !k.includes('-'))
+        .join(', ')}`,
+    );
     process.exit(1);
   }
   const targetDir = path.resolve(agentId);

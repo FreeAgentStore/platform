@@ -1,6 +1,6 @@
+import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { execSync } from 'node:child_process';
 
 const ORG = 'FreeAgentStore';
 const DOMAIN = 'freeagentstore.online';
@@ -65,9 +65,15 @@ export async function publish(opts: { name?: string; category?: string }) {
   // Set remote
   try {
     execSync(`git remote get-url origin`, { cwd, stdio: 'pipe' });
-    execSync(`git remote set-url origin https://github.com/${ORG}/${agentId}.git`, { cwd, stdio: 'pipe' });
+    execSync(`git remote set-url origin https://github.com/${ORG}/${agentId}.git`, {
+      cwd,
+      stdio: 'pipe',
+    });
   } catch {
-    execSync(`git remote add origin https://github.com/${ORG}/${agentId}.git`, { cwd, stdio: 'pipe' });
+    execSync(`git remote add origin https://github.com/${ORG}/${agentId}.git`, {
+      cwd,
+      stdio: 'pipe',
+    });
   }
 
   // Push
@@ -96,7 +102,9 @@ export async function publish(opts: { name?: string; category?: string }) {
   } catch {
     console.log(`  Could not register route automatically.`);
     console.log(`  The deploy workflow will handle it, or run manually:`);
-    console.log(`  npx wrangler d1 execute fags --remote --command "INSERT OR IGNORE INTO routes (slug, zone, r2_prefix, store, hosted_on, created_at, updated_at) VALUES ('${agentId}', '${DOMAIN}', 'agents/${agentId}', 'agents', 'r2', strftime('%s','now'), strftime('%s','now'))"`);
+    console.log(
+      `  npx wrangler d1 execute fags --remote --command "INSERT OR IGNORE INTO routes (slug, zone, r2_prefix, store, hosted_on, created_at, updated_at) VALUES ('${agentId}', '${DOMAIN}', 'agents/${agentId}', 'agents', 'r2', strftime('%s','now'), strftime('%s','now'))"`,
+    );
   }
 
   console.log(`\nPublished!`);
@@ -108,7 +116,10 @@ export async function publish(opts: { name?: string; category?: string }) {
 function detectAgentId(): string | null {
   // Try git remote
   try {
-    const remote = execSync('git remote get-url origin', { encoding: 'utf-8', stdio: 'pipe' }).trim();
+    const remote = execSync('git remote get-url origin', {
+      encoding: 'utf-8',
+      stdio: 'pipe',
+    }).trim();
     const match = remote.match(/\/([a-z0-9-]+?)(?:\.git)?$/);
     if (match) return match[1];
   } catch {}
