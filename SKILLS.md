@@ -118,7 +118,7 @@ For heuristic agents, `models` is an empty array and `estimatedDownload` is `"0M
 ## Deployment
 
 ```
-Push to main → GitHub Actions → build → upload to R2 → live at {agent}.freeagentstore.online
+Push to main → GitHub Actions → build → upload to R2 → live at freeagentstore.online/a/{agent}/
 ```
 
 The host worker at `*.freeagentstore.online` reads the Host header, looks up the slug in D1, and serves from R2.

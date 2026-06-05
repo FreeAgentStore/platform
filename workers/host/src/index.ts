@@ -1,9 +1,19 @@
 /**
  * FreeAgentStore Host Worker
- * Serves agent apps from R2 via wildcard DNS.
- * Vendored from FAS host worker pattern.
  *
- * Flow: Host header → D1 lookup → R2 serve
+ * Path-based hosting — all agents served from the apex domain:
+ *   freeagentstore.online/a/{slug}/  → agent app
+ *   freeagentstore.online/console/   → creator console
+ *   freeagentstore.online/agents/{slug}/ → detail page
+ *   freeagentstore.online/            → store site
+ *
+ * No third-level subdomains for apps. This avoids cookie/PWA/SW isolation
+ * issues. MCP stays on mcp.freeagentstore.online (separate worker).
+ *
+ * R2 layout:
+ *   agents/{slug}/*  — agent app files
+ *   console/*        — console SPA
+ *   store/*          — store site + detail pages
  */
 
 export interface Env {
@@ -23,117 +33,103 @@ export default {
     const url = new URL(request.url);
     const host = request.headers.get('Host')?.toLowerCase().replace(/:\d+$/, '') ?? '';
 
-    // Only GET/HEAD
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       return new Response('Method Not Allowed', { status: 405 });
     }
 
-    // Apex → serve store site from R2 (store/ prefix)
-    if (host === 'freeagentstore.online' || host === 'www.freeagentstore.online') {
-      let storeKey = `store${url.pathname}`;
-      if (storeKey.endsWith('/')) storeKey += 'index.html';
-      if (!storeKey.split('/').pop()?.includes('.')) storeKey += '/index.html';
-
-      const object = await env.AGENTS.get(storeKey);
-      if (object) return respond(object, contentType(storeKey), false);
-      // Fallback to store index for unknown paths
-      const fallback = await env.AGENTS.get('store/index.html');
-      if (fallback) return respond(fallback, 'text/html; charset=utf-8', true);
-      return new Response('Store site not yet deployed', { status: 503 });
-    }
-
-    // Console → serve from R2 (console/ prefix)
-    if (host.startsWith('console.')) {
-      const key = `console${url.pathname === '/' ? '/index.html' : url.pathname}`;
-      const object = await env.AGENTS.get(key);
-      if (object) return respond(object, contentType(key), false);
-      const fallback = await env.AGENTS.get('console/index.html');
-      if (fallback) return respond(fallback, 'text/html; charset=utf-8', true);
-      return new Response('Console not deployed', { status: 503 });
-    }
-
-    // Reserved subdomains
+    // MCP subdomain — handled by separate worker (wrangler route)
+    // Reserved subdomains — 404
     if (host.startsWith('api.') || host.startsWith('admin.') ||
         host.startsWith('publish.') || host.startsWith('agent.') ||
         host.startsWith('create.')) {
       return new Response('Not Found', { status: 404 });
     }
 
-    // Resolve route from D1
-    const route = await resolveRoute(env.DB, host);
-    if (!route) {
-      return new Response('Agent not found', { status: 404 });
+    // Redirect old subdomain URLs to path-based: tts.freeagentstore.online → /a/tts/
+    if (host !== 'freeagentstore.online' && host !== 'www.freeagentstore.online' &&
+        !host.startsWith('mcp.') && host.endsWith('.freeagentstore.online')) {
+      const slug = host.split('.')[0];
+      return Response.redirect(`https://freeagentstore.online/a/${slug}${url.pathname}`, 301);
     }
 
-    // Build R2 key
+    // Everything below is on the apex: freeagentstore.online
     const pathname = url.pathname;
-    const r2Key = r2KeyFor(route, pathname);
 
-    // Check ETag for 304
-    const ifNoneMatch = request.headers.get('If-None-Match');
+    // ── /a/{slug}/ → serve agent from R2 ──────────────────────
+    const agentMatch = pathname.match(/^\/a\/([a-z0-9-]+)(\/.*)?$/);
+    if (agentMatch) {
+      const slug = agentMatch[1];
+      const subpath = agentMatch[2] || '/';
 
-    // Fetch from R2
-    const object = await env.AGENTS.get(r2Key);
+      // Verify route exists in D1
+      const route = await env.DB
+        .prepare('SELECT r2_prefix FROM routes WHERE slug = ? AND zone = ?')
+        .bind(slug, 'freeagentstore.online')
+        .first<{ r2_prefix: string }>();
 
-    if (!object) {
-      // SPA fallback: missing path with no extension → serve index.html
-      const ext = pathname.split('/').pop()?.includes('.') ?? false;
-      if (!ext && pathname !== '/') {
+      if (!route) return new Response('Agent not found', { status: 404 });
+
+      let r2Key = route.r2_prefix + subpath;
+      if (r2Key.endsWith('/')) r2Key += 'index.html';
+      if (!r2Key.split('/').pop()?.includes('.')) r2Key += '/index.html';
+
+      const object = await env.AGENTS.get(r2Key);
+      if (object) return respond(request, object, contentType(r2Key));
+
+      // SPA fallback
+      const hasExt = subpath.split('/').pop()?.includes('.') ?? false;
+      if (!hasExt) {
         const fallback = await env.AGENTS.get(`${route.r2_prefix}/index.html`);
-        if (fallback) {
-          return respond(fallback, 'text/html', true);
-        }
+        if (fallback) return respond(request, fallback, 'text/html; charset=utf-8');
       }
       return new Response('Not Found', { status: 404 });
     }
 
-    // 304 Not Modified
-    if (ifNoneMatch && object.httpEtag && etagsMatch(ifNoneMatch, object.httpEtag)) {
-      return new Response(null, { status: 304, headers: securityHeaders(pathname) });
+    // ── /console/ → serve console SPA from R2 ─────────────────
+    if (pathname.startsWith('/console')) {
+      const subpath = pathname.replace(/^\/console/, '') || '/';
+      let consoleKey = `console${subpath}`;
+      if (consoleKey.endsWith('/')) consoleKey += 'index.html';
+      if (!consoleKey.split('/').pop()?.includes('.')) consoleKey += '/index.html';
+
+      const object = await env.AGENTS.get(consoleKey);
+      if (object) return respond(request, object, contentType(consoleKey));
+      // SPA fallback
+      const fallback = await env.AGENTS.get('console/index.html');
+      if (fallback) return respond(request, fallback, 'text/html; charset=utf-8');
+      return new Response('Console not deployed', { status: 503 });
     }
 
-    const mime = contentType(r2Key);
-    return respond(object, mime, false);
+    // ── Everything else → store site from R2 ──────────────────
+    let storeKey = `store${pathname}`;
+    if (storeKey.endsWith('/')) storeKey += 'index.html';
+    if (!storeKey.split('/').pop()?.includes('.')) storeKey += '/index.html';
+
+    const object = await env.AGENTS.get(storeKey);
+    if (object) return respond(request, object, contentType(storeKey));
+
+    // Fallback to store index
+    const fallback = await env.AGENTS.get('store/index.html');
+    if (fallback) return respond(request, fallback, 'text/html; charset=utf-8');
+    return new Response('Store not deployed', { status: 503 });
   },
 };
 
-function respond(object: R2ObjectBody, mime: string, isFallback: boolean): Response {
-  const pathname = isFallback ? '/index.html' : '';
-  const headers = securityHeaders(pathname);
-  headers.set('Content-Type', mime);
-  headers.set('ETag', object.httpEtag);
-
-  // Cache: 60s for HTML, 1yr immutable for hashed assets
-  if (mime.startsWith('text/html')) {
-    headers.set('Cache-Control', 'public, max-age=60, must-revalidate');
-  } else {
-    headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+function respond(request: Request, object: R2ObjectBody, mime: string): Response {
+  // 304 Not Modified
+  const ifNoneMatch = request.headers.get('If-None-Match');
+  if (ifNoneMatch && object.httpEtag && etagsMatch(ifNoneMatch, object.httpEtag)) {
+    return new Response(null, { status: 304, headers: securityHeaders() });
   }
 
+  const headers = securityHeaders();
+  headers.set('Content-Type', mime);
+  headers.set('ETag', object.httpEtag);
+  headers.set('Cache-Control', mime.startsWith('text/html')
+    ? 'public, max-age=60, must-revalidate'
+    : 'public, max-age=31536000, immutable');
+
   return new Response(object.body, { headers });
-}
-
-async function resolveRoute(db: D1Database, host: string): Promise<Route | null> {
-  const parts = host.split('.');
-  if (parts.length < 3) return null;
-  const slug = parts[0];
-  const zone = parts.slice(1).join('.');
-
-  const result = await db
-    .prepare('SELECT slug, zone, r2_prefix, store FROM routes WHERE slug = ? AND zone = ?')
-    .bind(slug, zone)
-    .first<Route>();
-
-  return result ?? null;
-}
-
-function r2KeyFor(route: Route, pathname: string): string {
-  let key = route.r2_prefix + pathname;
-  // Directory → index.html
-  if (key.endsWith('/')) key += 'index.html';
-  // No extension at end → try /index.html
-  if (!key.split('/').pop()?.includes('.')) key += '/index.html';
-  return key;
 }
 
 function etagsMatch(header: string, etag: string): boolean {
@@ -150,14 +146,9 @@ function contentType(path: string): string {
     css: 'text/css; charset=utf-8',
     json: 'application/json; charset=utf-8',
     svg: 'image/svg+xml',
-    png: 'image/png',
-    jpg: 'image/jpeg',
-    jpeg: 'image/jpeg',
-    webp: 'image/webp',
-    gif: 'image/gif',
-    ico: 'image/x-icon',
-    woff: 'font/woff',
-    woff2: 'font/woff2',
+    png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg',
+    webp: 'image/webp', gif: 'image/gif', ico: 'image/x-icon',
+    woff: 'font/woff', woff2: 'font/woff2',
     wasm: 'application/wasm',
     txt: 'text/plain; charset=utf-8',
     xml: 'application/xml',
@@ -168,25 +159,21 @@ function contentType(path: string): string {
   return types[ext ?? ''] ?? 'application/octet-stream';
 }
 
-function securityHeaders(pathname?: string): Headers {
+function securityHeaders(): Headers {
   const h = new Headers();
   h.set('X-Content-Type-Options', 'nosniff');
   h.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   h.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-  h.set(
-    'Content-Security-Policy',
-    [
-      "default-src 'self' https: data: blob:",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
-      "style-src 'self' 'unsafe-inline' https:",
-      "img-src 'self' data: blob: https:",
-      "font-src 'self' data: https:",
-      "connect-src 'self' https: wss: http://localhost:11434",
-      "frame-src 'self' https:",
-      "frame-ancestors 'self' https://freeagentstore.online https://*.freeagentstore.online",
-      "base-uri 'self'",
-      "object-src 'none'",
-    ].join('; '),
-  );
+  h.set('Content-Security-Policy', [
+    "default-src 'self' https: data: blob:",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
+    "style-src 'self' 'unsafe-inline' https:",
+    "img-src 'self' data: blob: https:",
+    "font-src 'self' data: https:",
+    "connect-src 'self' https: wss: http://localhost:11434",
+    "frame-src 'self' https:",
+    "base-uri 'self'",
+    "object-src 'none'",
+  ].join('; '));
   return h;
 }

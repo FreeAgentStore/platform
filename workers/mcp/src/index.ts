@@ -94,7 +94,7 @@ export class FagsMcpAgent extends McpAgent<Env, unknown, McpProps> {
         if (!this.env.DB) return text("D1 not configured.");
         const rows = await this.env.DB.prepare("SELECT slug, r2_prefix, created_at FROM routes ORDER BY created_at DESC").all<{ slug: string; r2_prefix: string; created_at: number }>();
         if (!rows.results.length) return text("No agents published yet.");
-        const lines = rows.results.map((r) => `- **${r.slug}** → https://${r.slug}.freeagentstore.online`);
+        const lines = rows.results.map((r) => `- **${r.slug}** → https://freeagentstore.online/a/${r.slug}/`);
         return text(`${rows.results.length} agent(s) on the platform:\n\n${lines.join("\n")}`);
       }
     );
@@ -106,7 +106,7 @@ export class FagsMcpAgent extends McpAgent<Env, unknown, McpProps> {
       { agent_id: z.string().describe("Agent ID (e.g. 'tts', 'transcriber')") },
       async ({ agent_id }) => {
         const org = this.env.GITHUB_ORG;
-        const liveUrl = `https://${agent_id}.freeagentstore.online`;
+        const liveUrl = `https://freeagentstore.online/a/${agent_id}/`;
         const repoUrl = `https://github.com/${org}/${agent_id}`;
 
         let status = "Unknown";
@@ -161,7 +161,7 @@ export class FagsMcpAgent extends McpAgent<Env, unknown, McpProps> {
 
         // 1. Check if agent already exists
         const existing = await this.env.DB.prepare("SELECT slug FROM routes WHERE slug = ? AND zone = 'freeagentstore.online'").bind(agent_id).first();
-        if (existing) return text(`Agent **${agent_id}** already exists at https://${agent_id}.freeagentstore.online`);
+        if (existing) return text(`Agent **${agent_id}** already exists at https://freeagentstore.online/a/${agent_id}/`);
 
         // 2. Create GitHub repo
         const repo = await ghApi(`/orgs/${org}/repos`, {
@@ -185,7 +185,7 @@ export class FagsMcpAgent extends McpAgent<Env, unknown, McpProps> {
           `Agent **${agent_id}** created!`,
           ``,
           `Repo: https://github.com/${org}/${agent_id}`,
-          `URL: https://${agent_id}.freeagentstore.online (live after first deploy)`,
+          `URL: https://freeagentstore.online/a/${agent_id}/ (live after first deploy)`,
           ``,
           `Next steps:`,
           `1. Clone: \`git clone https://github.com/${org}/${agent_id}\``,
@@ -360,7 +360,7 @@ export class FagsMcpAgent extends McpAgent<Env, unknown, McpProps> {
           "- template-agent-llm — Phi-3/Gemma (text generation)",
           "",
           "## Deploy",
-          "Push to main → GitHub Actions → R2 → live at {agent}.freeagentstore.online",
+          "Push to main → GitHub Actions → R2 → live at freeagentstore.online/a/{agent}/",
           "",
           "## Compliance",
           "- MIT license required",
