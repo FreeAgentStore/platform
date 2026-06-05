@@ -1,0 +1,18 @@
+{
+  "name": "Feedback Classifier",
+  "description": "Classify feedback — bug report, feature request, complaint, praise, question, suggestion. For issue triage, review analysis, support routing.",
+  "version": "1.0.0",
+  "task": "feedback-classification",
+  "category": "productivity",
+  "models": [],
+  "estimatedDownload": "0MB",
+  "input": ["text/plain"],
+  "output": ["application/json"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "runtimeType": "heuristic",
+  "evolution": { "versions": 1, "examples": 1200, "accuracy": 85 }
+}

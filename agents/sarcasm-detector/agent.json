@@ -1,0 +1,18 @@
+{
+  "name": "Sarcasm Detector",
+  "description": "Detect sarcasm in text. Scores contradiction, exaggeration, and understatement patterns. Evolved from 1000 labeled examples.",
+  "version": "1.0.0",
+  "task": "sarcasm-detection",
+  "category": "text",
+  "models": [],
+  "estimatedDownload": "0MB",
+  "input": ["text/plain"],
+  "output": ["application/json"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "runtimeType": "heuristic",
+  "evolution": { "versions": 1, "examples": 1000, "accuracy": 72 }
+}

@@ -1,0 +1,18 @@
+{
+  "name": "Question Detector",
+  "description": "Classify questions — yes/no, open-ended, rhetorical, or not a question. For chatbots, FAQ matching, search intent.",
+  "version": "1.0.0",
+  "task": "question-detection",
+  "category": "text",
+  "models": [],
+  "estimatedDownload": "0MB",
+  "input": ["text/plain"],
+  "output": ["application/json"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "runtimeType": "heuristic",
+  "evolution": { "versions": 1, "examples": 900, "accuracy": 87 }
+}

@@ -1,0 +1,18 @@
+{
+  "name": "Intent Detector",
+  "description": "Detect text intent — question, command, statement, greeting, farewell, exclamation. Evolved keyword + structural scoring.",
+  "version": "1.0.0",
+  "task": "intent-detection",
+  "category": "text",
+  "models": [],
+  "estimatedDownload": "0MB",
+  "input": ["text/plain"],
+  "output": ["application/json"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "runtimeType": "heuristic",
+  "evolution": { "versions": 1, "examples": 800, "accuracy": 90 }
+}

@@ -1,0 +1,18 @@
+{
+  "name": "Topic Classifier",
+  "description": "Classify text topic — technology, business, health, sports, entertainment, science, politics, finance, education, travel. For content routing and feeds.",
+  "version": "1.0.0",
+  "task": "topic-classification",
+  "category": "text",
+  "models": [],
+  "estimatedDownload": "0MB",
+  "input": ["text/plain"],
+  "output": ["application/json"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "runtimeType": "heuristic",
+  "evolution": { "versions": 1, "examples": 2000, "accuracy": 83 }
+}
