@@ -130,15 +130,24 @@
     <section>
       <div class="toolbar">
         <button class="filter-btn active" onclick="filterAgents('all')">All</button>
+        <button class="filter-btn" onclick="filterAgents('text')">Text</button>
+        <button class="filter-btn" onclick="filterAgents('productivity')">Productivity</button>
+        <button class="filter-btn" onclick="filterAgents('code')">Code</button>
+        <button class="filter-btn" onclick="filterAgents('game-ai')">Game AI</button>
+        <button class="filter-btn" onclick="filterAgents('creative')">Creative</button>
         <button class="filter-btn" onclick="filterAgents('audio')">Audio</button>
         <button class="filter-btn" onclick="filterAgents('vision')">Vision</button>
-        <button class="filter-btn" onclick="filterAgents('text')">Text</button>
-        <button class="filter-btn" onclick="filterAgents('code')">Code</button>
-        <button class="filter-btn" onclick="filterAgents('productivity')">Productivity</button>
-        <button class="filter-btn" onclick="filterAgents('creative')">Creative</button>
         <button class="filter-btn" onclick="filterAgents('automation')">Automation</button>
-        <button class="filter-btn" onclick="filterAgents('game-ai')">Game AI</button>
         <span class="agent-count" id="agentCount">37 agents</span>
+      </div>
+      <div class="toolbar" style="margin-top:0.35rem;gap:0.35rem">
+        <span style="font-size:0.72rem;color:var(--muted-soft);font-weight:600;margin-right:0.25rem">TYPE</span>
+        <button class="filter-btn" style="font-size:0.7rem;padding:0.2rem 0.6rem" onclick="filterType('heuristic')">Heuristic</button>
+        <button class="filter-btn" style="font-size:0.7rem;padding:0.2rem 0.6rem" onclick="filterType('evolved')">Evolved</button>
+        <button class="filter-btn" style="font-size:0.7rem;padding:0.2rem 0.6rem" onclick="filterType('built-in-ai')">Built-in AI</button>
+        <button class="filter-btn" style="font-size:0.7rem;padding:0.2rem 0.6rem" onclick="filterType('model')">Model</button>
+        <button class="filter-btn" style="font-size:0.7rem;padding:0.2rem 0.6rem" onclick="filterType('game-ai')">Game AI</button>
+        <button class="filter-btn" style="font-size:0.7rem;padding:0.2rem 0.6rem;color:var(--muted-soft)" onclick="filterType('')">Clear</button>
       </div>
 
       <div class="agents-grid" id="agentsGrid">
@@ -820,12 +829,44 @@
   </footer>
 
   <script>
+    var _catFilter = 'all';
+    var _typeFilter = '';
+
     function filterAgents(cat) {
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === cat || (cat === 'all' && b.textContent === 'All')));
-      const cards = document.querySelectorAll('.agent-card');
-      let visible = 0;
-      cards.forEach(c => {
-        const show = cat === 'all' || c.dataset.category === cat;
+      _catFilter = cat;
+      // Update category button active states (first toolbar only)
+      var toolbars = document.querySelectorAll('.toolbar');
+      toolbars[0].querySelectorAll('.filter-btn').forEach(function(b) {
+        b.classList.toggle('active', b.textContent.toLowerCase() === cat || (cat === 'all' && b.textContent === 'All'));
+      });
+      applyFilters();
+    }
+
+    function filterType(type) {
+      _typeFilter = type;
+      // Update type button active states (second toolbar)
+      var toolbars = document.querySelectorAll('.toolbar');
+      if (toolbars[1]) {
+        toolbars[1].querySelectorAll('.filter-btn').forEach(function(b) {
+          b.classList.toggle('active', b.textContent.toLowerCase().replace(/\s+/g, '-') === type || b.textContent.toLowerCase() === type);
+        });
+      }
+      applyFilters();
+    }
+
+    function applyFilters() {
+      var cards = document.querySelectorAll('.agent-card');
+      var visible = 0;
+      cards.forEach(function(c) {
+        var catMatch = _catFilter === 'all' || c.dataset.category === _catFilter;
+        var typeMatch = true;
+        if (_typeFilter) {
+          // Read type from the first .tag in .agent-meta
+          var tag = c.querySelector('.agent-meta .tag');
+          var tagText = tag ? tag.textContent.toLowerCase().replace(/\s+/g, '-') : '';
+          typeMatch = tagText.indexOf(_typeFilter) >= 0;
+        }
+        var show = catMatch && typeMatch;
         c.style.display = show ? '' : 'none';
         if (show) visible++;
       });
