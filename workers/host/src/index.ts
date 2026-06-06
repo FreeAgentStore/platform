@@ -163,13 +163,13 @@ async function respondWithMirror(
   // 304 Not Modified — no body to inject into
   const ifNoneMatch = request.headers.get('If-None-Match');
   if (ifNoneMatch && object.httpEtag && etagsMatch(ifNoneMatch, object.httpEtag)) {
-    return new Response(null, { status: 304, headers: securityHeaders() });
+    return new Response(null, { status: 304, headers: agentSecurityHeaders() });
   }
 
   const html = await object.text();
   const injected = injectMirror(html, slug);
 
-  const headers = securityHeaders();
+  const headers = agentSecurityHeaders();
   headers.set('Content-Type', 'text/html; charset=utf-8');
   headers.set('ETag', object.httpEtag);
   headers.set('Cache-Control', 'public, max-age=60, must-revalidate');
@@ -229,24 +229,56 @@ function contentType(path: string): string {
   return types[ext ?? ''] ?? 'application/octet-stream';
 }
 
+/** Tight CSP for platform pages (store, console, mirror, detail pages). */
 function securityHeaders(): Headers {
+  return buildSecurityHeaders(false);
+}
+
+/** Relaxed CSP for agent apps (they need unsafe-eval for dynamic code). */
+function agentSecurityHeaders(): Headers {
+  return buildSecurityHeaders(true);
+}
+
+function buildSecurityHeaders(isAgent: boolean): Headers {
   const h = new Headers();
   h.set('X-Content-Type-Options', 'nosniff');
   h.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   h.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-  h.set(
-    'Content-Security-Policy',
-    [
-      "default-src 'self' https: data: blob:",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
-      "style-src 'self' 'unsafe-inline' https:",
-      "img-src 'self' data: blob: https:",
-      "font-src 'self' data: https:",
-      "connect-src 'self' https: wss: http://localhost:11434",
-      "frame-src 'self' https:",
-      "base-uri 'self'",
-      "object-src 'none'",
-    ].join('; '),
-  );
+  h.set('X-Frame-Options', 'SAMEORIGIN');
+  h.set('Permissions-Policy', 'camera=(), microphone=(self), geolocation=()');
+
+  if (isAgent) {
+    // Agents may use eval (heuristic code), inline scripts, and Ollama
+    h.set(
+      'Content-Security-Policy',
+      [
+        "default-src 'self' https: data: blob:",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
+        "style-src 'self' 'unsafe-inline' https:",
+        "img-src 'self' data: blob: https:",
+        "font-src 'self' data: https:",
+        "connect-src 'self' https: wss: http://localhost:11434",
+        "frame-src 'self' https:",
+        "base-uri 'self'",
+        "object-src 'none'",
+      ].join('; '),
+    );
+  } else {
+    // Platform pages — no eval, no localhost
+    h.set(
+      'Content-Security-Policy',
+      [
+        "default-src 'self' https: data: blob:",
+        "script-src 'self' 'unsafe-inline' https:",
+        "style-src 'self' 'unsafe-inline' https:",
+        "img-src 'self' data: blob: https:",
+        "font-src 'self' data: https:",
+        "connect-src 'self' https: wss:",
+        "frame-src 'self' https:",
+        "base-uri 'self'",
+        "object-src 'none'",
+      ].join('; '),
+    );
+  }
   return h;
 }

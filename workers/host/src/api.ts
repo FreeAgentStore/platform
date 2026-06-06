@@ -82,6 +82,41 @@ for (const p of PROVIDERS) HOST_TO_PROVIDER[p.host] = p.id;
 const PROVIDER_BY_ID: Record<string, Provider> = {};
 for (const p of PROVIDERS) PROVIDER_BY_ID[p.id] = p;
 
+// ── IP rate limiting (auth endpoints, in-memory per isolate) ─────────────────
+
+const AUTH_RATE_WINDOW = 60_000; // 1 minute
+const AUTH_RATE_MAX = 20; // max 20 auth requests per IP per minute
+const ipCounts = new Map<string, { count: number; resetAt: number }>();
+
+function checkIpRateLimit(request: Request): boolean {
+  const ip =
+    request.headers.get('CF-Connecting-IP') ??
+    request.headers.get('X-Forwarded-For')?.split(',')[0]?.trim() ??
+    'unknown';
+  const now = Date.now();
+  const entry = ipCounts.get(ip);
+
+  if (!entry || now > entry.resetAt) {
+    ipCounts.set(ip, { count: 1, resetAt: now + AUTH_RATE_WINDOW });
+    return true;
+  }
+
+  entry.count++;
+  if (entry.count > AUTH_RATE_MAX) return false;
+  return true;
+}
+
+// Periodic cleanup to prevent memory leak (runs at most once per minute)
+let lastCleanup = 0;
+function cleanupIpCounts(): void {
+  const now = Date.now();
+  if (now - lastCleanup < AUTH_RATE_WINDOW) return;
+  lastCleanup = now;
+  for (const [ip, entry] of ipCounts) {
+    if (now > entry.resetAt) ipCounts.delete(ip);
+  }
+}
+
 // ── CORS ─────────────────────────────────────────────────────────────────────
 
 const CORS_HEADERS: Record<string, string> = {
@@ -445,8 +480,33 @@ export async function handleApiRoute(request: Request, url: URL, env: Env): Prom
 
   const path = url.pathname;
 
+  // Periodic cleanup of IP rate limit map
+  cleanupIpCounts();
+
   try {
-    // ── Auth routes ────────────────────────────────────────────────────
+    // ── Health check (public, no auth) ────────────────────────────────
+    if (path === '/v1/health' && request.method === 'GET') {
+      const dbOk = await env.DB.prepare('SELECT 1')
+        .first()
+        .then(
+          () => true,
+          () => false,
+        );
+      const status = dbOk ? 200 : 503;
+      return jsonResponse(
+        {
+          status: dbOk ? 'healthy' : 'degraded',
+          db: dbOk ? 'ok' : 'error',
+          timestamp: new Date().toISOString(),
+        },
+        status,
+      );
+    }
+
+    // ── Auth routes (IP rate-limited) ───────────────────────────────────
+    if (path.startsWith('/v1/auth/') && !checkIpRateLimit(request)) {
+      return jsonResponse({ error: 'Too many requests. Try again later.' }, 429);
+    }
 
     // GET /v1/auth/github — Start GitHub OAuth
     if (path === '/v1/auth/github' && request.method === 'GET') {
@@ -747,8 +807,19 @@ export async function handleApiRoute(request: Request, url: URL, env: Env): Prom
     if (err instanceof AuthError) {
       return jsonResponse({ error: 'Unauthorized' }, 401);
     }
-    console.error('API route error:', err);
-    return jsonResponse({ error: 'Internal error', detail: String(err) }, 500);
+    const requestId = crypto.randomUUID().slice(0, 8);
+    console.error(
+      JSON.stringify({
+        level: 'error',
+        requestId,
+        method: request.method,
+        path,
+        error: String(err),
+        stack: err instanceof Error ? err.stack : undefined,
+        timestamp: new Date().toISOString(),
+      }),
+    );
+    return jsonResponse({ error: 'Internal error', requestId }, 500);
   }
 }
 

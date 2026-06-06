@@ -468,4 +468,82 @@ describe('handleApiRoute', () => {
     expect(ids).toContain('openrouter');
     expect(ids).toContain('together');
   });
+
+  // ── Health check ──
+  it('GET /v1/health returns healthy status', async () => {
+    const env = mockEnv({
+      DB: {
+        prepare: () => ({
+          bind: () => ({
+            first: async () => ({ '1': 1 }),
+            all: async () => ({ results: [] }),
+            run: async () => ({ meta: { changes: 0 } }),
+          }),
+          first: async () => ({ '1': 1 }),
+        }),
+      } as unknown as D1Database,
+    });
+    const res = await handleApiRoute(
+      makeRequest('GET', '/v1/health'),
+      new URL('https://freeagentstore.online/v1/health'),
+      env,
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { status: string; db: string; timestamp: string };
+    expect(body.status).toBe('healthy');
+    expect(body.db).toBe('ok');
+    expect(body.timestamp).toBeTruthy();
+  });
+
+  it('GET /v1/health returns degraded when DB fails', async () => {
+    const env = mockEnv({
+      DB: {
+        prepare: () => ({
+          bind: () => ({
+            first: async () => {
+              throw new Error('DB down');
+            },
+            all: async () => ({ results: [] }),
+            run: async () => ({ meta: { changes: 0 } }),
+          }),
+          first: async () => {
+            throw new Error('DB down');
+          },
+        }),
+      } as unknown as D1Database,
+    });
+    const res = await handleApiRoute(
+      makeRequest('GET', '/v1/health'),
+      new URL('https://freeagentstore.online/v1/health'),
+      env,
+    );
+    expect(res.status).toBe(503);
+    const body = (await res.json()) as { status: string; db: string };
+    expect(body.status).toBe('degraded');
+    expect(body.db).toBe('error');
+  });
+
+  // ── Error response includes requestId ──
+  it('500 errors include requestId', async () => {
+    const env = mockEnv({
+      DB: {
+        prepare: () => {
+          throw new Error('Simulated DB crash');
+        },
+      } as unknown as D1Database,
+    });
+    const signingKey = 'test-signing-key-for-hmac';
+    const token = await createTestToken('user-123', signingKey);
+    const res = await handleApiRoute(
+      makeRequest('GET', '/v1/keys/status', { headers: { Authorization: `Bearer ${token}` } }),
+      new URL('https://freeagentstore.online/v1/keys/status'),
+      env,
+    );
+    expect(res.status).toBe(500);
+    const body = (await res.json()) as { error: string; requestId: string };
+    expect(body.requestId).toBeTruthy();
+    expect(body.requestId).toHaveLength(8);
+    // Should NOT leak internal error details
+    expect(body.error).toBe('Internal error');
+  });
 });

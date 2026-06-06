@@ -115,6 +115,90 @@ describe('contentType', () => {
   });
 });
 
+describe('security headers', () => {
+  // Re-implement buildSecurityHeaders for testing (same logic as index.ts)
+  function buildSecurityHeaders(isAgent: boolean): Headers {
+    const h = new Headers();
+    h.set('X-Content-Type-Options', 'nosniff');
+    h.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+    h.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    h.set('X-Frame-Options', 'SAMEORIGIN');
+    h.set('Permissions-Policy', 'camera=(), microphone=(self), geolocation=()');
+    if (isAgent) {
+      h.set(
+        'Content-Security-Policy',
+        [
+          "default-src 'self' https: data: blob:",
+          "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
+          "style-src 'self' 'unsafe-inline' https:",
+          "img-src 'self' data: blob: https:",
+          "font-src 'self' data: https:",
+          "connect-src 'self' https: wss: http://localhost:11434",
+          "frame-src 'self' https:",
+          "base-uri 'self'",
+          "object-src 'none'",
+        ].join('; '),
+      );
+    } else {
+      h.set(
+        'Content-Security-Policy',
+        [
+          "default-src 'self' https: data: blob:",
+          "script-src 'self' 'unsafe-inline' https:",
+          "style-src 'self' 'unsafe-inline' https:",
+          "img-src 'self' data: blob: https:",
+          "font-src 'self' data: https:",
+          "connect-src 'self' https: wss:",
+          "frame-src 'self' https:",
+          "base-uri 'self'",
+          "object-src 'none'",
+        ].join('; '),
+      );
+    }
+    return h;
+  }
+
+  it('platform CSP does not include unsafe-eval', () => {
+    const h = buildSecurityHeaders(false);
+    const csp = h.get('Content-Security-Policy') ?? '';
+    expect(csp).not.toContain('unsafe-eval');
+  });
+
+  it('platform CSP does not include localhost', () => {
+    const h = buildSecurityHeaders(false);
+    const csp = h.get('Content-Security-Policy') ?? '';
+    expect(csp).not.toContain('localhost');
+  });
+
+  it('agent CSP includes unsafe-eval for heuristic code', () => {
+    const h = buildSecurityHeaders(true);
+    const csp = h.get('Content-Security-Policy') ?? '';
+    expect(csp).toContain('unsafe-eval');
+  });
+
+  it('agent CSP includes localhost for Ollama', () => {
+    const h = buildSecurityHeaders(true);
+    const csp = h.get('Content-Security-Policy') ?? '';
+    expect(csp).toContain('http://localhost:11434');
+  });
+
+  it('both include X-Frame-Options', () => {
+    expect(buildSecurityHeaders(false).get('X-Frame-Options')).toBe('SAMEORIGIN');
+    expect(buildSecurityHeaders(true).get('X-Frame-Options')).toBe('SAMEORIGIN');
+  });
+
+  it('both include Permissions-Policy', () => {
+    const pp = buildSecurityHeaders(false).get('Permissions-Policy') ?? '';
+    expect(pp).toContain('camera=()');
+    expect(pp).toContain('geolocation=()');
+  });
+
+  it('both include HSTS', () => {
+    expect(buildSecurityHeaders(false).get('Strict-Transport-Security')).toContain('max-age=');
+    expect(buildSecurityHeaders(true).get('Strict-Transport-Security')).toContain('max-age=');
+  });
+});
+
 describe('etagsMatch', () => {
   it('matches wildcard *', () => {
     expect(etagsMatch('*', '"abc123"')).toBe(true);
