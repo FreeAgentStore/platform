@@ -90,6 +90,13 @@
         <a href="https://github.com/FreeAgentStore">GitHub</a>
         <a href="https://proagentstore.online" class="pro">Pro</a>
       </nav>
+      <div id="auth-ui" style="margin-left:0.5rem;display:flex;align-items:center">
+        <a href="/v1/auth/github" id="auth-login" style="display:none;padding:0.35rem 0.85rem;border-radius:8px;border:1px solid var(--line);color:var(--muted);font-size:0.82rem;font-weight:600;text-decoration:none;transition:border-color 0.15s,color 0.15s">Sign in</a>
+        <div id="auth-user" style="display:none;align-items:center;gap:0.5rem">
+          <img id="auth-avatar" src="" alt="" style="width:28px;height:28px;border-radius:50%;border:1px solid var(--line)" />
+          <button id="auth-signout" style="padding:0.25rem 0.6rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;font-family:inherit">Sign out</button>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -299,6 +306,52 @@ const force = flock(agent, neighbors)</div>
         document.getElementById('readme-content').innerHTML = html;
         document.getElementById('readme').style.display = 'block';
       } catch {}
+    })();
+  </script>
+  <script>
+    (function() {
+      if (location.search.includes('login=success') && location.hash.startsWith('#session=')) {
+        var token = location.hash.slice('#session='.length);
+        if (token) {
+          localStorage.setItem('fags_session', JSON.stringify({ token: token }));
+          history.replaceState(null, '', location.pathname);
+          location.reload();
+          return;
+        }
+      }
+      var session = null;
+      try {
+        var stored = localStorage.getItem('fags_session');
+        if (stored) session = JSON.parse(stored);
+      } catch (_) {}
+      var loginEl = document.getElementById('auth-login');
+      var userEl = document.getElementById('auth-user');
+      var avatarEl = document.getElementById('auth-avatar');
+      var signoutEl = document.getElementById('auth-signout');
+      if (session && session.token) {
+        try {
+          var parts = session.token.split('.');
+          var payload = JSON.parse(atob(parts[0]));
+          if (payload.exp && payload.exp < Date.now() / 1000) {
+            localStorage.removeItem('fags_session');
+            session = null;
+          } else {
+            avatarEl.src = payload.avatar || '';
+            avatarEl.alt = payload.login || '';
+            userEl.style.display = 'flex';
+          }
+        } catch (_) {
+          localStorage.removeItem('fags_session');
+          session = null;
+        }
+      }
+      if (!session) loginEl.style.display = 'inline-block';
+      signoutEl.addEventListener('click', function() {
+        fetch('/v1/auth/logout', { method: 'POST' }).finally(function() {
+          localStorage.removeItem('fags_session');
+          location.reload();
+        });
+      });
     })();
   </script>
 </body>

@@ -411,36 +411,40 @@
   var currencyRates = null;
 
   // ── Session ──────────────────────────────────────────────────────────────
-  function getToken() {
-    // Check URL fragment for fresh login
+  // Auth uses httpOnly cookie (fags_session) set by the server.
+  // The cookie is automatically sent with same-origin fetch requests.
+  // We also check URL fragment for fresh login redirect (saves token to localStorage
+  // for the /v1/keys page which uses it).
+  function initSession() {
     var hash = location.hash;
     if (hash.indexOf('session=') > -1) {
       var t = hash.split('session=')[1];
       if (t) {
         localStorage.setItem('fags_session', JSON.stringify({ token: t }));
-        history.replaceState(null, '', location.pathname + location.search);
-        return t;
+        history.replaceState(null, '', location.pathname);
       }
     }
-    try {
-      var stored = localStorage.getItem('fags_session');
-      if (stored) { var p = JSON.parse(stored); if (p && p.token) return p.token; }
-    } catch (_) {}
-    return null;
   }
 
   function headers() {
-    var token = getToken();
-    return { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Accept': 'application/json' };
+    // Cookie is auto-sent; also include Bearer token if available for cross-origin compat
+    var h = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+    try {
+      var stored = localStorage.getItem('fags_session');
+      if (stored) {
+        var p = JSON.parse(stored);
+        if (p && p.token) h['Authorization'] = 'Bearer ' + p.token;
+      }
+    } catch (_) {}
+    return h;
   }
 
   // ── Init ─────────────────────────────────────────────────────────────────
   async function init() {
     loadPrefs();
-    var token = getToken();
-    if (!token) { showSignIn(); return; }
+    initSession();
 
-    // Verify session
+    // Verify session (cookie-based)
     try {
       var res = await fetch(API + '/auth/me', { headers: headers() });
       if (!res.ok) { showSignIn(); return; }
@@ -454,7 +458,7 @@
   function showSignIn() {
     document.getElementById('sign-in-page').classList.remove('hidden');
     document.getElementById('console-app').classList.add('hidden');
-    document.getElementById('hdr-user').innerHTML = '<a href="/v1/auth/github" class="sign-in-link">Sign in</a>';
+    document.getElementById('hdr-user').innerHTML = '<a href="/v1/auth/github?return_to=/console/" class="sign-in-link">Sign in</a>';
   }
 
   function showConsole() {

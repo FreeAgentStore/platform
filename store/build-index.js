@@ -351,6 +351,87 @@ const newScript = `<script>
 
 html = html.replace(oldScript, newScript);
 
+// --- Auth UI injection ---
+// Add auth-ui div after </nav> inside header
+const navCloseTag = '</nav>';
+const navClosePos = html.indexOf(navCloseTag);
+if (navClosePos !== -1) {
+  const authUiHtml = `</nav>
+      <div id="auth-ui" style="margin-left:0.5rem;display:flex;align-items:center">
+        <a href="/v1/auth/github" id="auth-login" style="display:none;padding:0.35rem 0.85rem;border-radius:8px;border:1px solid var(--line);color:var(--muted);font-size:0.82rem;font-weight:600;text-decoration:none;transition:border-color 0.15s,color 0.15s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--ink)'" onmouseout="this.style.borderColor='var(--line)';this.style.color='var(--muted)'">Sign in</a>
+        <div id="auth-user" style="display:none;align-items:center;gap:0.5rem">
+          <img id="auth-avatar" src="" alt="" style="width:28px;height:28px;border-radius:50%;border:1px solid var(--line)" />
+          <button id="auth-signout" style="padding:0.25rem 0.6rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;font-family:inherit">Sign out</button>
+        </div>
+      </div>`;
+  html = html.slice(0, navClosePos) + authUiHtml + html.slice(navClosePos + navCloseTag.length);
+}
+
+// Add auth script before closing </body>
+const authScript = `
+  <script>
+    (function() {
+      // Handle login callback: /?login=success#session=<token>
+      if (location.search.includes('login=success') && location.hash.startsWith('#session=')) {
+        var token = location.hash.slice('#session='.length);
+        if (token) {
+          localStorage.setItem('fags_session', JSON.stringify({ token: token }));
+          // Clean URL
+          history.replaceState(null, '', '/');
+          location.reload();
+          return;
+        }
+      }
+
+      var session = null;
+      try {
+        var stored = localStorage.getItem('fags_session');
+        if (stored) session = JSON.parse(stored);
+      } catch (_) {}
+
+      var loginEl = document.getElementById('auth-login');
+      var userEl = document.getElementById('auth-user');
+      var avatarEl = document.getElementById('auth-avatar');
+      var signoutEl = document.getElementById('auth-signout');
+
+      if (session && session.token) {
+        // Decode payload to get avatar + login
+        try {
+          var parts = session.token.split('.');
+          var payload = JSON.parse(atob(parts[0]));
+          if (payload.exp && payload.exp < Date.now() / 1000) {
+            // Expired — clear and show login
+            localStorage.removeItem('fags_session');
+            session = null;
+          } else {
+            avatarEl.src = payload.avatar || '';
+            avatarEl.alt = payload.login || '';
+            userEl.style.display = 'flex';
+          }
+        } catch (_) {
+          localStorage.removeItem('fags_session');
+          session = null;
+        }
+      }
+
+      if (!session) {
+        loginEl.style.display = 'inline-block';
+      }
+
+      signoutEl.addEventListener('click', function() {
+        fetch('/v1/auth/logout', { method: 'POST' }).finally(function() {
+          localStorage.removeItem('fags_session');
+          location.reload();
+        });
+      });
+    })();
+  </script>`;
+
+const bodyClosePos = html.lastIndexOf('</body>');
+if (bodyClosePos !== -1) {
+  html = html.slice(0, bodyClosePos) + authScript + '\n' + html.slice(bodyClosePos);
+}
+
 // --- Write back ---
 fs.writeFileSync(indexPath, html, 'utf-8');
 console.log(`Updated index.html with ${agents.length} agent cards, tabs (${tabCounts.library} libraries, ${tabCounts.model} models, ${tabCounts.agent} agents), ${categories.length} category filters, and API Keys section.`);
