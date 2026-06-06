@@ -41,13 +41,16 @@ export default function App() {
 
   async function checkAvailability() {
     const g = globalThis as any;
+    // Check Summarizer API first
     const S = g.Summarizer ?? g.ai?.summarizer;
     if (S?.availability) {
       const avail = await S.availability();
-      setStatus(avail === 'available' || avail === 'readily' ? 'available' : 'unavailable');
-    } else {
-      setStatus('unavailable');
+      if (avail === 'available' || avail === 'readily') { setStatus('available'); return; }
     }
+    // Check Prompt API (LanguageModel) — more widely available
+    const LM = g.LanguageModel ?? g.ai?.languageModel;
+    if (LM?.create) { setStatus('available'); return; }
+    setStatus('unavailable');
   }
 
   const addToHistory = useCallback((entry: HistoryEntry) => {
@@ -72,6 +75,30 @@ export default function App() {
         setStatus('available');
         setLoadingMessage('');
         addToHistory({ input: text.slice(0, 100), summary: result, type: summaryType, source: 'Chrome AI', timestamp: Date.now() });
+        return;
+      }
+    } catch {}
+
+    // Try Chrome Prompt API (LanguageModel / Gemini Nano)
+    try {
+      const g2 = globalThis as any;
+      const LM = g2.LanguageModel ?? g2.ai?.languageModel;
+      if (LM?.create) {
+        setLoadingMessage('Using Chrome Gemini Nano to summarize...');
+        const promptMap: Record<string, string> = {
+          'tl;dr': 'Give a 2-sentence TL;DR summary of the following text.',
+          'key-points': 'Extract 3-5 key points as a bullet list from the following text.',
+          'teaser': 'Write a short, engaging teaser (1-2 sentences) for the following text, suitable for social media.',
+          'headline': 'Write a single headline that captures the main point of the following text.',
+        };
+        const session = await LM.create({ systemPrompt: promptMap[summaryType] ?? promptMap['tl;dr'] });
+        const result = await session.prompt(text);
+        session.destroy?.();
+        setSummary(result);
+        setSource('Chrome Gemini Nano');
+        setStatus('available');
+        setLoadingMessage('');
+        addToHistory({ input: text.slice(0, 100), summary: result, type: summaryType, source: 'Gemini Nano', timestamp: Date.now() });
         return;
       }
     } catch {}
