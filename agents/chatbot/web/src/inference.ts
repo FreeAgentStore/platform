@@ -11,7 +11,14 @@ export interface InferenceOptions {
 const PROXY_BASE = 'https://freeagentstore.online/v1/proxy';
 
 function getSession(): string | null {
-  return localStorage.getItem('fags_session');
+  try {
+    const stored = localStorage.getItem('fags_session');
+    if (!stored) return null;
+    const parsed = JSON.parse(stored);
+    return parsed?.token ?? stored;
+  } catch {
+    return localStorage.getItem('fags_session');
+  }
 }
 
 async function chatViaProxy(options: InferenceOptions): Promise<string> {
