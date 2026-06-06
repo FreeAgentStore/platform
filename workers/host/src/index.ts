@@ -16,9 +16,13 @@
  *   store/*          — store site + detail pages
  */
 
+import { handleApiRoute } from './api';
+
 export interface Env {
   DB: D1Database;
   AGENTS: R2Bucket;
+  KEY_ENCRYPTION_KEY: string;
+  SESSION_SIGNING_KEY: string;
 }
 
 interface Route {
@@ -32,6 +36,11 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     const host = request.headers.get('Host')?.toLowerCase().replace(/:\d+$/, '') ?? '';
+
+    // API routes (key vault + proxy) — handle before R2 serving
+    if (url.pathname.startsWith('/v1/')) {
+      return handleApiRoute(request, url, env);
+    }
 
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       return new Response('Method Not Allowed', { status: 405 });
