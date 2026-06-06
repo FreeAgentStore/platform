@@ -1,0 +1,16 @@
+{
+  "name": "Heuristic Trainer",
+  "description": "Training interface for building LLM-distilled heuristic agents. Feed test data, evolve code, test iteratively. The workshop where agents are forged.",
+  "version": "1.0.0",
+  "task": "agent-training",
+  "category": "developer-tools",
+  "models": [],
+  "estimatedDownload": "0MB",
+  "input": ["application/json"],
+  "output": ["application/json"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false
+}
