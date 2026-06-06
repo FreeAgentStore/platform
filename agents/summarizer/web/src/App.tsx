@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 
 type SummaryType = 'tl;dr' | 'key-points' | 'teaser' | 'headline';
 type Status = 'checking' | 'available' | 'unavailable' | 'summarizing';
@@ -33,6 +33,7 @@ export default function App() {
   const [showHistory, setShowHistory] = useState(false);
   const [copied, setCopied] = useState(false);
   const [wordCount, setWordCount] = useState(0);
+  const [showRaw, setShowRaw] = useState(false);
 
   useEffect(() => { saveHistory(history); }, [history]);
   useEffect(() => { setWordCount(text.trim() ? text.trim().split(/\s+/).length : 0); }, [text]);
@@ -134,6 +135,32 @@ export default function App() {
     setShowHistory(false);
   }, []);
 
+  const renderedSummary = useMemo(() => {
+    if (!summary || showRaw) return null;
+    // Simple markdown → HTML
+    let html = summary
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      // Headers
+      .replace(/^### (.+)$/gm, '<h4 style="font-weight:700;margin:0.75rem 0 0.25rem">$1</h4>')
+      .replace(/^## (.+)$/gm, '<h3 style="font-weight:700;margin:0.75rem 0 0.25rem">$1</h3>')
+      // Bold
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      // Italic
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      // Bullet lists
+      .replace(/^\* (.+)$/gm, '<li style="margin-left:1rem;list-style:disc;margin-bottom:0.25rem">$1</li>')
+      .replace(/^- (.+)$/gm, '<li style="margin-left:1rem;list-style:disc;margin-bottom:0.25rem">$1</li>')
+      // Numbered lists
+      .replace(/^\d+\. (.+)$/gm, '<li style="margin-left:1rem;list-style:decimal;margin-bottom:0.25rem">$1</li>')
+      // Code
+      .replace(/`([^`]+)`/g, '<code style="background:#262626;padding:0.1rem 0.3rem;border-radius:3px;font-size:0.85em">$1</code>')
+      // Paragraphs (double newline)
+      .replace(/\n\n/g, '</p><p style="margin:0.5rem 0">')
+      // Single newlines (preserve)
+      .replace(/\n/g, '<br/>');
+    return `<p style="margin:0">${html}</p>`;
+  }, [summary, showRaw]);
+
   const timeAgo = (ts: number) => {
     const mins = Math.floor((Date.now() - ts) / 60000);
     if (mins < 1) return 'just now';
@@ -210,10 +237,16 @@ export default function App() {
                 Summary {source && <span className="text-neutral-600">via {source}</span>}
               </label>
               {summary && (
-                <button onClick={() => { navigator.clipboard.writeText(summary); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
-                  className="text-xs text-emerald-400 hover:text-emerald-300">
-                  {copied ? 'Copied!' : 'Copy'}
-                </button>
+                <div className="flex gap-2">
+                  <button onClick={() => setShowRaw(!showRaw)}
+                    className="text-xs text-neutral-500 hover:text-neutral-300">
+                    {showRaw ? 'Rendered' : 'Raw'}
+                  </button>
+                  <button onClick={() => { navigator.clipboard.writeText(summary); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
+                    className="text-xs text-emerald-400 hover:text-emerald-300">
+                    {copied ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
               )}
             </div>
             <div className="flex-1 p-4 rounded-lg bg-neutral-900 border border-neutral-800 text-sm whitespace-pre-wrap min-h-[250px]">
@@ -224,7 +257,11 @@ export default function App() {
                   <p className="text-neutral-600 text-xs max-w-xs">Chrome AI processes text locally on your device. This can take 10-20 seconds for longer texts.</p>
                 </div>
               ) : summary ? (
-                summary
+                showRaw || !renderedSummary ? (
+                  <span className="font-mono text-xs">{summary}</span>
+                ) : (
+                  <div dangerouslySetInnerHTML={{ __html: renderedSummary }} className="leading-relaxed" />
+                )
               ) : (
                 <span className="text-neutral-600">Summary will appear here. Paste text on the left and click Summarize.</span>
               )}
