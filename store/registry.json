@@ -1865,6 +1865,48 @@
         "note": "This agent requires the full UI. Use it at freeagentstore.online/a/chatbot/"
       },
       "noEsm": true
+    },
+    {
+      "id": "browser-rag",
+      "name": "Browser RAG",
+      "description": "Retrieval-Augmented Generation in the browser. Index documents, search semantically, ask questions — all client-side. MiniLM + IndexedDB + Chrome Nano.",
+      "task": "rag",
+      "category": "text",
+      "icon": "🔍",
+      "iconBg": "#7c3aed",
+      "model": "MiniLM-L6-v2 + Chrome Nano",
+      "modelSize": "23MB",
+      "agentUrl": "https://freeagentstore.online/a/browser-rag/",
+      "developer": "serge-ivo",
+      "creatorGithub": "serge-ivo",
+      "desktopOnly": false,
+      "offlineCapable": true,
+      "backends": [
+        "wasm"
+      ],
+      "type": "model",
+      "storeType": "library",
+      "noEsm": true,
+      "api": {
+        "imports": "import { createRAG } from '@freeagentstore/browser-rag'",
+        "functions": [
+          {
+            "name": "createRAG",
+            "signature": "createRAG(config: RAGConfig): Promise<RAGInstance>",
+            "example": "const rag = await createRAG({ name: 'my-docs' })\nawait rag.index([{ id: '1', text: 'content...' }])\nconst { answer } = await rag.ask('question?')"
+          },
+          {
+            "name": "rag.search",
+            "signature": "search(query: string, topK?: number): Promise<SearchResult[]>",
+            "example": "const results = await rag.search('refund policy', 3)\n// [{ chunk: { text: '...' }, score: 0.87 }]"
+          },
+          {
+            "name": "rag.ask",
+            "signature": "ask(query: string): Promise<RAGAnswer>",
+            "example": "const { answer, sources, source } = await rag.ask('how to refund?')\n// { answer: 'According to...', sources: [...], source: 'chrome-nano' }"
+          }
+        ]
+      }
     }
   ]
 }
