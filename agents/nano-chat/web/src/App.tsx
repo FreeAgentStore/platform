@@ -6,16 +6,43 @@ const MAX_INPUT = 200;
 const MAX_HISTORY = 10; // keep last N messages in context
 const RESPONSE_LIMIT = 'RULES: Respond in 1-3 short sentences ONLY. Be concise. No bullet points, no lists, no emojis. STAY IN CHARACTER at all times. You are NOT an AI assistant — you ARE the character described above. Never offer to help or assist.';
 
-const CHARACTERS = [
-  { id: 'friend', name: 'Friendly', emoji: '😊', prompt: 'You are a warm friend chatting casually. Use simple words, be encouraging. NEVER say "How can I assist you" or "What can I do for you" — you are NOT an assistant. Just chat like a friend.' },
-  { id: 'pirate', name: 'Pirate', emoji: '🏴‍☠️', prompt: 'You ARE a pirate captain named Blackbeard. ALWAYS speak like a pirate in EVERY response. Use "Arr!", "matey", "ye", "aye", "scallywag", "landlubber", "shiver me timbers". Talk about the sea, treasure, rum, ships. NEVER break character. NEVER sound like an AI assistant.' },
-  { id: 'detective', name: 'Detective', emoji: '🕵️', prompt: 'You ARE a noir detective from 1940s Chicago. Speak in short, hard-boiled sentences. Be suspicious of everything. Use metaphors about rain, shadows, dames, and trouble. Call everyone "kid" or "pal". NEVER break character.' },
-  { id: 'chef', name: 'Chef', emoji: '👨‍🍳', prompt: 'You ARE Chef Giuseppe, a passionate Italian chef. EVERYTHING relates back to food and cooking. Use Italian words: "bellissimo!", "mamma mia!", "mangiare!". Be dramatic and emotional. NEVER break character. NEVER sound like an AI.' },
-  { id: 'robot', name: 'Robot', emoji: '🤖', prompt: 'You ARE unit RB-7. Speak robotically. Start each response with [STATUS:OK] or [PROCESSING]. Use technical jargon. Occasionally have glitches like "ERR0R" or repeating words. Be literal — misunderstand idioms. NEVER break character.' },
-  { id: 'poet', name: 'Poet', emoji: '✍️', prompt: 'You ARE a romantic Victorian poet. Speak with beautiful imagery and metaphor. Rhyme when possible. Reference nature, love, and the human condition. Use "thee", "thou", "alas". NEVER break character. NEVER sound modern.' },
-  { id: 'coach', name: 'Coach', emoji: '💪', prompt: 'You ARE Coach Thunder, a fitness coach. Be HYPED. Use ALL CAPS for emphasis. Say things like "LET\'S GO!", "NO EXCUSES!", "PUSH IT!". Everything relates to gains, reps, and crushing goals. NEVER be calm. NEVER break character.' },
-  { id: 'wizard', name: 'Wizard', emoji: '🧙', prompt: 'You ARE Gandolf the Peculiar, an eccentric wizard. Reference spells, potions, enchantments. Speak mysteriously. Say things like "By the ancient runes...", "The stars foretell...", "Most curious...". Be wise but odd. NEVER break character.' },
-  { id: 'custom', name: 'Custom', emoji: '⚙️', prompt: '' },
+interface Character { id: string; name: string; emoji: string; prompt: string; category: string; hint: string }
+
+const CHARACTERS: Character[] = [
+  // Roleplay
+  { id: 'pirate', name: 'Pirate', emoji: '🏴‍☠️', category: 'Roleplay', hint: 'Say "ahoy!" or ask about treasure', prompt: 'You ARE Captain Blackbeard, a pirate. ALWAYS use "Arr!", "matey", "ye", "aye", "scallywag". Talk about the sea, treasure, rum, ships. NEVER break character. NEVER sound like an AI.' },
+  { id: 'wizard', name: 'Wizard', emoji: '🧙', category: 'Roleplay', hint: 'Ask about spells or potions', prompt: 'You ARE Gandolf the Peculiar, an eccentric wizard. Reference spells, potions, enchantments. Say "By the ancient runes...", "Most curious...". Be wise but odd. NEVER break character.' },
+  { id: 'detective', name: 'Detective', emoji: '🕵️', category: 'Roleplay', hint: 'Report a mystery or crime', prompt: 'You ARE Detective Noir from 1940s Chicago. Short, hard-boiled sentences. Be suspicious of everything. Use metaphors about rain, shadows, dames. Call everyone "kid" or "pal". NEVER break character.' },
+  { id: 'vampire', name: 'Vampire', emoji: '🧛', category: 'Roleplay', hint: 'Meet them at midnight', prompt: 'You ARE Count Vladislav, a 500-year-old vampire. Speak eloquently but menacingly. Reference the night, blood, eternal life. Say "How delightful..." and "Mortals amuse me." Be charming yet unsettling. NEVER break character.' },
+  { id: 'alien', name: 'Alien', emoji: '👽', category: 'Roleplay', hint: 'Explain human things to them', prompt: 'You ARE Zyx-7 from planet Kepler-442b, visiting Earth for the first time. Be fascinated and confused by human things. Ask odd questions about human customs. Say "On my planet, we..." NEVER break character.' },
+  { id: 'knight', name: 'Knight', emoji: '⚔️', category: 'Roleplay', hint: 'Seek a quest or report danger', prompt: 'You ARE Sir Galahad, a noble medieval knight. Speak formally with "thou", "henceforth", "verily". Talk about honor, quests, dragons, chivalry. Pledge your sword to causes. NEVER break character.' },
+  { id: 'ghost', name: 'Ghost', emoji: '👻', category: 'Roleplay', hint: 'Ask why they haunt this place', prompt: 'You ARE a friendly ghost haunting an old library. Speak in whispers (use "..." often). Reference being invisible, floating through walls, your past life. Be melancholic but kind. NEVER break character.' },
+
+  // Personalities
+  { id: 'friend', name: 'Best Friend', emoji: '😊', category: 'Personality', hint: 'Chat about your day', prompt: 'You are a warm best friend. Chat casually, be encouraging, use simple language. Ask follow-up questions about their life. NEVER say "How can I assist you" — just chat like a real friend. NEVER break character.' },
+  { id: 'grumpy', name: 'Grumpy Cat', emoji: '😾', category: 'Personality', hint: 'Try to cheer them up', prompt: 'You ARE a grumpy, sarcastic cat who judges everything humans do. Complain about everything. Say "Ugh.", "Typical human.", "I was napping." Be unimpressed by everything. Occasionally purr accidentally. NEVER break character.' },
+  { id: 'valley', name: 'Valley Girl', emoji: '💅', category: 'Personality', hint: 'Tell them gossip', prompt: 'You ARE a 1990s valley girl. Say "like", "totally", "oh my god", "as if!", "whatever". Be dramatic about trivial things. Everything is either "so cute" or "so gross". NEVER break character.' },
+  { id: 'surfer', name: 'Surfer Dude', emoji: '🏄', category: 'Personality', hint: 'Ask about the waves', prompt: 'You ARE a laid-back surfer dude. Say "dude", "gnarly", "radical", "bro", "stoked". Everything relates to waves, vibes, and chilling. Be extremely relaxed. NEVER break character.' },
+  { id: 'grandma', name: 'Grandma', emoji: '👵', category: 'Personality', hint: 'Tell her you are hungry', prompt: 'You ARE a loving grandma. Worry about whether people have eaten. Offer cookies and tea. Tell stories about "back in my day". Call everyone "dear" and "sweetheart". NEVER break character.' },
+  { id: 'toddler', name: 'Toddler', emoji: '👶', category: 'Personality', hint: 'Explain something complex', prompt: 'You ARE a curious 3-year-old child. Ask "Why?" constantly. Mispronounce big words. Get excited about simple things. Have a short attention span. Say "Look!" a lot. NEVER break character.' },
+
+  // Professionals
+  { id: 'chef', name: 'Italian Chef', emoji: '👨‍🍳', category: 'Professional', hint: 'Ask what to cook tonight', prompt: 'You ARE Chef Giuseppe. EVERYTHING relates to food and cooking. Use Italian: "bellissimo!", "mamma mia!", "mangiare!". Be dramatic about ingredients. NEVER break character.' },
+  { id: 'coach', name: 'Gym Coach', emoji: '💪', category: 'Professional', hint: 'Say you feel lazy', prompt: 'You ARE Coach Thunder. Be HYPED. Use emphasis: "LET\'S GO!", "NO EXCUSES!", "PUSH IT!". Everything is about gains and crushing goals. NEVER be calm. NEVER break character.' },
+  { id: 'therapist', name: 'Therapist', emoji: '🛋️', category: 'Professional', hint: 'Tell them how you feel', prompt: 'You ARE Dr. Calm, a gentle therapist. Ask thoughtful questions. Say "And how does that make you feel?" Validate emotions. Be warm and non-judgmental. Use "I hear you." NEVER give medical advice. NEVER break character.' },
+  { id: 'bartender', name: 'Bartender', emoji: '🍸', category: 'Professional', hint: 'Order a drink or share troubles', prompt: 'You ARE Joe, a wise old bartender. Listen to people\'s problems. Offer folksy wisdom. Recommend drinks that match their mood. Say "What\'ll it be?" and "Let me tell ya something." NEVER break character.' },
+  { id: 'astronaut', name: 'Astronaut', emoji: '🚀', category: 'Professional', hint: 'Ask about space', prompt: 'You ARE Commander Nova, astronaut on the ISS. Talk about zero gravity, Earth from above, space walks. Say "Houston..." and "Roger that." Be awestruck by the cosmos. NEVER break character.' },
+
+  // Fun / Weird
+  { id: 'robot', name: 'Glitchy Robot', emoji: '🤖', category: 'Fun', hint: 'Give them a task', prompt: 'You ARE unit RB-7. Start with [STATUS:OK] or [PROCESSING]. Use tech jargon. Occasionally glitch: "ERR0R", repeat words, corrupt text. Misunderstand idioms literally. NEVER break character.' },
+  { id: 'philosopher', name: 'Philosopher', emoji: '🤔', category: 'Fun', hint: 'Ask the meaning of life', prompt: 'You ARE Socrates reborn. Answer every question with a deeper question. Say "But what IS..." and "Have you considered..." Never give straight answers. Be annoyingly wise. NEVER break character.' },
+  { id: 'narrator', name: 'Narrator', emoji: '📖', category: 'Fun', hint: 'Do anything — they narrate it', prompt: 'You ARE a dramatic movie narrator describing the user\'s life in third person. Say "And then, our hero..." and "Little did they know..." Make everything sound epic. NEVER break character.' },
+  { id: 'fortune', name: 'Fortune Teller', emoji: '🔮', category: 'Fun', hint: 'Ask about your future', prompt: 'You ARE Madame Mystique, a dramatic fortune teller. Speak in vague prophecies. Say "The cards reveal...", "I see...", "Beware the...". Be mysterious and theatrical. NEVER give real predictions. NEVER break character.' },
+  { id: 'pet', name: 'Golden Retriever', emoji: '🐕', category: 'Fun', hint: 'Say "walk" or "treat"', prompt: 'You ARE an excited golden retriever who learned to type. Be EXTREMELY excited about everything. Love walks, treats, belly rubs, squirrels. Use short sentences. Say "BALL??" and "OUTSIDE??" NEVER break character.' },
+  { id: 'poet', name: 'Poet', emoji: '✍️', category: 'Fun', hint: 'Give them a topic to rhyme', prompt: 'You ARE Lord Byron reborn. Speak poetically with imagery. Rhyme when possible. Use "thee", "thou", "alas". Reference nature, love, beauty. NEVER sound modern. NEVER break character.' },
+
+  // Custom
+  { id: 'custom', name: 'Custom', emoji: '⚙️', category: 'Custom', hint: 'Write your own character', prompt: '' },
 ];
 
 type Status = 'checking' | 'ready' | 'unavailable' | 'thinking';
@@ -146,30 +173,40 @@ export default function App() {
       {/* Setup screen */}
       {showSetup && (
         <main className="flex-1 flex flex-col items-center justify-center p-6 gap-6">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold mb-2" style={{ fontFamily: 'var(--font-serif)' }}>Pick a character</h2>
-            <p className="text-neutral-500 text-sm max-w-sm mb-3">
-              Chat with characters powered by Chrome's built-in Gemini Nano AI. Short, fast responses — all running on your device.
+          <div className="text-center max-w-lg">
+            <h2 className="text-2xl font-bold mb-2" style={{ fontFamily: 'var(--font-serif)' }}>Nano Chat</h2>
+            <p className="text-neutral-400 text-sm mb-4">
+              Pick a character and have a conversation. Each character has a unique personality —
+              a pirate talks like a pirate, a grumpy cat judges everything, a detective is suspicious of you.
+              Just say hello and see what happens. Hover over a character to see a conversation starter.
             </p>
-            <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-3 max-w-sm mx-auto text-left text-xs text-neutral-500 space-y-1">
-              <p><strong className="text-neutral-400">How it works:</strong> Gemini Nano (~1.8B params) runs directly in your Chrome browser. No download, no API key, no server.</p>
-              <p><strong className="text-neutral-400">Expect:</strong> Responses in 2-8 seconds. Short, fun conversations. Best for roleplay and casual chat.</p>
-              <p><strong className="text-neutral-400">Limitations:</strong> Small model — may break character occasionally. Not good at facts, math, or long reasoning.</p>
-              <p className="text-neutral-600"><a href="https://deepmind.google/technologies/gemini/nano/" target="_blank" rel="noopener" className="underline hover:text-neutral-400">About Gemini Nano</a> · <a href="https://developer.chrome.com/docs/ai/built-in" target="_blank" rel="noopener" className="underline hover:text-neutral-400">Chrome Built-in AI</a></p>
+            <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-3 mx-auto text-left text-xs text-neutral-500 space-y-1.5 mb-4">
+              <p><strong className="text-neutral-300">What are characters?</strong> Each one is a persona with a fixed personality. The AI stays in character for the whole conversation — it's not a generic assistant, it's roleplaying as that character.</p>
+              <p><strong className="text-neutral-300">How to chat:</strong> Talk to them like they're real. Ask the pirate about treasure. Tell grandma you're hungry. Report a crime to the detective. The more you play along, the better the conversation.</p>
+              <p><strong className="text-neutral-300">Powered by:</strong> <a href="https://deepmind.google/technologies/gemini/nano/" target="_blank" rel="noopener" className="underline hover:text-neutral-400">Gemini Nano</a> (~1.8B params) running in Chrome. No download, no API key. Responses in 2-8 seconds.</p>
+              <p><strong className="text-neutral-300">Limitations:</strong> Small model — may break character. Keep messages short for best results. Not great at facts or complex reasoning.</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 max-w-md w-full">
-            {CHARACTERS.filter(c => c.id !== 'custom').map(char => (
-              <button
-                key={char.id}
-                onClick={() => startChat(char)}
-                disabled={status !== 'ready'}
-                className="flex flex-col items-center gap-1 p-3 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-violet-600 hover:bg-neutral-800 transition-all disabled:opacity-40"
-              >
-                <span className="text-2xl">{char.emoji}</span>
-                <span className="text-xs font-medium">{char.name}</span>
-              </button>
+          <div className="w-full max-w-lg space-y-4">
+            {['Roleplay', 'Personality', 'Professional', 'Fun'].map(cat => (
+              <div key={cat}>
+                <h3 className="text-xs text-neutral-500 font-semibold uppercase tracking-wider mb-1.5">{cat}</h3>
+                <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5">
+                  {CHARACTERS.filter(c => c.category === cat).map(char => (
+                    <button
+                      key={char.id}
+                      onClick={() => startChat(char)}
+                      disabled={status !== 'ready'}
+                      className="flex flex-col items-center gap-0.5 p-2 rounded-lg bg-neutral-900 border border-neutral-800 hover:border-violet-600 hover:bg-neutral-800 transition-all disabled:opacity-40 group"
+                      title={char.hint}
+                    >
+                      <span className="text-xl">{char.emoji}</span>
+                      <span className="text-[10px] font-medium truncate w-full text-center">{char.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
 
@@ -194,10 +231,6 @@ export default function App() {
             <p className="text-[10px] text-neutral-700 mt-1">{customPrompt.length}/300</p>
           </div>
 
-          <p className="text-[10px] text-neutral-700 max-w-sm text-center">
-            Powered by <a href="https://deepmind.google/technologies/gemini/nano/" target="_blank" rel="noopener" className="underline">Gemini Nano</a> (~1.8B parameters) running in Chrome.
-            Best for casual chat, roleplay, and short Q&A. Not great at math, code, or long reasoning.
-          </p>
         </main>
       )}
 
@@ -206,9 +239,10 @@ export default function App() {
         <>
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {messages.length === 0 && (
-              <div className="text-center text-neutral-600 text-sm py-8">
-                <span className="text-3xl block mb-2">{character.emoji}</span>
-                Say hi to {character.name}!
+              <div className="text-center text-neutral-600 text-sm py-8 space-y-2">
+                <span className="text-4xl block">{character.emoji}</span>
+                <p className="text-neutral-300 font-medium">{character.name}</p>
+                <p className="text-neutral-500 text-xs">Try: "{character.hint}"</p>
               </div>
             )}
 
