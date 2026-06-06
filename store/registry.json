@@ -1834,7 +1834,8 @@
             "example": "const set = generateCards('Photosynthesis is the process...')\n// { cards: [{ front: 'What is photosynthesis?', back: '...' }] }"
           }
         ]
-      }
+      },
+      "noEsm": true
     },
     {
       "id": "chatbot",
@@ -1862,7 +1863,8 @@
       "api": {
         "imports": "import { ... } from \"@freeagentstore/chatbot\"",
         "note": "This agent requires the full UI. Use it at freeagentstore.online/a/chatbot/"
-      }
+      },
+      "noEsm": true
     }
   ]
 }

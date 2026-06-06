@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contribute — FreeAgentStore</title>
+  <meta name="description" content="Build and publish AI tools on FreeAgentStore. Open source, MIT-licensed, community-driven.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#7c3aed">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{--font-body:'Manrope',system-ui,sans-serif;--font-display:'Fraunces',Georgia,serif;--paper:#0a0a0a;--panel:#171717;--ink:#fafafa;--muted:#a3a3a3;--accent:#7c3aed;--line:#262626}
+    body{font-family:var(--font-body);background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;min-height:100vh}
+    .container{max-width:720px;margin:0 auto;padding:0 1.5rem}
+    a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+    header{border-bottom:1px solid var(--line);padding:0.75rem 0}
+    header .container{display:flex;align-items:center;gap:1.25rem}
+    .brand{display:flex;align-items:center;gap:0.6rem;text-decoration:none;color:var(--ink)}
+    .brand-mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#a855f7);display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+    .brand-name{font-family:var(--font-display);font-size:1.15rem;font-weight:700}
+    nav{display:flex;gap:1.25rem;font-size:0.88rem;font-weight:600;margin-left:auto}
+    nav a{color:var(--muted);text-decoration:none}nav a:hover{color:var(--ink)}
+    h1{font-family:var(--font-display);font-size:2rem;font-weight:700;margin:2rem 0 1rem}
+    h2{font-family:var(--font-display);font-size:1.3rem;font-weight:700;margin:2rem 0 0.75rem}
+    h3{font-size:1rem;font-weight:600;margin:1.5rem 0 0.5rem}
+    p,li{color:var(--muted);line-height:1.7;font-size:0.95rem}
+    p{margin-bottom:1rem}
+    ol,ul{margin-bottom:1rem;padding-left:1.5rem}
+    li{margin-bottom:0.5rem}
+    pre{background:var(--panel);border:1px solid var(--line);border-radius:0.75rem;padding:1rem;overflow-x:auto;font-size:0.85rem;margin-bottom:1rem;color:var(--ink)}
+    code{font-size:0.88em;background:var(--panel);padding:0.15rem 0.4rem;border-radius:4px}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:0.75rem;padding:1.25rem;margin-bottom:1rem}
+    .card h3{margin-top:0}
+    footer{border-top:1px solid var(--line);padding:1.5rem 0;margin-top:3rem;text-align:center;font-size:0.8rem;color:#737373}
+    footer a{color:var(--muted)}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="/" class="brand"><span class="brand-mark">&#x1f916;</span><span class="brand-name">AgentStore</span></a>
+      <nav><a href="/">Agents</a><a href="/about/">About</a><a href="/get-started/">Get Started</a><a href="https://github.com/FreeAgentStore">GitHub</a></nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <h1>Contribute</h1>
+    <p>FreeAgentStore is open source and community-driven. Build an AI tool, publish it, and share it with the world.</p>
+
+    <h2>What to build</h2>
+
+    <div class="card">
+      <h3>Heuristic classifiers</h3>
+      <p>The sweet spot. Write a keyword-scoring classifier for a specific use case. The code is evolved by an LLM from data — ship pure JS, zero model, instant results. Examples: sentiment, intent, urgency, formality, clickbait, sarcasm detection.</p>
+      <p><strong>Good candidates:</strong> spam detection, fake review detection, resume quality scoring, headline quality, code smell detection, commit message quality, SEO scoring.</p>
+    </div>
+
+    <div class="card">
+      <h3>Parsers / extractors</h3>
+      <p>Take messy real-world input, return structured data. Examples: date parser, address parser, name parser, email classifier, code detector.</p>
+      <p><strong>Good candidates:</strong> phone number parser, credit card validator, URL classifier, cron expression parser, user agent parser.</p>
+    </div>
+
+    <div class="card">
+      <h3>Model-based agents</h3>
+      <p>Combine a Transformers.js model with domain-specific heuristics. The model does the heavy lifting, the heuristic adds real value. Examples: food analyzer, plant identifier, receipt scanner.</p>
+      <p><strong>Good candidates:</strong> outfit rater, meme reader, accent detector, music mood classifier.</p>
+    </div>
+
+    <div class="card">
+      <h3>Game AI</h3>
+      <p>Pure math libraries for game developers. Zero deps, 60fps capable, importable by FreeGameStore games. Examples: steering behaviors, behavior trees, physics simulation.</p>
+      <p><strong>Good candidates:</strong> pathfinding (A*), procedural terrain, wave function collapse, dialogue systems.</p>
+    </div>
+
+    <h2>How to contribute</h2>
+
+    <h3>1. Build your agent</h3>
+    <pre>npx @freeagentstore/cli init my-agent --template heuristic
+cd my-agent
+npm install
+npm run dev</pre>
+    <p>Templates: <code>heuristic</code> (pure TS), <code>built-in-ai</code> (Chrome AI), <code>model</code> (ONNX)</p>
+
+    <h3>2. Follow the rules</h3>
+    <ul>
+      <li><strong>MIT license</strong> — required for all free agents</li>
+      <li><strong>Pure TypeScript core</strong> — no React/DOM deps in the logic file</li>
+      <li><strong>Under 1MB bundle</strong> (excluding models)</li>
+      <li><strong>No cloud AI calls</strong> — models run in browser, not on a server</li>
+      <li><strong>No tracking</strong> — no analytics, no telemetry</li>
+      <li><strong>Dark theme</strong> — neutral-950/900/800, Manrope + Fraunces fonts</li>
+    </ul>
+
+    <h3>3. Test it</h3>
+    <pre>npx @freeagentstore/cli check</pre>
+    <p>All 9 compliance checks must pass.</p>
+
+    <h3>4. Publish</h3>
+    <pre>npx @freeagentstore/cli publish</pre>
+    <p>Creates a GitHub repo in the FreeAgentStore org, deploys to R2, registers the route. Your agent is live.</p>
+
+    <h2>Improving existing agents</h2>
+    <p>Every agent is its own repo at <a href="https://github.com/FreeAgentStore">github.com/FreeAgentStore</a>. Fork any agent, improve it, submit a PR.</p>
+    <p>For evolved heuristic agents: if you find a case where the classifier is wrong, open an issue with the input and expected output. These examples accumulate and drive the next evolution cycle.</p>
+
+    <h2>Quality standards</h2>
+    <ul>
+      <li>Agents should solve a real problem, not just wrap a model</li>
+      <li>Heuristic agents must track accuracy: <code>"evolution": { "versions": 1, "examples": 500, "accuracy": 90 }</code></li>
+      <li>Model agents must add domain value on top of raw model output</li>
+      <li>Write tests for your core logic</li>
+      <li>Write a clear README with API docs and usage examples</li>
+    </ul>
+  </main>
+
+  <footer><div class="container"><a href="/">FreeAgentStore</a> &middot; <a href="https://github.com/FreeAgentStore">GitHub</a></div></footer>
+</body>
+</html>
