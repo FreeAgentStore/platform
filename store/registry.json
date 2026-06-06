@@ -1835,6 +1835,34 @@
           }
         ]
       }
+    },
+    {
+      "id": "chatbot",
+      "name": "Document Chatbot",
+      "description": "Chat with your documents. Upload files, paste text, or import URLs. Answers using your own AI key.",
+      "task": "document-chat",
+      "category": "productivity",
+      "icon": "💬",
+      "iconBg": "#7c3aed",
+      "model": "User API key (OpenAI/Anthropic/Google/Groq)",
+      "modelSize": "0MB",
+      "agentUrl": "https://freeagentstore.online/a/chatbot/",
+      "developer": "serge-ivo",
+      "creatorGithub": "serge-ivo",
+      "desktopOnly": false,
+      "offlineCapable": false,
+      "backends": [
+        "proxy",
+        "built-in-ai",
+        "ollama"
+      ],
+      "type": "agent",
+      "storeType": "agent",
+      "needsKey": true,
+      "api": {
+        "imports": "import { ... } from \"@freeagentstore/chatbot\"",
+        "note": "This agent requires the full UI. Use it at freeagentstore.online/a/chatbot/"
+      }
     }
   ]
 }
