@@ -227,8 +227,8 @@ export default function App() {
         </button>
         <a href="https://freeagentstore.online" className="text-neutral-500 hover:text-neutral-300 text-sm">FreeAgentStore</a>
         <h1 className="font-semibold text-lg" style={{ fontFamily: 'var(--font-serif)' }}>{config.agentName}</h1>
-        <span className="ml-auto text-xs px-2 py-0.5 rounded bg-violet-900/40 text-violet-400">
-          {provider?.name ?? config.provider} {config.model}
+        <span className={`ml-auto text-xs px-2 py-0.5 rounded ${config.provider === 'built-in-ai' ? 'bg-emerald-900/40 text-emerald-400' : 'bg-violet-900/40 text-violet-400'}`}>
+          {config.provider === 'built-in-ai' ? 'Chrome Gemini Nano (free)' : `${provider?.name ?? config.provider} ${config.model}`}
         </span>
         <button
           onClick={() => { setConfigDraft({ ...config }); setShowConfig(true); }}
@@ -385,16 +385,24 @@ export default function App() {
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.length === 0 && !streaming && (
-              <div className="flex flex-col items-center justify-center h-full text-center">
-                <div className="text-4xl mb-4" style={{ fontFamily: 'var(--font-serif)' }}>
+              <div className="flex flex-col items-center justify-center h-full text-center px-4">
+                <div className="text-3xl mb-3" style={{ fontFamily: 'var(--font-serif)' }}>
                   {config.agentName}
                 </div>
-                <p className="text-neutral-500 text-sm max-w-md">
+                <p className="text-neutral-500 text-sm max-w-md mb-4">
                   {docs.length === 0
-                    ? 'Add some documents in the sidebar, then ask questions about them.'
+                    ? 'Upload documents in the sidebar, then ask questions about them.'
                     : `${docs.length} document${docs.length !== 1 ? 's' : ''} loaded (${formatBytes(totalSize)}). Ask a question!`
                   }
                 </p>
+                {config.provider === 'built-in-ai' && (
+                  <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-4 max-w-md text-left text-xs text-neutral-500 space-y-2">
+                    <p className="text-neutral-300 font-medium">Running on Chrome Gemini Nano (free)</p>
+                    <p>This chatbot uses Google's Gemini Nano model built into Chrome. It runs <strong className="text-neutral-400">entirely on your device</strong> — no data leaves your browser, no API key needed.</p>
+                    <p><strong className="text-neutral-400">Expect 10-60 second response times</strong> depending on document size. The model is small (1.8B params) — great for Q&A and summaries, less accurate for complex reasoning.</p>
+                    <p>For faster, smarter responses: add an API key (OpenAI, Claude, Gemini) in <a href="/console/#keys" className="text-violet-400 underline">Console</a>.</p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -420,13 +428,28 @@ export default function App() {
 
             {generating && !streaming && (
               <div className="flex justify-start">
-                <div className="px-4 py-2.5 rounded-2xl rounded-bl-md bg-neutral-900 border border-neutral-800 text-neutral-400 text-sm">
-                  <span className="inline-flex gap-1">
-                    <span className="animate-pulse">Thinking</span>
-                    <span className="animate-bounce" style={{ animationDelay: '0ms' }}>.</span>
-                    <span className="animate-bounce" style={{ animationDelay: '150ms' }}>.</span>
-                    <span className="animate-bounce" style={{ animationDelay: '300ms' }}>.</span>
-                  </span>
+                <div className="max-w-md px-4 py-3 rounded-2xl rounded-bl-md bg-neutral-900 border border-neutral-800 text-sm space-y-2">
+                  <div className="flex items-center gap-2 text-violet-400">
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                    <span className="font-medium">
+                      {config.provider === 'built-in-ai' ? 'Gemini Nano is thinking...' : `${config.model} is thinking...`}
+                    </span>
+                  </div>
+                  {config.provider === 'built-in-ai' && (
+                    <div className="text-neutral-500 text-xs space-y-1.5">
+                      <p>
+                        <strong className="text-neutral-400">This runs on your device</strong> using Chrome's built-in Gemini Nano model (~1.8B parameters).
+                        {totalSize > 0 && <> Processing ~{Math.ceil(totalSize / 1024)}KB of documents may take {totalSize < 2000 ? '10-20' : totalSize < 5000 ? '20-40' : '30-60'} seconds.</>}
+                      </p>
+                      <p>Gemini Nano is great for: summaries, Q&A, simple analysis, and short writing. It struggles with: complex reasoning, math, code generation, and very long texts.</p>
+                      <p className="text-neutral-600">
+                        <a href="https://developer.chrome.com/docs/ai/built-in" target="_blank" rel="noopener" className="underline hover:text-neutral-400">Learn about Chrome Built-in AI</a>
+                        {' · '}
+                        <a href="https://deepmind.google/technologies/gemini/nano/" target="_blank" rel="noopener" className="underline hover:text-neutral-400">About Gemini Nano</a>
+                      </p>
+                      <p className="text-neutral-600">For faster, smarter responses, add an OpenAI or Claude key in <a href="/console/#keys" className="underline hover:text-neutral-400">Console → API Keys</a>.</p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

@@ -26,8 +26,8 @@ export interface AgentConfig {
 }
 
 export const DEFAULT_CONFIG: AgentConfig = {
-  provider: 'openai',
-  model: 'gpt-4o-mini',
+  provider: 'built-in-ai',
+  model: 'gemini-nano',
   temperature: 0.7,
   systemPrompt: 'You are a document Q&A assistant. The user has uploaded documents which are included below. ALWAYS answer based on the document content. If the user asks "what is this about" or similar, summarize the documents. If the answer is not in the documents, say "I could not find that in your documents." Never ask the user for clarification about what "it" refers to — "it" always means the uploaded documents.',
   responseStyle: 'concise',
