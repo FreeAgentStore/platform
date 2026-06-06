@@ -111,41 +111,51 @@ export function buildPromptFromConfig(config: WritingConfig, task: string): stri
 export function analyzeStyle(examples: WritingExample[]): Partial<WritingConfig> {
   if (examples.length === 0) return {};
 
-  const outputs = examples.map(e => e.output);
+  const outputs = examples.map((e) => e.output);
 
   // Analyze sentence length
-  const allSentences = outputs.flatMap(o => o.match(/[^.!?]+[.!?]+/g) ?? []);
-  const avgWords = allSentences.length > 0
-    ? allSentences.reduce((sum, s) => sum + s.trim().split(/\s+/).length, 0) / allSentences.length
-    : 15;
+  const allSentences = outputs.flatMap((o) => o.match(/[^.!?]+[.!?]+/g) ?? []);
+  const avgWords =
+    allSentences.length > 0
+      ? allSentences.reduce((sum, s) => sum + s.trim().split(/\s+/).length, 0) / allSentences.length
+      : 15;
   const avgSentenceLength: 'short' | 'medium' | 'long' =
     avgWords < 15 ? 'short' : avgWords < 25 ? 'medium' : 'long';
 
   // Detect common greetings
-  const firstLines = outputs.map(o => o.split('\n')[0].trim());
-  const greetings = firstLines.filter(l => /^(hi|hey|hello|dear|good|thanks)/i.test(l));
-  const greeting = greetings.length > outputs.length / 2
-    ? mostCommon(greetings) : undefined;
+  const firstLines = outputs.map((o) => o.split('\n')[0].trim());
+  const greetings = firstLines.filter((l) => /^(hi|hey|hello|dear|good|thanks)/i.test(l));
+  const greeting = greetings.length > outputs.length / 2 ? mostCommon(greetings) : undefined;
 
   // Detect common sign-offs
-  const lastLines = outputs.map(o => o.trim().split('\n').pop()?.trim() ?? '');
-  const signOffs = lastLines.filter(l => /^(best|regards|thanks|cheers|sincerely|warm)/i.test(l));
-  const signOff = signOffs.length > outputs.length / 2
-    ? mostCommon(signOffs) : undefined;
+  const lastLines = outputs.map((o) => o.trim().split('\n').pop()?.trim() ?? '');
+  const signOffs = lastLines.filter((l) => /^(best|regards|thanks|cheers|sincerely|warm)/i.test(l));
+  const signOff = signOffs.length > outputs.length / 2 ? mostCommon(signOffs) : undefined;
 
   // Detect paragraph count
-  const paragraphCounts = outputs.map(o => o.split(/\n\s*\n/).length);
-  const avgParagraphs = Math.round(paragraphCounts.reduce((a, b) => a + b, 0) / paragraphCounts.length);
+  const paragraphCounts = outputs.map((o) => o.split(/\n\s*\n/).length);
+  const avgParagraphs = Math.round(
+    paragraphCounts.reduce((a, b) => a + b, 0) / paragraphCounts.length,
+  );
 
   // Detect bullet points usage
-  const useBulletPoints = outputs.filter(o => /^[\s]*[-•*]\s/m.test(o)).length > outputs.length / 3;
+  const useBulletPoints =
+    outputs.filter((o) => /^[\s]*[-•*]\s/m.test(o)).length > outputs.length / 3;
 
   // Detect formality (simple heuristic)
-  const formalWords = ['sincerely', 'regards', 'dear', 'hereby', 'pursuant', 'accordingly', 'furthermore'];
+  const formalWords = [
+    'sincerely',
+    'regards',
+    'dear',
+    'hereby',
+    'pursuant',
+    'accordingly',
+    'furthermore',
+  ];
   const casualWords = ['hey', 'cool', 'awesome', 'gonna', 'wanna', 'lol', 'btw', 'fyi'];
   const allText = outputs.join(' ').toLowerCase();
-  const formalCount = formalWords.filter(w => allText.includes(w)).length;
-  const casualCount = casualWords.filter(w => allText.includes(w)).length;
+  const formalCount = formalWords.filter((w) => allText.includes(w)).length;
+  const casualCount = casualWords.filter((w) => allText.includes(w)).length;
   const formality = Math.min(10, Math.max(0, 5 + formalCount - casualCount));
 
   // Detect directness (short = direct)
@@ -153,9 +163,26 @@ export function analyzeStyle(examples: WritingExample[]): Partial<WritingConfig>
 
   return {
     toneRules: [
-      { aspect: 'formality', value: formality, description: formality > 6 ? 'Formal, professional' : formality > 3 ? 'Balanced, professional-casual' : 'Casual, conversational' },
-      { aspect: 'directness', value: directness, description: directness > 6 ? 'Direct, to the point' : 'Detailed, thorough' },
-      { aspect: 'length', value: avgParagraphs <= 2 ? 8 : avgParagraphs <= 4 ? 5 : 3, description: `Typically ${avgParagraphs} paragraph(s)` },
+      {
+        aspect: 'formality',
+        value: formality,
+        description:
+          formality > 6
+            ? 'Formal, professional'
+            : formality > 3
+              ? 'Balanced, professional-casual'
+              : 'Casual, conversational',
+      },
+      {
+        aspect: 'directness',
+        value: directness,
+        description: directness > 6 ? 'Direct, to the point' : 'Detailed, thorough',
+      },
+      {
+        aspect: 'length',
+        value: avgParagraphs <= 2 ? 8 : avgParagraphs <= 4 ? 5 : 3,
+        description: `Typically ${avgParagraphs} paragraph(s)`,
+      },
     ],
     formatting: {
       greeting,
@@ -163,7 +190,7 @@ export function analyzeStyle(examples: WritingExample[]): Partial<WritingConfig>
       maxParagraphs: avgParagraphs + 1,
       avgSentenceLength,
       useBulletPoints,
-      includeSubjectLine: examples.some(e => e.type === 'email'),
+      includeSubjectLine: examples.some((e) => e.type === 'email'),
     },
     trainedOn: examples.length,
   };
@@ -188,9 +215,12 @@ export function createDefaultConfig(): WritingConfig {
  * Build the LLM prompt for evolving a system prompt from examples.
  * Used by the Console training UI.
  */
-export function buildTrainingPrompt(examples: WritingExample[], currentConfig?: WritingConfig): string {
+export function buildTrainingPrompt(
+  examples: WritingExample[],
+  currentConfig?: WritingConfig,
+): string {
   const parts = [
-    'Analyze these writing examples and create a system prompt that captures the author\'s style.',
+    "Analyze these writing examples and create a system prompt that captures the author's style.",
     'Focus on: tone, formality, sentence structure, common phrases, greeting/sign-off patterns.',
     '',
     `Examples (${examples.length}):`,
@@ -219,6 +249,10 @@ function mostCommon(arr: string[]): string {
   for (const s of arr) counts.set(s, (counts.get(s) ?? 0) + 1);
   let best = arr[0];
   let max = 0;
-  for (const [k, v] of counts) if (v > max) { best = k; max = v; }
+  for (const [k, v] of counts)
+    if (v > max) {
+      best = k;
+      max = v;
+    }
   return best;
 }

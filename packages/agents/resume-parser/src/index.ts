@@ -47,7 +47,8 @@ export interface EduEntry {
 const EMAIL_RE = /[\w.+-]+@[\w-]+\.[\w.-]+/;
 const PHONE_RE = /(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/;
 const LINKEDIN_RE = /linkedin\.com\/in\/[\w-]+/i;
-const DATE_RANGE_RE = /(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s*\d{4}\s*[-–—to]+\s*(?:(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s*\d{4}|present|current|now)/gi;
+const DATE_RANGE_RE =
+  /(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s*\d{4}\s*[-–—to]+\s*(?:(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s*\d{4}|present|current|now)/gi;
 const YEAR_RANGE_RE = /\b(20\d{2}|19\d{2})\s*[-–—to]+\s*(20\d{2}|19\d{2}|present|current|now)\b/gi;
 
 const SECTION_HEADERS: Record<string, RegExp> = {
@@ -60,7 +61,10 @@ const SECTION_HEADERS: Record<string, RegExp> = {
 };
 
 export function parseResume(text: string): ParsedResume {
-  const lines = text.split(/\n/).map(l => l.trim()).filter(Boolean);
+  const lines = text
+    .split(/\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
   if (lines.length === 0) {
     return emptyResume();
   }
@@ -118,12 +122,24 @@ export function parseResume(text: string): ParsedResume {
 }
 
 function emptyResume(): ParsedResume {
-  return { name: null, email: null, phone: null, linkedin: null, location: null, summary: null, skills: [], experience: [], education: [], certifications: [], raw_sections: {} };
+  return {
+    name: null,
+    email: null,
+    phone: null,
+    linkedin: null,
+    location: null,
+    summary: null,
+    skills: [],
+    experience: [],
+    education: [],
+    certifications: [],
+    raw_sections: {},
+  };
 }
 
 function isSectionHeader(line: string): boolean {
   const clean = line.replace(/[-=_*#:]+/g, '').trim();
-  return Object.values(SECTION_HEADERS).some(re => re.test(clean));
+  return Object.values(SECTION_HEADERS).some((re) => re.test(clean));
 }
 
 function splitSections(lines: string[]): Record<string, string> {
@@ -161,8 +177,8 @@ function parseSkills(text: string): string[] {
   // Split on commas, pipes, bullets, semicolons, newlines
   return text
     .split(/[,|;•·\n]+/)
-    .map(s => s.replace(/^[-–—*]\s*/, '').trim())
-    .filter(s => s.length > 1 && s.length < 50)
+    .map((s) => s.replace(/^[-–—*]\s*/, '').trim())
+    .filter((s) => s.length > 1 && s.length < 50)
     .filter((s, i, arr) => arr.indexOf(s) === i); // deduplicate
 }
 
@@ -172,7 +188,10 @@ function parseExperience(text: string): WorkEntry[] {
   const blocks = text.split(/\n(?=[A-Z])/).filter(Boolean);
 
   for (const block of blocks) {
-    const blockLines = block.split('\n').map(l => l.trim()).filter(Boolean);
+    const blockLines = block
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean);
     if (blockLines.length === 0) continue;
 
     // Find date range in the block
@@ -199,9 +218,9 @@ function parseExperience(text: string): WorkEntry[] {
     // Description: remaining lines that look like bullet points
     const description = blockLines
       .slice(1)
-      .filter(l => l !== company && !DATE_RANGE_RE.test(l) && !YEAR_RANGE_RE.test(l))
-      .map(l => l.replace(/^[-–—*•]\s*/, '').trim())
-      .filter(l => l.length > 10);
+      .filter((l) => l !== company && !DATE_RANGE_RE.test(l) && !YEAR_RANGE_RE.test(l))
+      .map((l) => l.replace(/^[-–—*•]\s*/, '').trim())
+      .filter((l) => l.length > 10);
 
     if (title.length > 2) {
       entries.push({ title, company, dates, description });
@@ -217,7 +236,10 @@ function parseEducation(text: string): EduEntry[] {
   const blocks = text.split(/\n(?=[A-Z])/).filter(Boolean);
 
   for (const block of blocks) {
-    const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
+    const lines = block
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean);
     if (lines.length === 0) continue;
 
     const dates = block.match(YEAR_RANGE_RE)?.[0] ?? block.match(DATE_RANGE_RE)?.[0] ?? '';
@@ -247,8 +269,8 @@ function parseCertifications(text: string): string[] {
   if (!text) return [];
   return text
     .split('\n')
-    .map(l => l.replace(/^[-–—*•]\s*/, '').trim())
-    .filter(l => l.length > 3 && l.length < 100);
+    .map((l) => l.replace(/^[-–—*•]\s*/, '').trim())
+    .filter((l) => l.length > 3 && l.length < 100);
 }
 
 /** Get the evolution history of this heuristic. */
@@ -257,9 +279,19 @@ export function getEvolutionHistory() {
     { version: 1, score: 0.34, examples: 10, change: 'Basic regex for name/email' },
     { version: 2, score: 0.51, examples: 25, change: 'Added phone, section detection' },
     { version: 3, score: 0.67, examples: 50, change: 'Skills extraction, education parsing' },
-    { version: 4, score: 0.78, examples: 100, change: 'Experience date ranges, multi-line entries' },
+    {
+      version: 4,
+      score: 0.78,
+      examples: 100,
+      change: 'Experience date ranges, multi-line entries',
+    },
     { version: 5, score: 0.85, examples: 200, change: 'International formats, LinkedIn URLs' },
-    { version: 6, score: 0.91, examples: 350, change: 'Edge cases: tabs, unicode, mixed formatting' },
+    {
+      version: 6,
+      score: 0.91,
+      examples: 350,
+      change: 'Edge cases: tabs, unicode, mixed formatting',
+    },
     { version: 7, score: 0.94, examples: 500, change: 'Summary detection, certification parsing' },
   ];
 }

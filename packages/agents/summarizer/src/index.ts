@@ -44,7 +44,8 @@ export function createDefaultConfig(): SummaryConfig {
 export function createMeetingNotesConfig(): SummaryConfig {
   return {
     styleName: 'Meeting Notes',
-    systemPrompt: 'Extract structured meeting notes. Focus on decisions made, action items with owners and deadlines, and key discussion points. Skip small talk and tangents.',
+    systemPrompt:
+      'Extract structured meeting notes. Focus on decisions made, action items with owners and deadlines, and key discussion points. Skip small talk and tangents.',
     extractFields: [
       { name: 'decisions', description: 'Decisions that were made', required: true },
       { name: 'actionItems', description: 'Action items with owner and deadline', required: true },
@@ -63,7 +64,8 @@ export function createMeetingNotesConfig(): SummaryConfig {
 export function createResearchPaperConfig(): SummaryConfig {
   return {
     styleName: 'Research Paper',
-    systemPrompt: 'Summarize this research paper. Extract the core contribution, methodology, key findings, and limitations. Use precise academic language.',
+    systemPrompt:
+      'Summarize this research paper. Extract the core contribution, methodology, key findings, and limitations. Use precise academic language.',
     extractFields: [
       { name: 'hypothesis', description: 'Research question or hypothesis', required: true },
       { name: 'method', description: 'Methodology used', required: true },
@@ -109,7 +111,7 @@ export function buildPromptFromConfig(config: SummaryConfig, text: string): stri
  * Extracts first/last sentences + sentences with key phrases.
  */
 export function heuristicSummarize(text: string, maxSentences = 5): string {
-  const sentences = text.match(/[^.!?]+[.!?]+/g)?.map(s => s.trim()) ?? [text];
+  const sentences = text.match(/[^.!?]+[.!?]+/g)?.map((s) => s.trim()) ?? [text];
   if (sentences.length <= maxSentences) return sentences.join(' ');
 
   const scored = sentences.map((s, i) => {
@@ -118,7 +120,8 @@ export function heuristicSummarize(text: string, maxSentences = 5): string {
     if (i === 0) score += 3;
     if (i === sentences.length - 1) score += 2;
     // Sentences with key phrases
-    if (/\b(important|key|significant|conclusion|result|found|shows|demonstrates)\b/i.test(s)) score += 2;
+    if (/\b(important|key|significant|conclusion|result|found|shows|demonstrates)\b/i.test(s))
+      score += 2;
     if (/\b(however|but|although|despite|nevertheless)\b/i.test(s)) score += 1;
     // Longer sentences often carry more info
     score += Math.min(2, s.split(/\s+/).length / 15);
@@ -127,5 +130,5 @@ export function heuristicSummarize(text: string, maxSentences = 5): string {
 
   scored.sort((a, b) => b.score - a.score);
   const top = scored.slice(0, maxSentences).sort((a, b) => a.index - b.index);
-  return top.map(s => s.sentence).join(' ');
+  return top.map((s) => s.sentence).join(' ');
 }

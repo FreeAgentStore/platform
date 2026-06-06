@@ -1,14 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { BuiltInAvailability, BuiltInSession } from '../built-in-ai.js';
-import {
-  createPromptSession,
-  createRewriter,
-  createSummarizer,
-  createTranslator,
-  createWriter,
-  detectBuiltInAI,
-  smartPrompt,
-} from '../built-in-ai.js';
+import { createPromptSession, detectBuiltInAI, smartPrompt } from '../built-in-ai.js';
 
 /**
  * Detect built-in AI capabilities in the current browser.

@@ -21,7 +21,8 @@ export default function App() {
     <div className="p-3 space-y-3">
       <div className="flex items-center justify-between">
         <span className="font-semibold text-sm">FAGS Automator</span>
-        <button type="button"
+        <button
+          type="button"
           onClick={openSidePanel}
           className="text-[10px] text-neutral-500 hover:text-neutral-300 underline"
         >
@@ -41,7 +42,8 @@ export default function App() {
         <div className="space-y-1">
           <div className="text-[10px] text-neutral-500 uppercase tracking-wider">Quick Replay</div>
           {automations.slice(0, 5).map((a) => (
-            <button type="button"
+            <button
+              type="button"
               key={a.id}
               onClick={async () => {
                 await chrome.runtime.sendMessage({ type: 'BG_REPLAY', automation: a });

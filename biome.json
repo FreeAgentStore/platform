@@ -24,7 +24,9 @@
         "noNonNullAssertion": "off"
       },
       "suspicious": {
-        "noExplicitAny": "warn"
+        "noExplicitAny": "off",
+        "useIterableCallbackReturn": "warn",
+        "noArrayIndexKey": "warn"
       },
       "correctness": {
         "useExhaustiveDependencies": "warn"

@@ -80,7 +80,9 @@ export function selectorFor(el: Element): string {
   while (current && current !== document.documentElement) {
     const parent: Element | null = current.parentElement;
     if (!parent) break;
-    const siblings = Array.from(parent.children).filter((c: Element) => c.tagName === current!.tagName);
+    const siblings = Array.from(parent.children).filter(
+      (c: Element) => c.tagName === current!.tagName,
+    );
     if (siblings.length === 1) {
       path.unshift(current.tagName.toLowerCase());
     } else {
@@ -153,14 +155,20 @@ export function startRecording(targetDocument: Document = document): {
  * Build a prompt to condense recorded actions into clean JS.
  */
 export function buildCondensePrompt(actions: RecordedAction[], scriptName: string): string {
-  const lines = actions.map(a => {
+  const lines = actions.map((a) => {
     switch (a.type) {
-      case 'click': return `CLICK ${a.target.selector} // ${a.target.text ?? a.target.tag}`;
-      case 'fill': return `FILL ${a.target.selector} = "${a.value}"`;
-      case 'select': return `SELECT ${a.target.selector} = "${a.value}"`;
-      case 'navigate': return `NAVIGATE ${a.url}`;
-      case 'wait': return `WAIT ${a.value}ms`;
-      default: return `${a.type} ${a.target.selector}`;
+      case 'click':
+        return `CLICK ${a.target.selector} // ${a.target.text ?? a.target.tag}`;
+      case 'fill':
+        return `FILL ${a.target.selector} = "${a.value}"`;
+      case 'select':
+        return `SELECT ${a.target.selector} = "${a.value}"`;
+      case 'navigate':
+        return `NAVIGATE ${a.url}`;
+      case 'wait':
+        return `WAIT ${a.value}ms`;
+      default:
+        return `${a.type} ${a.target.selector}`;
     }
   });
 
@@ -174,7 +182,7 @@ export function buildCondensePrompt(actions: RecordedAction[], scriptName: strin
     `Handle missing elements gracefully (check if element exists before acting).`,
     ``,
     `Recorded actions:`,
-    ...lines.map(l => `  ${l}`),
+    ...lines.map((l) => `  ${l}`),
     ``,
     `Return ONLY the async function body. No function declaration, just the code.`,
     `The function receives (data) as parameter.`,
@@ -184,9 +192,14 @@ export function buildCondensePrompt(actions: RecordedAction[], scriptName: strin
 /**
  * Replay a condensed script on the current page.
  */
-export async function replayScript(code: string, data: Record<string, unknown> = {}): Promise<{ success: boolean; error?: string }> {
+export async function replayScript(
+  code: string,
+  data: Record<string, unknown> = {},
+): Promise<{ success: boolean; error?: string }> {
   try {
-    const fn = new Function('data', `return (async function(data) { ${code} })(data)`) as (data: Record<string, unknown>) => Promise<void>;
+    const fn = new Function('data', `return (async function(data) { ${code} })(data)`) as (
+      data: Record<string, unknown>,
+    ) => Promise<void>;
     await fn(data);
     return { success: true };
   } catch (e) {
@@ -197,7 +210,11 @@ export async function replayScript(code: string, data: Record<string, unknown> =
 /**
  * Replay inside an iframe (same-origin only).
  */
-export async function replayInIframe(iframe: HTMLIFrameElement, code: string, data: Record<string, unknown> = {}): Promise<{ success: boolean; error?: string }> {
+export async function replayInIframe(
+  iframe: HTMLIFrameElement,
+  code: string,
+  data: Record<string, unknown> = {},
+): Promise<{ success: boolean; error?: string }> {
   try {
     const doc = iframe.contentDocument;
     if (!doc) return { success: false, error: 'Cannot access iframe document (cross-origin?)' };

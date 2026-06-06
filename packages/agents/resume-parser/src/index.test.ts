@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { parseResume, getEvolutionHistory } from './index';
+import { describe, expect, it } from 'vitest';
+import { getEvolutionHistory, parseResume } from './index';
 
 const SAMPLE_RESUME = `
 John Smith

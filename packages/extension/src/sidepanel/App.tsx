@@ -54,7 +54,8 @@ export default function App() {
               placeholder="Automation name (e.g. Greenhouse Login)"
               className="w-full px-2 py-1.5 rounded bg-neutral-900 border border-neutral-800 text-xs focus:outline-none focus:border-violet-600"
             />
-            <button type="button"
+            <button
+              type="button"
               onClick={async () => {
                 await chrome.runtime.sendMessage({
                   type: 'BG_START_RECORDING',
@@ -68,7 +69,8 @@ export default function App() {
             </button>
           </>
         ) : (
-          <button type="button"
+          <button
+            type="button"
             onClick={async () => {
               const res = await chrome.runtime.sendMessage({ type: 'BG_STOP_RECORDING' });
               setRecording(false);
@@ -99,7 +101,8 @@ export default function App() {
         ) : (
           <div className="divide-y divide-neutral-800">
             {automations.map((a) => (
-              <button type="button"
+              <button
+                type="button"
                 key={a.id}
                 onClick={() => {
                   setSelectedId(a.id);
@@ -175,7 +178,11 @@ function DetailView({ automation, onBack }: { automation: Automation; onBack: ()
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="px-3 py-2 border-b border-neutral-800 flex items-center gap-2">
-        <button type="button" onClick={onBack} className="text-xs text-neutral-500 hover:text-neutral-300">
+        <button
+          type="button"
+          onClick={onBack}
+          className="text-xs text-neutral-500 hover:text-neutral-300"
+        >
           Back
         </button>
         <span className="font-semibold text-xs truncate flex-1">{automation.name}</span>
@@ -186,21 +193,24 @@ function DetailView({ automation, onBack }: { automation: Automation; onBack: ()
 
       {/* Actions */}
       <div className="p-3 border-b border-neutral-800 flex gap-2">
-        <button type="button"
+        <button
+          type="button"
           onClick={handleReplay}
           disabled={replaying}
           className="flex-1 py-1.5 rounded bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-semibold disabled:opacity-40"
         >
           {replaying ? 'Replaying...' : 'Replay'}
         </button>
-        <button type="button"
+        <button
+          type="button"
           onClick={handleTrain}
           disabled={training}
           className="flex-1 py-1.5 rounded bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold disabled:opacity-40"
         >
           {training ? 'Training...' : 'Train'}
         </button>
-        <button type="button"
+        <button
+          type="button"
           onClick={handleDelete}
           className="px-2 py-1.5 rounded bg-neutral-800 text-neutral-400 hover:text-red-400 text-xs"
         >
