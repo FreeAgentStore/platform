@@ -687,6 +687,18 @@ export async function handleApiRoute(request: Request, url: URL, env: Env): Prom
       return handleProxy(request, url, env, proxyMatch[1], proxyMatch[2]);
     }
 
+    // GET /v1/qr?data=URL — generate QR code as SVG
+    if (path === '/v1/qr' && request.method === 'GET') {
+      const data = url.searchParams.get('data');
+      if (!data) return jsonResponse({ error: 'Missing ?data= parameter' }, 400);
+      const { generateQRSvg } = await import('./qr-endpoint');
+      const svg = generateQRSvg(data);
+      const h = corsHeaders();
+      h.set('Content-Type', 'image/svg+xml');
+      h.set('Cache-Control', 'public, max-age=300');
+      return new Response(svg, { headers: h });
+    }
+
     // ── Mirror relay routes (unauthenticated — room ID = access token) ──
 
     const mirrorMatch = path.match(/^\/v1\/mirror\/([a-z0-9]{6,16})$/);
