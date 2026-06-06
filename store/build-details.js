@@ -11,7 +11,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const registry = JSON.parse(fs.readFileSync(path.join(__dirname, 'registry.json'), 'utf-8'));
 const outDir = __dirname;
 
-function generateDetailPage(agent) {
+function generateDetailPage(agent, readmeHtml) {
   const isHeuristic = agent.type === 'heuristic';
   const backends = (agent.backends ?? []).join(', ').toUpperCase() || 'None';
   const repoPath = `FreeAgentStore/${agent.id}`;
@@ -146,6 +146,8 @@ function generateDetailPage(agent) {
         <!-- Description -->
         <p class="desc">${agent.description} Runs entirely in your browser — your data never leaves your device.</p>
 
+        ${readmeHtml ? `<div class="readme" style="margin:1.5rem 0;padding:1.25rem;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius)"><h2 style="font-family:var(--font-display);font-size:1.1rem;margin-bottom:0.75rem">Documentation</h2>${readmeHtml}</div>` : ''}
+
         <!-- Badges -->
         <div class="badges">
           <span class="badge-pass"><span class="dot"></span> Free forever</span>
@@ -153,6 +155,7 @@ function generateDetailPage(agent) {
           <span class="badge-pass"><span class="dot"></span> 100% private</span>
           <span class="badge-pass"><span class="dot"></span> Open source (MIT)</span>
         </div>
+        <div id="usage-stats"></div>
 
         <!-- Meta grid -->
         <div class="meta-grid">
@@ -354,6 +357,11 @@ function generateDetailPage(agent) {
         });
       });
     })();
+  <\/script>
+  <script>
+    fetch('/v1/stats/${agent.id}').then(function(r){return r.json()}).then(function(d){
+      if(d.calls>0){document.getElementById('usage-stats').innerHTML='<span style="font-size:0.82rem;color:#a3a3a3">'+d.calls+' API calls</span>';}
+    }).catch(function(){});
   <\/script>
 </body>
 </html>`;
@@ -1402,11 +1410,91 @@ function generateConfigSandbox(agent) {
     <\/script>`;
 }
 
+function simpleMarkdown(md) {
+  const lines = md.split('\n');
+  let html = '';
+  let inCode = false;
+  let inList = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Code block toggle
+    if (line.trimStart().startsWith('```')) {
+      if (inCode) {
+        html += '</code></pre>';
+        inCode = false;
+      } else {
+        if (inList) { html += '</ul>'; inList = false; }
+        html += '<pre style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:0.75rem;overflow-x:auto;margin:0.5rem 0"><code style="font-size:0.82rem">';
+        inCode = true;
+      }
+      continue;
+    }
+
+    if (inCode) {
+      html += escapeHtml(line) + '\n';
+      continue;
+    }
+
+    // Blank line
+    if (!line.trim()) {
+      if (inList) { html += '</ul>'; inList = false; }
+      continue;
+    }
+
+    // Headers
+    if (line.startsWith('## ')) {
+      if (inList) { html += '</ul>'; inList = false; }
+      html += '<h3 style="font-size:0.95rem;font-weight:700;margin:1rem 0 0.4rem">' + escapeHtml(line.slice(3)) + '</h3>';
+      continue;
+    }
+    if (line.startsWith('# ')) {
+      if (inList) { html += '</ul>'; inList = false; }
+      html += '<h2 style="font-size:1.05rem;font-weight:700;margin:1rem 0 0.4rem">' + escapeHtml(line.slice(2)) + '</h2>';
+      continue;
+    }
+
+    // List items
+    if (/^[-*] /.test(line.trimStart())) {
+      if (!inList) { html += '<ul style="margin:0.4rem 0;padding-left:1.25rem">'; inList = true; }
+      html += '<li style="font-size:0.88rem;color:var(--muted);margin-bottom:0.2rem">' + inlineMarkdown(line.trimStart().slice(2)) + '</li>';
+      continue;
+    }
+
+    // Paragraph
+    if (inList) { html += '</ul>'; inList = false; }
+    html += '<p style="font-size:0.88rem;color:var(--muted);line-height:1.6;margin:0.4rem 0">' + inlineMarkdown(line) + '</p>';
+  }
+
+  if (inCode) html += '</code></pre>';
+  if (inList) html += '</ul>';
+  return html;
+}
+
+function inlineMarkdown(text) {
+  let s = escapeHtml(text);
+  s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/`([^`]+)`/g, '<code style="background:var(--paper);padding:0.1rem 0.3rem;border-radius:3px;font-size:0.82rem">$1</code>');
+  s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+  return s;
+}
+
 // Generate
 for (const agent of registry.agents) {
   const dir = path.join(outDir, 'agents', agent.id);
   fs.mkdirSync(dir, { recursive: true });
-  const html = generateDetailPage(agent);
+
+  let readmeHtml = '';
+  try {
+    const readmePath = path.join(__dirname, '..', 'agents', agent.id, 'README.md');
+    if (fs.existsSync(readmePath)) {
+      const md = fs.readFileSync(readmePath, 'utf-8');
+      readmeHtml = simpleMarkdown(md);
+    }
+  } catch {}
+
+  const html = generateDetailPage(agent, readmeHtml);
   fs.writeFileSync(path.join(dir, 'index.html'), html);
   console.log(`Generated: /agents/${agent.id}/`);
 }

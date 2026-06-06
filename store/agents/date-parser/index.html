@@ -118,6 +118,8 @@
         <!-- Description -->
         <p class="desc">Parse any date or time string — 'next tuesday', 'March 14, 2025', 'in 3 days', '2025-03-14T10:00Z'. 500+ formats. Runs entirely in your browser — your data never leaves your device.</p>
 
+        
+
         <!-- Badges -->
         <div class="badges">
           <span class="badge-pass"><span class="dot"></span> Free forever</span>
@@ -125,6 +127,7 @@
           <span class="badge-pass"><span class="dot"></span> 100% private</span>
           <span class="badge-pass"><span class="dot"></span> Open source (MIT)</span>
         </div>
+        <div id="usage-stats"></div>
 
         <!-- Meta grid -->
         <div class="meta-grid">
@@ -381,6 +384,11 @@
         });
       });
     })();
+  </script>
+  <script>
+    fetch('/v1/stats/date-parser').then(function(r){return r.json()}).then(function(d){
+      if(d.calls>0){document.getElementById('usage-stats').innerHTML='<span style="font-size:0.82rem;color:#a3a3a3">'+d.calls+' API calls</span>';}
+    }).catch(function(){});
   </script>
 </body>
 </html>

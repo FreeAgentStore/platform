@@ -68,6 +68,9 @@
     .tab:hover { color: var(--ink); }
     .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
     .tab-count { font-size: 0.72rem; color: var(--muted-soft); margin-left: 0.25rem; }
+.search-input{flex:1;min-width:200px;max-width:320px;padding:0.5rem 0.85rem 0.5rem 2.2rem;border-radius:100px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-size:0.85rem;font-family:var(--font-body);outline:none;transition:border-color 0.15s;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23737373' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.156a5 5 0 1 1 0-10 5 5 0 0 1 0 10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:0.75rem center}
+    .search-input:focus{border-color:var(--accent)}
+    .search-input::placeholder{color:var(--muted-soft)}
 
     /* Filter bar */
     .toolbar{padding:1rem 0;display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center}
@@ -184,6 +187,7 @@
         </div>
 
         <div class="toolbar">
+        <input type="text" class="search-input" id="searchInput" placeholder="Search agents..." autocomplete="off" />
         <button class="filter-btn active" onclick="filterCategory('all')">All</button>
         <button class="filter-btn" onclick="filterCategory('text')">Text</button>
         <button class="filter-btn" onclick="filterCategory('productivity')">Productivity</button>
@@ -197,7 +201,7 @@
         <span class="agent-count" id="agentCount">53 agents</span>
       </div>
             <div class="agents-grid" id="agentsGrid">
-        <div class="agent-card" data-category="audio" data-store-type="model">
+        <div class="agent-card" data-category="audio" data-store-type="model" data-name="text to speech" data-desc="convert text to natural-sounding speech using kokoro tts. 30+ voices, 8 languages.">
           <a href="/agents/tts/" class="agent-card-body">
             <div class="agent-icon" style="background:#7c3aed">🔊</div>
             <div class="agent-body">
@@ -215,7 +219,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="audio" data-store-type="model">
+        <div class="agent-card" data-category="audio" data-store-type="model" data-name="transcriber" data-desc="transcribe audio to text using whisper ai. drop a file, get a transcript with timestamps.">
           <a href="/agents/transcriber/" class="agent-card-body">
             <div class="agent-icon" style="background:#2563eb">🎤</div>
             <div class="agent-body">
@@ -233,7 +237,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="vision" data-store-type="model">
+        <div class="agent-card" data-category="vision" data-store-type="model" data-name="background remover" data-desc="remove image backgrounds instantly using rmbg ai. drop an image, get a transparent png.">
           <a href="/agents/bg-remover/" class="agent-card-body">
             <div class="agent-icon" style="background:#059669">✂️</div>
             <div class="agent-body">
@@ -251,7 +255,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="text" data-store-type="library">
+        <div class="agent-card" data-category="text" data-store-type="library" data-name="sentiment analyzer" data-desc="analyze text sentiment instantly. no model download, no ai inference. heuristic code that evolves.">
           <a href="/agents/sentiment/" class="agent-card-body">
             <div class="agent-icon" style="background:#d97706">😊</div>
             <div class="agent-body">
@@ -269,7 +273,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="productivity" data-store-type="library">
+        <div class="agent-card" data-category="productivity" data-store-type="library" data-name="resume parser" data-desc="parse resumes into structured json — name, email, skills, experience, education. heuristic evolved from 500+ resumes.">
           <a href="/agents/resume-parser/" class="agent-card-body">
             <div class="agent-icon" style="background:#be185d">📄</div>
             <div class="agent-body">
@@ -287,7 +291,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="text" data-store-type="agent">
+        <div class="agent-card" data-category="text" data-store-type="agent" data-name="summarizer" data-desc="summarize any text — tl;dr, key points, headlines. uses chrome's built-in ai. zero download, instant.">
           <a href="/agents/summarizer/" class="agent-card-body">
             <div class="agent-icon" style="background:#059669">📝</div>
             <div class="agent-body">
@@ -306,7 +310,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="text" data-store-type="agent">
+        <div class="agent-card" data-category="text" data-store-type="agent" data-name="writing assistant" data-desc="draft, rewrite, and polish text. formal, casual, or neutral tone. uses chrome's built-in ai. zero download.">
           <a href="/agents/writing-assistant/" class="agent-card-body">
             <div class="agent-icon" style="background:#2563eb">✍️</div>
             <div class="agent-body">
@@ -325,7 +329,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="code" data-store-type="agent">
+        <div class="agent-card" data-category="code" data-store-type="agent" data-name="code explainer" data-desc="paste code, get a plain english explanation. review for bugs, generate docs. uses chrome's built-in ai.">
           <a href="/agents/code-explainer/" class="agent-card-body">
             <div class="agent-icon" style="background:#0891b2">💻</div>
             <div class="agent-body">
@@ -344,7 +348,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="productivity" data-store-type="agent">
+        <div class="agent-card" data-category="productivity" data-store-type="agent" data-name="voice notes" data-desc="speak and get structured notes — title, key points, action items. web speech api + chrome built-in ai.">
           <a href="/agents/voice-notes/" class="agent-card-body">
             <div class="agent-icon" style="background:#7c3aed">🎙️</div>
             <div class="agent-body">
@@ -363,7 +367,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="creative" data-store-type="library">
+        <div class="agent-card" data-category="creative" data-store-type="library" data-name="icon generator" data-desc="browse 100+ curated svg icons or search by description. color customization, svg/png export. works instantly, no ai required.">
           <a href="/agents/icon-generator/" class="agent-card-body">
             <div class="agent-icon" style="background:#ec4899">🎨</div>
             <div class="agent-body">
@@ -381,7 +385,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="automation" data-store-type="agent">
+        <div class="agent-card" data-category="automation" data-store-type="agent" data-name="browser automation" data-desc="record actions → ai condenses to js → replay without ai">
           <a href="/agents/browser-automation/" class="agent-card-body">
             <div class="agent-icon" style="background:#f59e0b">🤖</div>
             <div class="agent-body">
@@ -400,7 +404,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="productivity" data-store-type="library">
+        <div class="agent-card" data-category="productivity" data-store-type="library" data-name="unit converter" data-desc="convert between units instantly — length, weight, temperature, volume, speed, data, time. no model, no download.">
           <a href="/agents/unit-converter/" class="agent-card-body">
             <div class="agent-icon" style="background:#0d9488">📏</div>
             <div class="agent-body">
@@ -418,7 +422,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="creative" data-store-type="library">
+        <div class="agent-card" data-category="creative" data-store-type="library" data-name="avatar maker" data-desc="upload a photo, get a stylized avatar. geometric, pixel art, silhouette, or mosaic styles. pure canvas rendering.">
           <a href="/agents/avatar-maker/" class="agent-card-body">
             <div class="agent-icon" style="background:#8b5cf6">👤</div>
             <div class="agent-body">
@@ -436,7 +440,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="creative" data-store-type="agent">
+        <div class="agent-card" data-category="creative" data-store-type="agent" data-name="mood palette" data-desc="upload a photo or describe a mood — get a color palette with names. extract colors from images or generate from text.">
           <a href="/agents/mood-palette/" class="agent-card-body">
             <div class="agent-icon" style="background:#ec4899">🎨</div>
             <div class="agent-body">
@@ -455,7 +459,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="code" data-store-type="library">
+        <div class="agent-card" data-category="code" data-store-type="library" data-name="regex builder" data-desc="describe a pattern in english, get a regex. 30+ common patterns, live testing, match highlighting.">
           <a href="/agents/regex-builder/" class="agent-card-body">
             <div class="agent-icon" style="background:#f59e0b;font-family:monospace;font-size:0.9rem">.*</div>
             <div class="agent-body">
@@ -473,7 +477,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="code" data-store-type="library">
+        <div class="agent-card" data-category="code" data-store-type="library" data-name="json formatter" data-desc="paste json — format, minify, validate, query, diff. syntax highlighting, tree view, typescript types. pure js, instant.">
           <a href="/agents/json-formatter/" class="agent-card-body">
             <div class="agent-icon" style="background:#0891b2;font-family:monospace;font-size:0.75rem">{ }</div>
             <div class="agent-body">
@@ -491,7 +495,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="code" data-store-type="library">
+        <div class="agent-card" data-category="code" data-store-type="library" data-name="hash generator" data-desc="sha-256, md5, hmac, base64, uuid, passwords, jwt decode, totp. uses web crypto api. zero deps.">
           <a href="/agents/hash-generator/" class="agent-card-body">
             <div class="agent-icon" style="background:#6366f1;font-family:monospace;font-size:1.2rem">#</div>
             <div class="agent-body">
@@ -509,7 +513,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="game-ai" data-store-type="library">
+        <div class="agent-card" data-category="game-ai" data-store-type="library" data-name="steering behaviors" data-desc="craig reynolds' steering behaviors for game characters. seek, flee, wander, flock, arrive, avoid. 60fps for 500+ agents. importable by fgs games.">
           <a href="/agents/steering/" class="agent-card-body">
             <div class="agent-icon" style="background:#16a34a">→</div>
             <div class="agent-body">
@@ -527,7 +531,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="game-ai" data-store-type="library">
+        <div class="agent-card" data-category="game-ai" data-store-type="library" data-name="behavior trees" data-desc="composable behavior trees for npc ai. sequence, selector, parallel, decorators. visual editor + live preview. for game character logic.">
           <a href="/agents/behavior-tree/" class="agent-card-body">
             <div class="agent-icon" style="background:#65a30d">🌳</div>
             <div class="agent-body">
@@ -545,7 +549,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="game-ai" data-store-type="library">
+        <div class="agent-card" data-category="game-ai" data-store-type="library" data-name="physics sim" data-desc="verlet integration physics — particles, springs, cloth, soft bodies, ragdolls. pure math, 60fps. for game effects and dynamic objects.">
           <a href="/agents/physics-sim/" class="agent-card-body">
             <div class="agent-icon" style="background:#dc2626">⚡</div>
             <div class="agent-body">
@@ -563,7 +567,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="productivity" data-store-type="library">
+        <div class="agent-card" data-category="productivity" data-store-type="library" data-name="date parser" data-desc="parse any date or time string — 'next tuesday', 'march 14, 2025', 'in 3 days', '2025-03-14t10:00z'. 500+ formats.">
           <a href="/agents/date-parser/" class="agent-card-body">
             <div class="agent-icon" style="background:#0284c7">📅</div>
             <div class="agent-body">
@@ -581,7 +585,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="text" data-store-type="library">
+        <div class="agent-card" data-category="text" data-store-type="library" data-name="emotion detector" data-desc="detect emotions in text — joy, anger, sadness, fear, surprise, disgust, trust, anticipation. plutchik's 8 emotions, evolved scoring.">
           <a href="/agents/emotion-detector/" class="agent-card-body">
             <div class="agent-icon" style="background:#c026d3">🎭</div>
             <div class="agent-body">
@@ -599,7 +603,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="text" data-store-type="library">
+        <div class="agent-card" data-category="text" data-store-type="library" data-name="language detector" data-desc="detect the language of any text. character n-gram frequency analysis evolved from wikipedia corpora. 30 languages, 95%+ accuracy.">
           <a href="/agents/language-detector/" class="agent-card-body">
             <div class="agent-icon" style="background:#0369a1">🌐</div>
             <div class="agent-body">
@@ -617,7 +621,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="productivity" data-store-type="library">
+        <div class="agent-card" data-category="productivity" data-store-type="library" data-name="address parser" data-desc="parse any address into structured fields — street, unit, city, state, zip, country. us, uk, eu, japanese formats.">
           <a href="/agents/address-parser/" class="agent-card-body">
             <div class="agent-icon" style="background:#0284c7">🏠</div>
             <div class="agent-body">
@@ -635,7 +639,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="productivity" data-store-type="library">
+        <div class="agent-card" data-category="productivity" data-store-type="library" data-name="email classifier" data-desc="classify emails — transactional, promotional, personal, notification, newsletter, spam. 200+ signal patterns.">
           <a href="/agents/email-classifier/" class="agent-card-body">
             <div class="agent-icon" style="background:#7c3aed">📧</div>
             <div class="agent-body">
@@ -653,7 +657,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="productivity" data-store-type="library">
+        <div class="agent-card" data-category="productivity" data-store-type="library" data-name="name parser" data-desc="parse human names — prefix, first, middle, last, suffix. western, eastern, hispanic, arabic, mononym formats.">
           <a href="/agents/name-parser/" class="agent-card-body">
             <div class="agent-icon" style="background:#0891b2">👤</div>
             <div class="agent-body">
@@ -671,7 +675,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="text" data-store-type="library">
+        <div class="agent-card" data-category="text" data-store-type="library" data-name="profanity filter" data-desc="context-aware profanity detection. leetspeak, evasion patterns, severity levels. distinguishes insults from innocent usage.">
           <a href="/agents/profanity-filter/" class="agent-card-body">
             <div class="agent-icon" style="background:#dc2626">🛡️</div>
             <div class="agent-body">
@@ -689,7 +693,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="game-ai" data-store-type="library">
+        <div class="agent-card" data-category="game-ai" data-store-type="library" data-name="name generator" data-desc="fantasy, sci-fi, medieval, japanese, nordic character names. markov chains per genre/race/gender. for games and fiction.">
           <a href="/agents/name-generator/" class="agent-card-body">
             <div class="agent-icon" style="background:#a855f7">✨</div>
             <div class="agent-body">
@@ -707,7 +711,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="code" data-store-type="library">
+        <div class="agent-card" data-category="code" data-store-type="library" data-name="code detector" data-desc="detect the programming language of any code snippet. 30 languages, keyword + structural + syntax scoring.">
           <a href="/agents/code-detector/" class="agent-card-body">
             <div class="agent-icon" style="background:#059669">&lt;/&gt;</div>
             <div class="agent-body">
@@ -725,7 +729,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="text" data-store-type="library">
+        <div class="agent-card" data-category="text" data-store-type="library" data-name="intent detector" data-desc="detect text intent — question, command, statement, greeting, farewell. evolved keyword + structural scoring.">
           <a href="/agents/intent-detector/" class="agent-card-body">
             <div class="agent-icon" style="background:#6366f1">🧠</div>
             <div class="agent-body">
@@ -743,7 +747,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="productivity" data-store-type="library">
+        <div class="agent-card" data-category="productivity" data-store-type="library" data-name="urgency detector" data-desc="detect text urgency — critical, high, normal, low. for support tickets, emails, notifications.">
           <a href="/agents/urgency-detector/" class="agent-card-body">
             <div class="agent-icon" style="background:#dc2626">🚨</div>
             <div class="agent-body">
@@ -761,7 +765,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="text" data-store-type="library">
+        <div class="agent-card" data-category="text" data-store-type="library" data-name="formality detector" data-desc="detect text formality — formal, neutral, casual, slang. for tone adjustment, writing tools.">
           <a href="/agents/formality-detector/" class="agent-card-body">
             <div class="agent-icon" style="background:#0891b2">👔</div>
             <div class="agent-body">
@@ -779,7 +783,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="productivity" data-store-type="library">
+        <div class="agent-card" data-category="productivity" data-store-type="library" data-name="feedback classifier" data-desc="classify feedback — bug, feature request, complaint, praise, question, suggestion. for issue triage.">
           <a href="/agents/feedback-classifier/" class="agent-card-body">
             <div class="agent-icon" style="background:#059669">📋</div>
             <div class="agent-body">
@@ -797,7 +801,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="text" data-store-type="library">
+        <div class="agent-card" data-category="text" data-store-type="library" data-name="topic classifier" data-desc="classify text topic — technology, business, health, sports, entertainment, science, politics, finance, education, travel.">
           <a href="/agents/topic-classifier/" class="agent-card-body">
             <div class="agent-icon" style="background:#7c3aed">📰</div>
             <div class="agent-body">
@@ -815,7 +819,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="text" data-store-type="library">
+        <div class="agent-card" data-category="text" data-store-type="library" data-name="clickbait detector" data-desc="detect clickbait headlines. scores sensationalism, emotional manipulation, vagueness. for content curation.">
           <a href="/agents/clickbait-detector/" class="agent-card-body">
             <div class="agent-icon" style="background:#f59e0b">🎣</div>
             <div class="agent-body">
@@ -833,7 +837,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="text" data-store-type="library">
+        <div class="agent-card" data-category="text" data-store-type="library" data-name="question detector" data-desc="classify questions — yes/no, open-ended, rhetorical, choice, or not a question. for chatbots, faq matching.">
           <a href="/agents/question-detector/" class="agent-card-body">
             <div class="agent-icon" style="background:#2563eb">❓</div>
             <div class="agent-body">
@@ -851,7 +855,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="text" data-store-type="library">
+        <div class="agent-card" data-category="text" data-store-type="library" data-name="sarcasm detector" data-desc="detect sarcasm — contradiction, exaggeration, understatement patterns. honestly scoped at 72% (sarcasm is hard).">
           <a href="/agents/sarcasm-detector/" class="agent-card-body">
             <div class="agent-icon" style="background:#a855f7">🙃</div>
             <div class="agent-body">
@@ -869,7 +873,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="vision" data-store-type="model">
+        <div class="agent-card" data-category="vision" data-store-type="model" data-name="food analyzer" data-desc="photograph food, get dish name + estimated calories + ingredients. mobilevit + nutrition database.">
           <a href="/agents/food-analyzer/" class="agent-card-body">
             <div class="agent-icon" style="background:#f97316">🍔</div>
             <div class="agent-body">
@@ -887,7 +891,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="vision" data-store-type="model">
+        <div class="agent-card" data-category="vision" data-store-type="model" data-name="plant identifier" data-desc="photograph a plant, get species + care instructions + toxicity info. mobilevit + botanical database.">
           <a href="/agents/plant-identifier/" class="agent-card-body">
             <div class="agent-icon" style="background:#16a34a">🌿</div>
             <div class="agent-body">
@@ -905,7 +909,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="text" data-store-type="model">
+        <div class="agent-card" data-category="text" data-store-type="model" data-name="smart search" data-desc="semantic text search — finds meaning, not just keywords. minilm embeddings (23mb).">
           <a href="/agents/smart-search/" class="agent-card-body">
             <div class="agent-icon" style="background:#2563eb">🔍</div>
             <div class="agent-body">
@@ -923,7 +927,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="productivity" data-store-type="model">
+        <div class="agent-card" data-category="productivity" data-store-type="model" data-name="document scanner" data-desc="photograph a document, get clean extracted text with paragraphs. trocr + layout heuristics.">
           <a href="/agents/document-scanner/" class="agent-card-body">
             <div class="agent-icon" style="background:#6366f1">📄</div>
             <div class="agent-body">
@@ -941,7 +945,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="productivity" data-store-type="model">
+        <div class="agent-card" data-category="productivity" data-store-type="model" data-name="voice journal" data-desc="record voice, get transcription + mood analysis + summary. whisper tiny + emotion + summarizer.">
           <a href="/agents/voice-journal/" class="agent-card-body">
             <div class="agent-icon" style="background:#7c3aed">🎙️</div>
             <div class="agent-body">
@@ -959,7 +963,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="vision" data-store-type="model">
+        <div class="agent-card" data-category="vision" data-store-type="model" data-name="scene describer" data-desc="upload a photo, get a natural language description. object detection + spatial reasoning. for accessibility.">
           <a href="/agents/scene-describer/" class="agent-card-body">
             <div class="agent-icon" style="background:#0891b2">👁️</div>
             <div class="agent-body">
@@ -977,7 +981,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="productivity" data-store-type="model">
+        <div class="agent-card" data-category="productivity" data-store-type="model" data-name="receipt scanner" data-desc="photograph a receipt, get merchant + date + line items + totals. trocr + receipt parsing heuristics.">
           <a href="/agents/receipt-scanner/" class="agent-card-body">
             <div class="agent-icon" style="background:#059669">🧾</div>
             <div class="agent-body">
@@ -995,7 +999,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="productivity" data-store-type="model">
+        <div class="agent-card" data-category="productivity" data-store-type="model" data-name="faq matcher" data-desc="index your faq, find the best answer for any question. semantic matching with minilm (23mb).">
           <a href="/agents/faq-matcher/" class="agent-card-body">
             <div class="agent-icon" style="background:#0284c7">❓</div>
             <div class="agent-body">
@@ -1013,7 +1017,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="text" data-store-type="model">
+        <div class="agent-card" data-category="text" data-store-type="model" data-name="plagiarism checker" data-desc="compare two texts for semantic similarity. minilm embeddings + paragraph comparison.">
           <a href="/agents/plagiarism-checker/" class="agent-card-body">
             <div class="agent-icon" style="background:#dc2626">🔎</div>
             <div class="agent-body">
@@ -1031,7 +1035,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="productivity" data-store-type="model">
+        <div class="agent-card" data-category="productivity" data-store-type="model" data-name="meeting summarizer" data-desc="upload a meeting recording, get transcript + decisions + action items. whisper tiny + meeting heuristics.">
           <a href="/agents/meeting-summarizer/" class="agent-card-body">
             <div class="agent-icon" style="background:#7c3aed">📝</div>
             <div class="agent-body">
@@ -1049,7 +1053,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="education" data-store-type="library">
+        <div class="agent-card" data-category="education" data-store-type="library" data-name="study card maker" data-desc="paste text or notes — auto-generate flashcards. keyword extraction + question generation. anki export.">
           <a href="/agents/study-cards/" class="agent-card-body">
             <div class="agent-icon" style="background:#f59e0b">📚</div>
             <div class="agent-body">
@@ -1067,7 +1071,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="productivity" data-store-type="agent">
+        <div class="agent-card" data-category="productivity" data-store-type="agent" data-name="document chatbot" data-desc="chat with your documents. upload files, paste text, or import urls. answers using your own ai key.">
           <a href="/agents/chatbot/" class="agent-card-body">
             <div class="agent-icon" style="background:#7c3aed">💬</div>
             <div class="agent-body">
@@ -1086,7 +1090,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="text" data-store-type="library">
+        <div class="agent-card" data-category="text" data-store-type="library" data-name="browser rag" data-desc="retrieval-augmented generation in the browser. index documents, search semantically, ask questions — all client-side. minilm + indexeddb + chrome nano.">
           <a href="/agents/browser-rag/" class="agent-card-body">
             <div class="agent-icon" style="background:#7c3aed">🔍</div>
             <div class="agent-body">
@@ -1104,7 +1108,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="text" data-store-type="agent">
+        <div class="agent-card" data-category="text" data-store-type="agent" data-name="nano chat" data-desc="fast chat with chrome gemini nano. pick a character, set the vibe, chat away. short responses, zero download, 100% private.">
           <a href="/agents/nano-chat/" class="agent-card-body">
             <div class="agent-icon" style="background:#7c3aed">💬</div>
             <div class="agent-body">
@@ -1122,7 +1126,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="text" data-store-type="agent">
+        <div class="agent-card" data-category="text" data-store-type="agent" data-name="text rewriter" data-desc="rewrite text in any style — formal, casual, poetry, pirate, eli5, gen z, shakespearean, haiku, tweet. chrome nano.">
           <a href="/agents/text-rewriter/" class="agent-card-body">
             <div class="agent-icon" style="background:#7c3aed">✍️</div>
             <div class="agent-body">
@@ -1140,7 +1144,7 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="text" data-store-type="agent">
+        <div class="agent-card" data-category="text" data-store-type="agent" data-name="nano translator" data-desc="translate text between 28 languages using chrome gemini nano. runs on your device, 100% private.">
           <a href="/agents/nano-translator/" class="agent-card-body">
             <div class="agent-icon" style="background:#0891b2">🌐</div>
             <div class="agent-body">
@@ -1247,6 +1251,7 @@
   <script>
     var _tab = 'all';
     var _category = 'all';
+    var _search = '';
 
     function switchTab(tab) {
       _tab = tab;
@@ -1271,12 +1276,18 @@
       cards.forEach(function(c) {
         var tabMatch = _tab === 'all' || c.dataset.storeType === _tab;
         var catMatch = _category === 'all' || c.dataset.category === _category;
-        var show = tabMatch && catMatch;
+        var searchMatch = !_search || (c.dataset.name && c.dataset.name.includes(_search)) || (c.dataset.desc && c.dataset.desc.includes(_search));
+        var show = tabMatch && catMatch && searchMatch;
         c.style.display = show ? '' : 'none';
         if (show) visible++;
       });
       document.getElementById('agentCount').textContent = visible + ' agent' + (visible !== 1 ? 's' : '');
     }
+
+    document.getElementById('searchInput').addEventListener('input', function(e) {
+      _search = e.target.value.toLowerCase().trim();
+      applyFilters();
+    });
   </script>
 
   <script>

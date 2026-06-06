@@ -13,6 +13,7 @@
  *   GET    /v1/keys              → server-rendered HTML key management page (auth)
  *   GET    /v1/usage             → usage stats (auth)
  *   ALL    /v1/proxy/:host/*     → proxy request with injected user key (auth)
+ *   GET    /v1/stats/:agentId    → public aggregate usage stats for an agent
  *   GET    /v1/mirror.js         → mirror Web Component client script
  *   GET    /v1/mirror/:roomId/ws → WebSocket upgrade → MirrorRoom DO
  *   GET    /v1/mirror/:roomId    → room info (peer count)
@@ -746,6 +747,27 @@ export async function handleApiRoute(request: Request, url: URL, env: Env): Prom
     const proxyMatch = path.match(/^\/v1\/proxy\/([^/]+)\/(.+)$/);
     if (proxyMatch) {
       return await handleProxy(request, url, env, proxyMatch[1], proxyMatch[2]);
+    }
+
+    // GET /v1/stats/:agentId — public aggregate usage stats for an agent
+    const statsMatch = path.match(/^\/v1\/stats\/([a-z0-9-]+)$/);
+    if (statsMatch && request.method === 'GET') {
+      const agentId = statsMatch[1];
+      const row = await env.DB.prepare(
+        'SELECT COUNT(*) as calls, MAX(created_at) as last_used FROM usage_log WHERE agent_id = ?',
+      )
+        .bind(agentId)
+        .first<{ calls: number; last_used: number | null }>();
+      const h = corsHeaders();
+      h.set('Content-Type', 'application/json; charset=utf-8');
+      h.set('Cache-Control', 'public, max-age=300');
+      return new Response(
+        JSON.stringify({
+          calls: row?.calls ?? 0,
+          lastUsed: row?.last_used ? new Date(row.last_used * 1000).toISOString() : null,
+        }),
+        { headers: h },
+      );
     }
 
     // GET /v1/qr?data=URL — generate QR code as SVG

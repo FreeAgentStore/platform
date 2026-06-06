@@ -16,6 +16,10 @@ let html = fs.readFileSync(indexPath, 'utf-8');
 // --- Idempotency: remove previous injections before re-injecting ---
 // Remove duplicate Tab bar CSS blocks (keep the first /* Filter bar */ occurrence)
 html = html.replace(/\s*\/\* Tab bar \*\/[\s\S]*?\.tab-count \{[^}]+\}\s*\n/g, '\n');
+// Remove search input CSS (will be re-injected)
+html = html.replace(/\s*\.search-input\{[^}]+\}\s*\n\s*\.search-input:focus\{[^}]+\}\s*\n\s*\.search-input::placeholder\{[^}]+\}\s*\n/g, '\n');
+// Remove search input HTML from toolbar (will be re-injected)
+html = html.replace(/<input type="text" class="search-input"[^/]*\/>\s*\n\s*/g, '');
 // Remove duplicate auth-ui divs (keep zero — we'll inject fresh)
 html = html.replace(/<div id="auth-ui"[\s\S]*?<\/div>\s*<\/div>\s*/g, '');
 // Remove duplicate auth scripts
@@ -115,7 +119,7 @@ function generateCard(agent) {
     ? `\n                <span class="tag" style="background:rgba(234,88,12,0.15);color:#fb923c">API Key</span>`
     : '';
 
-  return `        <div class="agent-card" data-category="${agent.category}" data-store-type="${agent.storeType || 'library'}">
+  return `        <div class="agent-card" data-category="${agent.category}" data-store-type="${agent.storeType || 'library'}" data-name="${agent.name.toLowerCase()}" data-desc="${(agent.description || '').toLowerCase()}">
           <a href="/agents/${agent.id}/" class="agent-card-body">
             <div class="agent-icon" style="background:${agent.iconBg}${fontStyle}">${iconContent}</div>
             <div class="agent-body">
@@ -222,10 +226,11 @@ const filterButtons = [
 ];
 
 // Replace the toolbar's filter buttons (between <div class="toolbar"> and <span class="agent-count")
+const searchInput = `<input type="text" class="search-input" id="searchInput" placeholder="Search agents..." autocomplete="off" />`;
 const toolbarMatch = html.match(/<div class="toolbar">\s*\n([\s\S]*?)<span class="agent-count"/);
 if (toolbarMatch) {
   const oldButtons = toolbarMatch[1];
-  const newButtons = '        ' + filterButtons.join('\n        ') + '\n        ';
+  const newButtons = '        ' + searchInput + '\n        ' + filterButtons.join('\n        ') + '\n        ';
   html = html.replace(oldButtons, newButtons);
 }
 
@@ -244,10 +249,27 @@ const tabsCss = `
     .tab-count { font-size: 0.72rem; color: var(--muted-soft); margin-left: 0.25rem; }
 `;
 
-// Insert tabs CSS before /* Filter bar */
+// Search input CSS
+const searchCss = `
+    .search-input{flex:1;min-width:200px;max-width:320px;padding:0.5rem 0.85rem 0.5rem 2.2rem;border-radius:100px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-size:0.85rem;font-family:var(--font-body);outline:none;transition:border-color 0.15s;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23737373' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.156a5 5 0 1 1 0-10 5 5 0 0 1 0 10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:0.75rem center}
+    .search-input:focus{border-color:var(--accent)}
+    .search-input::placeholder{color:var(--muted-soft)}
+`;
+
+// Insert tabs CSS + search CSS before /* Filter bar */
 const filterBarCssPos = html.indexOf('/* Filter bar */');
 if (filterBarCssPos !== -1) {
-  html = html.slice(0, filterBarCssPos) + tabsCss.trim() + '\n\n    ' + html.slice(filterBarCssPos);
+  // Remove any existing search-input CSS to prevent duplication
+  html = html.replace(/\s*\.search-input\{[^}]+\}\s*\n\s*\.search-input:focus\{[^}]+\}\s*\n\s*\.search-input::placeholder\{[^}]+\}\s*\n/g, '\n');
+  // Re-find position after cleanup
+  const updatedFilterBarCssPos = html.indexOf('/* Filter bar */');
+  html = html.slice(0, updatedFilterBarCssPos) + tabsCss.trim() + '\n' + searchCss.trim() + '\n\n    ' + html.slice(updatedFilterBarCssPos);
+} else {
+  // Fallback: just insert before </style>
+  const styleClosePos = html.indexOf('</style>');
+  if (styleClosePos !== -1) {
+    html = html.slice(0, styleClosePos) + tabsCss.trim() + '\n' + searchCss.trim() + '\n  ' + html.slice(styleClosePos);
+  }
 }
 
 // --- Add API Keys section ---
@@ -335,6 +357,7 @@ const oldScript = `<script>
 const newScript = `<script>
     var _tab = 'all';
     var _category = 'all';
+    var _search = '';
 
     function switchTab(tab) {
       _tab = tab;
@@ -359,12 +382,18 @@ const newScript = `<script>
       cards.forEach(function(c) {
         var tabMatch = _tab === 'all' || c.dataset.storeType === _tab;
         var catMatch = _category === 'all' || c.dataset.category === _category;
-        var show = tabMatch && catMatch;
+        var searchMatch = !_search || (c.dataset.name && c.dataset.name.includes(_search)) || (c.dataset.desc && c.dataset.desc.includes(_search));
+        var show = tabMatch && catMatch && searchMatch;
         c.style.display = show ? '' : 'none';
         if (show) visible++;
       });
       document.getElementById('agentCount').textContent = visible + ' agent' + (visible !== 1 ? 's' : '');
     }
+
+    document.getElementById('searchInput').addEventListener('input', function(e) {
+      _search = e.target.value.toLowerCase().trim();
+      applyFilters();
+    });
   </script>`;
 
 html = html.replace(oldScript, newScript);

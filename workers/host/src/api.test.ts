@@ -574,4 +574,41 @@ describe('handleApiRoute', () => {
     const body = (await res.json()) as { error: string };
     expect(body.error).toContain('Unknown proxy host');
   });
+
+  // ── Stats endpoint ──
+  it('GET /v1/stats/:agentId returns usage counts', async () => {
+    const env = mockEnv({
+      DB: {
+        prepare: () => ({
+          bind: () => ({
+            first: async () => ({ calls: 42, last_used: 1700000000 }),
+            all: async () => ({ results: [] }),
+            run: async () => ({ meta: { changes: 0 } }),
+          }),
+        }),
+      } as unknown as D1Database,
+    });
+    const res = await handleApiRoute(
+      makeRequest('GET', '/v1/stats/sentiment'),
+      new URL('https://freeagentstore.online/v1/stats/sentiment'),
+      env,
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { calls: number; lastUsed: string | null };
+    expect(body.calls).toBe(42);
+    expect(body.lastUsed).toBeTruthy();
+    expect(res.headers.get('Cache-Control')).toContain('max-age=300');
+  });
+
+  it('GET /v1/stats/:agentId returns zero for unused agent', async () => {
+    const res = await handleApiRoute(
+      makeRequest('GET', '/v1/stats/nonexistent'),
+      new URL('https://freeagentstore.online/v1/stats/nonexistent'),
+      mockEnv(),
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { calls: number; lastUsed: string | null };
+    expect(body.calls).toBe(0);
+    expect(body.lastUsed).toBeNull();
+  });
 });

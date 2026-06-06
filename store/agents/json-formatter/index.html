@@ -118,6 +118,8 @@
         <!-- Description -->
         <p class="desc">Paste JSON — format, minify, validate, query, diff. Syntax highlighting, tree view, TypeScript types. Pure JS, instant. Runs entirely in your browser — your data never leaves your device.</p>
 
+        
+
         <!-- Badges -->
         <div class="badges">
           <span class="badge-pass"><span class="dot"></span> Free forever</span>
@@ -125,6 +127,7 @@
           <span class="badge-pass"><span class="dot"></span> 100% private</span>
           <span class="badge-pass"><span class="dot"></span> Open source (MIT)</span>
         </div>
+        <div id="usage-stats"></div>
 
         <!-- Meta grid -->
         <div class="meta-grid">
@@ -400,6 +403,11 @@ validateJson('{bad}')    // { valid: false, error: '...' }</div>
         });
       });
     })();
+  </script>
+  <script>
+    fetch('/v1/stats/json-formatter').then(function(r){return r.json()}).then(function(d){
+      if(d.calls>0){document.getElementById('usage-stats').innerHTML='<span style="font-size:0.82rem;color:#a3a3a3">'+d.calls+' API calls</span>';}
+    }).catch(function(){});
   </script>
 </body>
 </html>
