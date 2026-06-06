@@ -61,6 +61,8 @@ function jsonResponse(data: unknown, status = 200): Response {
 
 interface SessionPayload {
   uid: string;
+  login?: string;
+  avatar?: string;
   exp: number;
 }
 
@@ -73,7 +75,7 @@ async function verifySession(request: Request, env: Env): Promise<string | null>
   }
   if (!token) {
     const cookie = request.headers.get('Cookie') ?? '';
-    const match = cookie.match(/(?:^|;\s*)session=([^\s;]+)/);
+    const match = cookie.match(/(?:^|;\s*)fags_session=([^\s;]+)/);
     if (match) token = match[1];
   }
   if (!token || !env.SESSION_SIGNING_KEY) return null;
@@ -123,6 +125,81 @@ class AuthError extends Error {
   constructor() {
     super('Unauthorized');
   }
+}
+
+async function verifySessionFull(request: Request, env: Env): Promise<SessionPayload | null> {
+  let token: string | null = null;
+  const authHeader = request.headers.get('Authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    token = authHeader.slice(7);
+  }
+  if (!token) {
+    const cookie = request.headers.get('Cookie') ?? '';
+    const match = cookie.match(/(?:^|;\s*)fags_session=([^\s;]+)/);
+    if (match) token = match[1];
+  }
+  if (!token || !env.SESSION_SIGNING_KEY) return null;
+
+  const dotIndex = token.lastIndexOf('.');
+  if (dotIndex < 0) return null;
+
+  const payloadB64 = token.slice(0, dotIndex);
+  const signatureHex = token.slice(dotIndex + 1);
+
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(env.SESSION_SIGNING_KEY),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['verify'],
+  );
+
+  const signatureBytes = hexToBuffer(signatureHex);
+  const valid = await crypto.subtle.verify(
+    'HMAC',
+    key,
+    signatureBytes,
+    new TextEncoder().encode(payloadB64),
+  );
+  if (!valid) return null;
+
+  try {
+    const payload: SessionPayload = JSON.parse(atob(payloadB64));
+    if (payload.exp && payload.exp < Date.now() / 1000) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+async function createSession(
+  uid: string,
+  login: string,
+  avatar: string,
+  signingKey: string,
+): Promise<string> {
+  const payload: SessionPayload = {
+    uid,
+    login,
+    avatar,
+    exp: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60, // 30 days
+  };
+  const payloadB64 = btoa(JSON.stringify(payload));
+
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(signingKey),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+
+  const sig = new Uint8Array(
+    await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(payloadB64)),
+  );
+  const sigHex = Array.from(sig).map((b) => b.toString(16).padStart(2, '0')).join('');
+
+  return `${payloadB64}.${sigHex}`;
 }
 
 // ── Encryption (envelope: DEK wrapped under KEK, same pattern as FAS) ────────
@@ -262,6 +339,115 @@ export async function handleApiRoute(request: Request, url: URL, env: Env): Prom
   const path = url.pathname;
 
   try {
+    // ── Auth routes ────────────────────────────────────────────────────
+
+    // GET /v1/auth/github — Start GitHub OAuth
+    if (path === '/v1/auth/github' && request.method === 'GET') {
+      if (!env.GITHUB_CLIENT_ID) {
+        return jsonResponse({ error: 'GitHub OAuth not configured.' }, 503);
+      }
+      const state = crypto.randomUUID();
+      const redirectUri = `${url.origin}/v1/auth/callback`;
+      const ghUrl = `https://github.com/login/oauth/authorize?client_id=${env.GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read:user&state=${state}`;
+      const h = new Headers({ Location: ghUrl });
+      h.append('Set-Cookie', `fags_oauth_state=${state}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600`);
+      return new Response(null, { status: 302, headers: h });
+    }
+
+    // GET /v1/auth/callback — Handle GitHub callback
+    if (path === '/v1/auth/callback' && request.method === 'GET') {
+      const code = url.searchParams.get('code');
+      const state = url.searchParams.get('state');
+      if (!code || !state) {
+        return new Response('Missing code or state', { status: 400 });
+      }
+
+      // Verify state matches cookie
+      const cookies = request.headers.get('Cookie') ?? '';
+      const stateMatch = cookies.match(/(?:^|;\s*)fags_oauth_state=([^\s;]+)/);
+      if (!stateMatch || stateMatch[1] !== state) {
+        return new Response('Invalid state (CSRF check failed)', { status: 403 });
+      }
+
+      if (!env.GITHUB_CLIENT_ID || !env.GITHUB_CLIENT_SECRET || !env.SESSION_SIGNING_KEY) {
+        return new Response('OAuth not configured', { status: 503 });
+      }
+
+      // Exchange code for access token
+      const tokenRes = await fetch('https://github.com/login/oauth/access_token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          client_id: env.GITHUB_CLIENT_ID,
+          client_secret: env.GITHUB_CLIENT_SECRET,
+          code,
+        }),
+      });
+      const tokenData = await tokenRes.json<{ access_token?: string; error?: string }>();
+      if (!tokenData.access_token) {
+        return new Response(`GitHub token exchange failed: ${tokenData.error ?? 'unknown'}`, { status: 502 });
+      }
+
+      // Get user info
+      const userRes = await fetch('https://api.github.com/user', {
+        headers: {
+          Authorization: `Bearer ${tokenData.access_token}`,
+          'User-Agent': 'FreeAgentStore-Host',
+          Accept: 'application/json',
+        },
+      });
+      if (!userRes.ok) {
+        return new Response('Failed to fetch GitHub user info', { status: 502 });
+      }
+      const ghUser = await userRes.json<{ id: number; login: string; name?: string; avatar_url?: string }>();
+      const uid = String(ghUser.id);
+
+      // Upsert user in D1
+      await env.DB
+        .prepare(
+          `INSERT INTO users (github_id, login, name, avatar_url, last_login_at)
+           VALUES (?, ?, ?, ?, unixepoch())
+           ON CONFLICT (github_id) DO UPDATE SET
+             login = excluded.login,
+             name = excluded.name,
+             avatar_url = excluded.avatar_url,
+             last_login_at = unixepoch()`,
+        )
+        .bind(uid, ghUser.login, ghUser.name ?? null, ghUser.avatar_url ?? null)
+        .run();
+
+      // Create session token
+      const sessionToken = await createSession(uid, ghUser.login, ghUser.avatar_url ?? '', env.SESSION_SIGNING_KEY);
+
+      // Set cookie + redirect with token in fragment for JS
+      const h = new Headers({ Location: `/?login=success#session=${sessionToken}` });
+      h.append('Set-Cookie', `fags_session=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`);
+      // Clear the state cookie
+      h.append('Set-Cookie', 'fags_oauth_state=; Path=/; Max-Age=0');
+      return new Response(null, { status: 302, headers: h });
+    }
+
+    // GET /v1/auth/me — Get current user (requires auth)
+    if (path === '/v1/auth/me' && request.method === 'GET') {
+      const session = await verifySessionFull(request, env);
+      if (!session) return jsonResponse({ error: 'Unauthorized' }, 401);
+      return jsonResponse({
+        uid: session.uid,
+        login: session.login ?? null,
+        avatar: session.avatar ?? null,
+      });
+    }
+
+    // POST /v1/auth/logout — Clear session
+    if (path === '/v1/auth/logout' && request.method === 'POST') {
+      const h = corsHeaders();
+      h.set('Content-Type', 'application/json; charset=utf-8');
+      h.append('Set-Cookie', 'fags_session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0');
+      return new Response(JSON.stringify({ ok: true }), { headers: h });
+    }
+
+    // ── Key vault routes ──────────────────────────────────────────────
+
     // GET /v1/keys/providers (public)
     if (path === '/v1/keys/providers' && request.method === 'GET') {
       return jsonResponse({ providers: PROVIDERS });

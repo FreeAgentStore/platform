@@ -11,6 +11,9 @@ zone_name = "freeagentstore.online"
 pattern = "*.freeagentstore.online/*"
 zone_name = "freeagentstore.online"
 
+[vars]
+GITHUB_CLIENT_ID = ""
+
 [[r2_buckets]]
 binding = "AGENTS"
 bucket_name = "fags-agents"

@@ -23,6 +23,8 @@ export interface Env {
   AGENTS: R2Bucket;
   KEY_ENCRYPTION_KEY: string;
   SESSION_SIGNING_KEY: string;
+  GITHUB_CLIENT_ID?: string;
+  GITHUB_CLIENT_SECRET?: string;
 }
 
 interface Route {
