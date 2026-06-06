@@ -358,7 +358,8 @@ export async function handleApiRoute(request: Request, url: URL, env: Env): Prom
     if (err instanceof AuthError) {
       return jsonResponse({ error: 'Unauthorized' }, 401);
     }
-    throw err;
+    console.error('API route error:', err);
+    return jsonResponse({ error: 'Internal error', detail: String(err) }, 500);
   }
 }
 
