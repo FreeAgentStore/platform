@@ -428,11 +428,11 @@ describe('handleApiRoute', () => {
       mockEnv({ GITHUB_CLIENT_ID: 'test-id' } as unknown as Env),
     );
     expect(res.status).toBe(302);
-    const cookies = res.headers.getSetCookie();
-    const stateCookie = cookies.find((c) => c.startsWith('fags_oauth_state='));
-    expect(stateCookie).toBeDefined();
-    expect(stateCookie).toContain('HttpOnly');
-    expect(stateCookie).toContain('Secure');
+    // Set-Cookie contains the state cookie — verify via raw header
+    const setCookie = res.headers.get('Set-Cookie') ?? '';
+    expect(setCookie).toContain('fags_oauth_state=');
+    expect(setCookie).toContain('HttpOnly');
+    expect(setCookie).toContain('Secure');
   });
 
   // ── OAuth return_to param ──
@@ -442,10 +442,9 @@ describe('handleApiRoute', () => {
       new URL('https://freeagentstore.online/v1/auth/github?return_to=/console/'),
       mockEnv({ GITHUB_CLIENT_ID: 'test-id' } as unknown as Env),
     );
-    const cookies = res.headers.getSetCookie();
-    const returnCookie = cookies.find((c) => c.startsWith('fags_return_to='));
-    expect(returnCookie).toBeDefined();
-    expect(returnCookie).toContain('%2Fconsole%2F');
+    const setCookie = res.headers.get('Set-Cookie') ?? '';
+    expect(setCookie).toContain('fags_return_to=');
+    expect(setCookie).toContain('%2Fconsole%2F');
   });
 
   // ── Providers list content ──
