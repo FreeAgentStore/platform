@@ -87,13 +87,13 @@ export default function App() {
       if (LM?.create) {
         setLoadingMessage('Using Chrome Gemini Nano to summarize...');
         const promptMap: Record<string, string> = {
-          'tl;dr': 'Give a 2-sentence TL;DR summary of the following text.',
-          'key-points': 'Extract 3-5 key points as a bullet list from the following text.',
-          'teaser': 'Write a short, engaging teaser (1-2 sentences) for the following text, suitable for social media.',
-          'headline': 'Write a single headline that captures the main point of the following text.',
+          'tl;dr': 'Summarize the following text in exactly 2 sentences. Output ONLY the summary, nothing else. No commentary, no preamble, no "Here is the summary" — just the 2 sentences.',
+          'key-points': 'Extract 3-5 key points from the following text as a bullet list. Output ONLY the bullet points, nothing else. No preamble, no commentary.',
+          'teaser': 'Write a 1-2 sentence teaser for the following text, suitable for social media. Output ONLY the teaser, nothing else.',
+          'headline': 'Write ONE headline that captures the main point of the following text. Output ONLY the headline, nothing else.',
         };
-        const session = await LM.create({ systemPrompt: promptMap[summaryType] ?? promptMap['tl;dr'] });
-        const result = await session.prompt(text);
+        const session = await LM.create({ systemPrompt: 'You are a text summarizer. You output ONLY the requested summary format. Never add commentary, opinions, questions, or conversation. Never say "Okay", "Sure", "Here is", etc. Just output the summary.' });
+        const result = await session.prompt(promptMap[summaryType] + '\n\nText:\n' + text);
         session.destroy?.();
         setSummary(result);
         setSource('Chrome Gemini Nano');
