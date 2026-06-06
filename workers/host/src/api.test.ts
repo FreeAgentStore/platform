@@ -220,13 +220,13 @@ describe('handleApiRoute', () => {
   });
 
   // ── Key management page ──
-  it('GET /v1/keys returns HTML page', async () => {
+  it('GET /v1/keys redirects to console', async () => {
     const res = await handleApiRoute(
       makeRequest('GET', '/v1/keys'),
       new URL('https://freeagentstore.online/v1/keys'),
       mockEnv(),
     );
-    expect(res.status).toBe(200);
-    expect(res.headers.get('Content-Type')).toContain('text/html');
+    expect(res.status).toBe(302);
+    expect(res.headers.get('Location')).toBe('/console/#keys');
   });
 });
