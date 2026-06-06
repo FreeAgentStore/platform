@@ -3,6 +3,15 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 type SummaryType = 'tl;dr' | 'key-points' | 'teaser' | 'headline';
 type Status = 'checking' | 'available' | 'unavailable' | 'summarizing';
 
+const DEFAULT_PROMPTS: Record<string, string> = {
+  'tl;dr': 'Summarize the following text in exactly 2 sentences. Output ONLY the summary, nothing else. No commentary, no preamble — just the 2 sentences.',
+  'key-points': 'Extract 3-5 key points from the following text as a bullet list. Output ONLY the bullet points, nothing else.',
+  'teaser': 'Write a 1-2 sentence teaser for the following text, suitable for social media. Output ONLY the teaser, nothing else.',
+  'headline': 'Write ONE headline that captures the main point of the following text. Output ONLY the headline, nothing else.',
+};
+
+const SYSTEM_PROMPT = 'You are a text summarizer. You output ONLY the requested summary format. Never add commentary, opinions, questions, or conversation. Just output the summary.';
+
 interface HistoryEntry {
   input: string;
   summary: string;
@@ -34,6 +43,8 @@ export default function App() {
   const [copied, setCopied] = useState(false);
   const [wordCount, setWordCount] = useState(0);
   const [showRaw, setShowRaw] = useState(false);
+  const [showPrompt, setShowPrompt] = useState(false);
+  const [customPrompt, setCustomPrompt] = useState('');
 
   useEffect(() => { saveHistory(history); }, [history]);
   useEffect(() => { setWordCount(text.trim() ? text.trim().split(/\s+/).length : 0); }, [text]);
@@ -86,14 +97,9 @@ export default function App() {
       const LM = g2.LanguageModel ?? g2.ai?.languageModel;
       if (LM?.create) {
         setLoadingMessage('Using Chrome Gemini Nano to summarize...');
-        const promptMap: Record<string, string> = {
-          'tl;dr': 'Summarize the following text in exactly 2 sentences. Output ONLY the summary, nothing else. No commentary, no preamble, no "Here is the summary" — just the 2 sentences.',
-          'key-points': 'Extract 3-5 key points from the following text as a bullet list. Output ONLY the bullet points, nothing else. No preamble, no commentary.',
-          'teaser': 'Write a 1-2 sentence teaser for the following text, suitable for social media. Output ONLY the teaser, nothing else.',
-          'headline': 'Write ONE headline that captures the main point of the following text. Output ONLY the headline, nothing else.',
-        };
-        const session = await LM.create({ systemPrompt: 'You are a text summarizer. You output ONLY the requested summary format. Never add commentary, opinions, questions, or conversation. Never say "Okay", "Sure", "Here is", etc. Just output the summary.' });
-        const result = await session.prompt(promptMap[summaryType] + '\n\nText:\n' + text);
+        const activePrompt = customPrompt.trim() || DEFAULT_PROMPTS[summaryType] || DEFAULT_PROMPTS['tl;dr'];
+        const session = await LM.create({ systemPrompt: SYSTEM_PROMPT });
+        const result = await session.prompt(activePrompt + '\n\nText:\n' + text);
         session.destroy?.();
         setSummary(result);
         setSource('Chrome Gemini Nano');
@@ -209,8 +215,32 @@ export default function App() {
               placeholder="Paste an article, email, document, meeting notes, or any long text..."
               disabled={status === 'summarizing'}
               className="flex-1 min-h-[250px] p-4 rounded-lg bg-neutral-900 border border-neutral-800 resize-none focus:outline-none focus:border-emerald-600 text-neutral-100 placeholder:text-neutral-600 text-sm disabled:opacity-50" />
+            {/* Prompt editor */}
+            <div>
+              <button onClick={() => setShowPrompt(!showPrompt)}
+                className="text-xs text-neutral-500 hover:text-neutral-300 flex items-center gap-1 mb-1">
+                <span>{showPrompt ? '▼' : '▶'}</span> {showPrompt ? 'Hide' : 'Edit'} prompt
+              </button>
+              {showPrompt && (
+                <div className="mb-2">
+                  <textarea
+                    value={customPrompt || DEFAULT_PROMPTS[summaryType] || ''}
+                    onChange={e => setCustomPrompt(e.target.value)}
+                    rows={3}
+                    className="w-full p-3 rounded-lg bg-neutral-900 border border-neutral-800 resize-none focus:outline-none focus:border-emerald-600 text-neutral-300 text-xs font-mono"
+                    placeholder="Custom prompt..."
+                  />
+                  <div className="flex gap-2 mt-1">
+                    <button onClick={() => setCustomPrompt('')}
+                      className="text-[10px] text-neutral-600 hover:text-neutral-400">Reset to default</button>
+                    <span className="text-[10px] text-neutral-700">The text you paste will be appended automatically</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="flex gap-2 items-center">
-              <select value={summaryType} onChange={e => setSummaryType(e.target.value as SummaryType)}
+              <select value={summaryType} onChange={e => { setSummaryType(e.target.value as SummaryType); setCustomPrompt(''); }}
                 disabled={status === 'summarizing'}
                 className="px-3 py-2.5 rounded-lg bg-neutral-900 border border-neutral-800 text-sm disabled:opacity-50">
                 <option value="tl;dr">TL;DR</option>
