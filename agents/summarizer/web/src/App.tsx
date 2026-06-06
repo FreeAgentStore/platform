@@ -95,12 +95,9 @@ export default function App() {
     } catch {}
 
     setLoadingMessage('');
-    const sentences = text.match(/[^.!?]+[.!?]+/g) ?? [text];
-    const heuristic = sentences.slice(0, summaryType === 'headline' ? 1 : summaryType === 'tl;dr' ? 2 : 4).join(' ').trim();
-    setSummary(heuristic);
-    setSource('Heuristic (extracts key sentences)');
-    setStatus('available');
-    addToHistory({ input: text.slice(0, 100), summary: heuristic, type: summaryType, source: 'Heuristic', timestamp: Date.now() });
+    setSummary('This agent requires Chrome Built-in AI or Ollama to summarize text. Neither is available right now.\n\nTo enable:\n• Chrome 138+: enable "Summarization API" at chrome://flags\n• Ollama: install from ollama.com, then run `ollama run llama3.2`\n• Or add your API key at /console/#keys to use OpenAI/Claude instead (coming soon).');
+    setSource('Not available');
+    setStatus('unavailable');
   }
 
   const restoreFromHistory = useCallback((entry: HistoryEntry) => {
