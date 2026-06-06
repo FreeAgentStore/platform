@@ -1,12 +1,17 @@
 /**
- * FAGS Host Worker — API routes for user key vault + proxy.
+ * FAGS Host Worker — API routes for auth, user key vault + proxy.
  *
  * Routes:
+ *   GET    /v1/auth/github       → start GitHub OAuth login
+ *   GET    /v1/auth/callback     → handle GitHub OAuth callback
+ *   GET    /v1/auth/me           → get current user (auth)
+ *   POST   /v1/auth/logout       → clear session
  *   GET    /v1/keys/providers    → list supported AI providers (public)
  *   GET    /v1/keys/status       → which providers the user has keys for (auth)
  *   PUT    /v1/keys/:provider    → store/update an encrypted key (auth)
  *   DELETE /v1/keys/:provider    → remove a key (auth)
  *   GET    /v1/keys              → server-rendered HTML key management page (auth)
+ *   GET    /v1/usage             → usage stats (auth)
  *   ALL    /v1/proxy/:host/*     → proxy request with injected user key (auth)
  */
 
@@ -290,6 +295,47 @@ function escapeHtml(s: string): string {
   return s.replace(/[<>"'&]/g, (c) => `&#${c.charCodeAt(0)};`);
 }
 
+// ── Pricing table (per 1M tokens) ────────────────────────────────────────────
+
+const PRICING: Record<string, Record<string, { input: number; output: number }>> = {
+  openai: {
+    'gpt-4o-mini': { input: 0.15, output: 0.60 },
+    'gpt-4o': { input: 2.50, output: 10.00 },
+    'gpt-4-turbo': { input: 10.00, output: 30.00 },
+  },
+  anthropic: {
+    'claude-3-haiku-20240307': { input: 0.25, output: 1.25 },
+    'claude-3-5-sonnet-20241022': { input: 3.00, output: 15.00 },
+  },
+  google: {
+    'gemini-1.5-flash': { input: 0.075, output: 0.30 },
+    'gemini-1.5-pro': { input: 1.25, output: 5.00 },
+  },
+  groq: {
+    'llama-3.3-70b-versatile': { input: 0.59, output: 0.79 },
+    'mixtral-8x7b-32768': { input: 0.24, output: 0.24 },
+  },
+};
+
+async function logUsage(
+  db: D1Database,
+  userId: string,
+  provider: string,
+  model: string | null,
+  tokensIn: number,
+  tokensOut: number,
+  agentId: string | null,
+): Promise<void> {
+  const pricing = PRICING[provider]?.[model ?? ''];
+  const costUsd = pricing
+    ? (tokensIn * pricing.input / 1_000_000) + (tokensOut * pricing.output / 1_000_000)
+    : null;
+
+  await db.prepare(
+    'INSERT INTO usage_log (user_id, provider, model, tokens_in, tokens_out, cost_usd, agent_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, unixepoch())',
+  ).bind(userId, provider, model, tokensIn, tokensOut, costUsd, agentId).run();
+}
+
 // ── Rate limiting ────────────────────────────────────────────────────────────
 
 const PROXY_RATE_LIMIT = 100; // requests per user per hour
@@ -349,8 +395,10 @@ export async function handleApiRoute(request: Request, url: URL, env: Env): Prom
       const state = crypto.randomUUID();
       const redirectUri = `${url.origin}/v1/auth/callback`;
       const ghUrl = `https://github.com/login/oauth/authorize?client_id=${env.GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read:user&state=${state}`;
+      const returnTo = url.searchParams.get('return_to') ?? '/';
       const h = new Headers({ Location: ghUrl });
       h.append('Set-Cookie', `fags_oauth_state=${state}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600`);
+      h.append('Set-Cookie', `fags_return_to=${encodeURIComponent(returnTo)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600`);
       return new Response(null, { status: 302, headers: h });
     }
 
@@ -419,11 +467,17 @@ export async function handleApiRoute(request: Request, url: URL, env: Env): Prom
       // Create session token
       const sessionToken = await createSession(uid, ghUser.login, ghUser.avatar_url ?? '', env.SESSION_SIGNING_KEY);
 
+      // Read return_to cookie for post-login redirect
+      const returnMatch = cookies.match(/(?:^|;\s*)fags_return_to=([^\s;]+)/);
+      const returnTo = returnMatch ? decodeURIComponent(returnMatch[1]) : '/';
+      const safeReturn = returnTo.startsWith('/') ? returnTo : '/';
+
       // Set cookie + redirect with token in fragment for JS
-      const h = new Headers({ Location: `/?login=success#session=${sessionToken}` });
+      const h = new Headers({ Location: `${safeReturn}?login=success#session=${sessionToken}` });
       h.append('Set-Cookie', `fags_session=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`);
-      // Clear the state cookie
+      // Clear the state + return_to cookies
       h.append('Set-Cookie', 'fags_oauth_state=; Path=/; Max-Age=0');
+      h.append('Set-Cookie', 'fags_return_to=; Path=/; Max-Age=0');
       return new Response(null, { status: 302, headers: h });
     }
 
@@ -531,6 +585,12 @@ export async function handleApiRoute(request: Request, url: URL, env: Env): Prom
       h.set('Content-Type', 'text/html; charset=utf-8');
       h.set('Cache-Control', 'no-store');
       return new Response(renderKeysPage(returnUrl, highlightProvider), { headers: h });
+    }
+
+    // GET /v1/usage (auth — usage stats)
+    if (path === '/v1/usage' && request.method === 'GET') {
+      const uid = await requireAuth(request, env);
+      return handleUsage(env.DB, uid);
     }
 
     // ALL /v1/proxy/:host/* (auth — proxy with key injection)
@@ -663,10 +723,146 @@ async function handleProxy(
       .catch(() => {});
   }
 
-  return new Response(upstreamRes.body, {
+  // Extract model from request body + agent_id from Referer
+  let requestModel: string | null = null;
+  let agentId: string | null = null;
+  let requestTokenEstimate = 0;
+  if (forwardBody) {
+    try {
+      const bodyText = new TextDecoder().decode(forwardBody as ArrayBuffer);
+      const bodyJson = JSON.parse(bodyText);
+      requestModel = bodyJson.model ?? null;
+      requestTokenEstimate = Math.ceil(bodyText.length / 4);
+    } catch {
+      requestTokenEstimate = Math.ceil((forwardBody as ArrayBuffer).byteLength / 4);
+    }
+  }
+  const referer = request.headers.get('Referer') ?? '';
+  const agentRefMatch = referer.match(/\/a\/([a-z0-9-]+)/);
+  if (agentRefMatch) agentId = agentRefMatch[1];
+
+  // Log usage — handle streaming vs non-streaming responses
+  const isStreaming = (upstreamRes.headers.get('content-type') ?? '').includes('text/event-stream');
+  if (isStreaming) {
+    const [clientStream, logStream] = upstreamRes.body!.tee();
+
+    // Fire-and-forget: read the log stream to extract final usage chunk
+    (async () => {
+      try {
+        const reader = logStream.getReader();
+        const decoder = new TextDecoder();
+        let lastUsage: { prompt_tokens?: number; completion_tokens?: number } | null = null;
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const text = decoder.decode(value, { stream: true });
+          for (const line of text.split('\n')) {
+            if (!line.startsWith('data: ')) continue;
+            const data = line.slice(6).trim();
+            if (data === '[DONE]') continue;
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.usage) lastUsage = parsed.usage;
+            } catch { /* not JSON */ }
+          }
+        }
+        const tokensIn = lastUsage?.prompt_tokens ?? requestTokenEstimate;
+        const tokensOut = lastUsage?.completion_tokens ?? 0;
+        await logUsage(env.DB, uid, providerId, requestModel, tokensIn, tokensOut, agentId);
+      } catch { /* swallow errors in background logging */ }
+    })();
+
+    return new Response(clientStream, {
+      status: upstreamRes.status,
+      statusText: upstreamRes.statusText,
+      headers: respHeaders,
+    });
+  }
+
+  // Non-streaming: read body, extract usage, return
+  const responseBody = await upstreamRes.arrayBuffer();
+  let tokensIn = requestTokenEstimate;
+  let tokensOut = Math.ceil(responseBody.byteLength / 4);
+  try {
+    const resJson = JSON.parse(new TextDecoder().decode(responseBody));
+    if (resJson.usage) {
+      tokensIn = resJson.usage.prompt_tokens ?? tokensIn;
+      tokensOut = resJson.usage.completion_tokens ?? tokensOut;
+    }
+    if (resJson.model && !requestModel) requestModel = resJson.model;
+  } catch { /* not JSON */ }
+  logUsage(env.DB, uid, providerId, requestModel, tokensIn, tokensOut, agentId).catch(() => {});
+
+  return new Response(responseBody, {
     status: upstreamRes.status,
     statusText: upstreamRes.statusText,
     headers: respHeaders,
+  });
+}
+
+// ── Usage handler ─────────────────────────────────────────────────────────────
+
+async function handleUsage(db: D1Database, userId: string): Promise<Response> {
+  const now = Math.floor(Date.now() / 1000);
+  const startOfDay = now - (now % 86400);
+  const startOfWeek = now - (now % 604800);
+  const startOfMonth = now - (now % 2592000); // ~30 days
+
+  const [todayRow, weekRow, monthRow, byProviderRows, recentRows] = await Promise.all([
+    db.prepare(
+      `SELECT COUNT(*) as requests, COALESCE(SUM(tokens_in),0) as tokens_in, COALESCE(SUM(tokens_out),0) as tokens_out, COALESCE(SUM(cost_usd),0) as cost_usd
+       FROM usage_log WHERE user_id = ? AND created_at >= ?`,
+    ).bind(userId, startOfDay).first<{ requests: number; tokens_in: number; tokens_out: number; cost_usd: number }>(),
+
+    db.prepare(
+      `SELECT COUNT(*) as requests, COALESCE(SUM(tokens_in),0) as tokens_in, COALESCE(SUM(tokens_out),0) as tokens_out, COALESCE(SUM(cost_usd),0) as cost_usd
+       FROM usage_log WHERE user_id = ? AND created_at >= ?`,
+    ).bind(userId, startOfWeek).first<{ requests: number; tokens_in: number; tokens_out: number; cost_usd: number }>(),
+
+    db.prepare(
+      `SELECT COUNT(*) as requests, COALESCE(SUM(tokens_in),0) as tokens_in, COALESCE(SUM(tokens_out),0) as tokens_out, COALESCE(SUM(cost_usd),0) as cost_usd
+       FROM usage_log WHERE user_id = ? AND created_at >= ?`,
+    ).bind(userId, startOfMonth).first<{ requests: number; tokens_in: number; tokens_out: number; cost_usd: number }>(),
+
+    db.prepare(
+      `SELECT provider, model, COUNT(*) as requests, COALESCE(SUM(tokens_in),0) as tokens_in, COALESCE(SUM(tokens_out),0) as tokens_out, COALESCE(SUM(cost_usd),0) as cost_usd
+       FROM usage_log WHERE user_id = ? GROUP BY provider, model ORDER BY requests DESC LIMIT 20`,
+    ).bind(userId).all<{ provider: string; model: string; requests: number; tokens_in: number; tokens_out: number; cost_usd: number }>(),
+
+    db.prepare(
+      `SELECT provider, model, tokens_in, tokens_out, cost_usd, agent_id, created_at
+       FROM usage_log WHERE user_id = ? ORDER BY created_at DESC LIMIT 50`,
+    ).bind(userId).all<{ provider: string; model: string; tokens_in: number; tokens_out: number; cost_usd: number; agent_id: string | null; created_at: number }>(),
+  ]);
+
+  const fmt = (r: { requests: number; tokens_in: number; tokens_out: number; cost_usd: number } | null) => ({
+    requests: r?.requests ?? 0,
+    tokensIn: r?.tokens_in ?? 0,
+    tokensOut: r?.tokens_out ?? 0,
+    costUsd: Math.round((r?.cost_usd ?? 0) * 10000) / 10000,
+  });
+
+  return jsonResponse({
+    today: fmt(todayRow),
+    thisWeek: fmt(weekRow),
+    thisMonth: fmt(monthRow),
+    byProvider: (byProviderRows.results ?? []).map((r) => ({
+      provider: r.provider,
+      model: r.model,
+      requests: r.requests,
+      tokensIn: r.tokens_in,
+      tokensOut: r.tokens_out,
+      costUsd: Math.round(r.cost_usd * 10000) / 10000,
+    })),
+    recentCalls: (recentRows.results ?? []).map((r) => ({
+      provider: r.provider,
+      model: r.model,
+      tokensIn: r.tokens_in,
+      tokensOut: r.tokens_out,
+      costUsd: Math.round((r.cost_usd ?? 0) * 10000) / 10000,
+      agentId: r.agent_id,
+      createdAt: r.created_at,
+    })),
   });
 }
 

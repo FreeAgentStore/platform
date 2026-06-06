@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Creator Console - FreeAgentStore</title>
+  <meta name="description" content="Manage your API keys, monitor usage, and configure your FreeAgentStore account.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --font-body:'Manrope',system-ui,sans-serif;
+      --font-display:'Fraunces',Georgia,serif;
+      --paper:#0a0a0a;--panel:#171717;--panel-alt:#1f1f1f;
+      --ink:#fafafa;--ink-strong:#ffffff;
+      --muted:#a3a3a3;--muted-soft:#737373;
+      --accent:#7c3aed;--accent-hover:#6d28d9;--accent-soft:rgba(124,58,237,0.15);
+      --success:#16a34a;--success-soft:rgba(22,163,74,0.15);
+      --danger:#dc2626;--danger-soft:rgba(220,38,38,0.15);
+      --warning:#f59e0b;--warning-soft:rgba(245,158,11,0.15);
+      --line:#262626;--line-strong:#404040;
+      --shadow:0 1px 3px rgba(0,0,0,0.3);
+      --shadow-lg:0 10px 25px -8px rgba(0,0,0,0.5);
+      --radius:0.75rem;
+    }
+    body{font-family:var(--font-body);background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;min-height:100vh}
+    a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+
+    /* Header */
+    header{border-bottom:1px solid var(--line);background:var(--paper);position:sticky;top:0;z-index:50}
+    header .hdr{max-width:960px;margin:0 auto;padding:0.75rem 1.5rem;display:flex;align-items:center;gap:1rem}
+    .brand{display:flex;align-items:center;gap:0.5rem;text-decoration:none;color:var(--ink)}
+    .brand-mark{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#a855f7);display:flex;align-items:center;justify-content:center;font-size:0.95rem}
+    .brand-name{font-family:var(--font-display);font-size:1rem;font-weight:700}
+    .brand-sep{color:var(--muted-soft);font-weight:300;font-size:1.1rem}
+    .brand-page{font-size:0.88rem;font-weight:600;color:var(--muted)}
+    .hdr-right{margin-left:auto;display:flex;align-items:center;gap:1rem}
+    .hdr-link{font-size:0.82rem;color:var(--muted);font-weight:600;text-decoration:none}
+    .hdr-link:hover{color:var(--ink)}
+    .avatar{width:28px;height:28px;border-radius:50%;border:2px solid var(--line)}
+    .sign-in-link{font-size:0.82rem;color:var(--accent);font-weight:600;text-decoration:none}
+
+    /* Main layout */
+    .wrap{max-width:960px;margin:0 auto;padding:1.5rem}
+
+    /* Tab bar */
+    .tab-bar{display:flex;gap:0;border-bottom:1px solid var(--line);margin-bottom:1.5rem}
+    .tab-btn{padding:0.65rem 1.25rem;font-size:0.88rem;font-weight:600;color:var(--muted);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s;font-family:var(--font-body)}
+    .tab-btn:hover{color:var(--ink)}
+    .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+    .tab-panel{display:none}
+    .tab-panel.active{display:block}
+
+    /* Cards */
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem}
+    .card-title{font-size:0.82rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem}
+    .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.75rem}
+
+    /* Stat cards */
+    .stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:1rem}
+    .stat-label{font-size:0.75rem;color:var(--muted);font-weight:600;margin-bottom:0.25rem}
+    .stat-value{font-size:1.5rem;font-weight:800;color:var(--ink)}
+    .stat-sub{font-size:0.72rem;color:var(--muted-soft);margin-top:0.15rem}
+
+    /* User card */
+    .user-card{display:flex;align-items:center;gap:1rem;padding:1.25rem}
+    .user-avatar{width:56px;height:56px;border-radius:50%;border:3px solid var(--accent)}
+    .user-info{flex:1}
+    .user-name{font-size:1.1rem;font-weight:700}
+    .user-login{font-size:0.82rem;color:var(--muted)}
+
+    /* Provider list */
+    .provider-row{display:flex;align-items:center;gap:0.75rem;padding:0.85rem 0;border-bottom:1px solid var(--line)}
+    .provider-row:last-child{border-bottom:none}
+    .provider-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+    .provider-dot.on{background:var(--success)}
+    .provider-dot.off{background:var(--muted-soft)}
+    .provider-name{font-weight:600;font-size:0.9rem;flex:1}
+    .provider-status{font-size:0.75rem;color:var(--muted);margin-right:0.5rem}
+    .provider-actions{display:flex;gap:0.4rem}
+    .provider-docs{font-size:0.72rem;color:var(--accent);text-decoration:none}
+    .provider-docs:hover{text-decoration:underline}
+
+    /* Buttons */
+    .btn{display:inline-flex;align-items:center;gap:0.3rem;padding:0.4rem 0.85rem;border:none;border-radius:0.5rem;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font-body);transition:all 0.15s}
+    .btn-primary{background:var(--accent);color:#fff}
+    .btn-primary:hover{background:var(--accent-hover)}
+    .btn-ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+    .btn-ghost:hover{border-color:var(--line-strong)}
+    .btn-danger{background:transparent;color:var(--danger);border:1px solid rgba(220,38,38,0.3)}
+    .btn-danger:hover{background:var(--danger-soft)}
+    .btn-sm{padding:0.3rem 0.6rem;font-size:0.75rem}
+    .btn:disabled{opacity:0.4;cursor:not-allowed}
+
+    /* Forms */
+    .input-row{display:flex;gap:0.5rem;margin-top:0.5rem}
+    .input{flex:1;padding:0.45rem 0.75rem;border:1px solid var(--line);border-radius:0.5rem;background:var(--paper);color:var(--ink);font-size:0.85rem;font-family:var(--font-body)}
+    .input:focus{outline:none;border-color:var(--accent)}
+    .toggle-vis{background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.8rem;padding:0.3rem}
+
+    /* Usage table */
+    .usage-table{width:100%;border-collapse:collapse;font-size:0.82rem}
+    .usage-table th{text-align:left;padding:0.5rem 0.75rem;color:var(--muted);font-weight:600;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid var(--line)}
+    .usage-table td{padding:0.5rem 0.75rem;border-bottom:1px solid var(--line);color:var(--ink)}
+    .usage-table tr:last-child td{border-bottom:none}
+
+    /* Bar chart */
+    .bar-chart{display:flex;flex-direction:column;gap:0.5rem;margin-top:0.5rem}
+    .bar-row{display:flex;align-items:center;gap:0.5rem}
+    .bar-label{font-size:0.75rem;color:var(--muted);width:120px;text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .bar-track{flex:1;height:20px;background:var(--panel-alt);border-radius:4px;overflow:hidden}
+    .bar-fill{height:100%;background:var(--accent);border-radius:4px;transition:width 0.3s}
+    .bar-value{font-size:0.72rem;color:var(--muted-soft);width:60px;flex-shrink:0}
+
+    /* Period selector */
+    .period-sel{display:flex;gap:0.25rem;margin-bottom:1rem}
+    .period-btn{padding:0.35rem 0.75rem;border-radius:100px;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:0.78rem;font-weight:600;cursor:pointer;font-family:var(--font-body);transition:all 0.15s}
+    .period-btn:hover{border-color:var(--accent);color:var(--accent)}
+    .period-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+
+    /* Quick actions */
+    .actions-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:0.75rem}
+    .action-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:1rem;text-decoration:none;color:var(--ink);transition:all 0.15s;display:block}
+    .action-card:hover{border-color:var(--accent);transform:translateY(-1px);text-decoration:none}
+    .action-icon{font-size:1.5rem;margin-bottom:0.5rem}
+    .action-title{font-size:0.88rem;font-weight:700;margin-bottom:0.15rem}
+    .action-desc{font-size:0.75rem;color:var(--muted)}
+
+    /* Settings */
+    .setting-row{display:flex;align-items:center;justify-content:space-between;padding:0.85rem 0;border-bottom:1px solid var(--line)}
+    .setting-row:last-child{border-bottom:none}
+    .setting-label{font-weight:600;font-size:0.88rem}
+    .setting-desc{font-size:0.75rem;color:var(--muted)}
+    select{padding:0.4rem 0.6rem;border:1px solid var(--line);border-radius:0.5rem;background:var(--panel);color:var(--ink);font-family:var(--font-body);font-size:0.82rem}
+    select:focus{outline:none;border-color:var(--accent)}
+
+    /* Sign-in page */
+    .sign-in{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70vh;text-align:center;padding:2rem}
+    .sign-in .brand-mark-lg{width:72px;height:72px;border-radius:18px;background:linear-gradient(135deg,var(--accent),#a855f7);display:flex;align-items:center;justify-content:center;font-size:2rem;margin-bottom:1.5rem}
+    .sign-in h1{font-family:var(--font-display);font-size:1.75rem;font-weight:700;margin-bottom:0.5rem}
+    .sign-in p{color:var(--muted);font-size:0.95rem;max-width:400px;margin-bottom:2rem;line-height:1.6}
+    .sign-in-btn{display:inline-flex;align-items:center;gap:0.6rem;padding:0.65rem 1.5rem;border-radius:0.75rem;background:var(--ink);color:var(--paper);font-weight:700;font-size:0.95rem;text-decoration:none;transition:opacity 0.15s}
+    .sign-in-btn:hover{opacity:0.9;text-decoration:none}
+    .sign-in-btn svg{width:20px;height:20px}
+
+    /* Status toast */
+    .toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:0.75rem 1.25rem;font-size:0.85rem;font-weight:600;box-shadow:var(--shadow-lg);z-index:100;opacity:0;transform:translateY(10px);transition:all 0.3s;pointer-events:none}
+    .toast.show{opacity:1;transform:translateY(0);pointer-events:auto}
+    .toast.success{border-color:var(--success);color:var(--success)}
+    .toast.error{border-color:var(--danger);color:var(--danger)}
+
+    .hidden{display:none!important}
+
+    /* Responsive */
+    @media(max-width:640px){
+      .wrap{padding:1rem}
+      .card-grid{grid-template-columns:1fr 1fr}
+      .actions-grid{grid-template-columns:1fr 1fr}
+      .tab-btn{padding:0.5rem 0.75rem;font-size:0.82rem}
+      .user-card{flex-direction:column;text-align:center}
+      .provider-row{flex-wrap:wrap}
+      .provider-actions{width:100%;justify-content:flex-end;margin-top:0.25rem}
+      .bar-label{width:80px}
+      .usage-table{font-size:0.75rem}
+      .usage-table th,.usage-table td{padding:0.4rem 0.5rem}
+    }
+    @media(max-width:420px){
+      .card-grid{grid-template-columns:1fr}
+      .actions-grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="hdr">
+      <a href="/" class="brand">
+        <span class="brand-mark">&#129302;</span>
+        <span class="brand-name">AgentStore</span>
+      </a>
+      <span class="brand-sep">/</span>
+      <span class="brand-page">Console</span>
+      <div class="hdr-right">
+        <a href="/" class="hdr-link">Agents</a>
+        <a href="/skills.md" class="hdr-link">Docs</a>
+        <div id="hdr-user"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Sign-in page -->
+  <div id="sign-in-page" class="sign-in hidden">
+    <div class="brand-mark-lg">&#129302;</div>
+    <h1>Creator Console</h1>
+    <p>Sign in with GitHub to manage your API keys, monitor usage, and configure your FreeAgentStore account.</p>
+    <a href="/v1/auth/github?return_to=/console/" class="sign-in-btn">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+      Sign in with GitHub
+    </a>
+  </div>
+
+  <!-- Console (shown after auth) -->
+  <div id="console-app" class="wrap hidden">
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="overview">Overview</button>
+      <button class="tab-btn" data-tab="keys">API Keys</button>
+      <button class="tab-btn" data-tab="usage">Usage</button>
+      <button class="tab-btn" data-tab="settings">Settings</button>
+    </div>
+
+    <!-- Overview Tab -->
+    <div id="tab-overview" class="tab-panel active">
+      <div class="card" id="user-card-wrap">
+        <div class="user-card">
+          <img id="user-avatar" class="user-avatar" src="" alt="">
+          <div class="user-info">
+            <div id="user-name" class="user-name"></div>
+            <div id="user-login" class="user-login"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-grid" style="margin-bottom:1rem">
+        <div class="stat">
+          <div class="stat-label">Requests Today</div>
+          <div class="stat-value" id="ov-requests">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Estimated Cost Today</div>
+          <div class="stat-value" id="ov-cost">--</div>
+          <div class="stat-sub">Based on published rates</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Your API Keys</div>
+        <div id="ov-keys-summary"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Quick Actions</div>
+        <div class="actions-grid">
+          <a href="#" class="action-card" onclick="switchToTab('keys');return false">
+            <div class="action-icon">&#128273;</div>
+            <div class="action-title">Manage Keys</div>
+            <div class="action-desc">Add or update API keys for AI providers</div>
+          </a>
+          <a href="/" class="action-card">
+            <div class="action-icon">&#129302;</div>
+            <div class="action-title">Browse Agents</div>
+            <div class="action-desc">Explore all 49 AI tools on the store</div>
+          </a>
+          <a href="/skills.md" class="action-card">
+            <div class="action-icon">&#128214;</div>
+            <div class="action-title">View Docs</div>
+            <div class="action-desc">Platform guide and SDK reference</div>
+          </a>
+          <a href="#" class="action-card" onclick="switchToTab('usage');return false">
+            <div class="action-icon">&#128200;</div>
+            <div class="action-title">Usage Stats</div>
+            <div class="action-desc">Monitor API usage and cost estimates</div>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- API Keys Tab -->
+    <div id="tab-keys" class="tab-panel">
+      <div class="card">
+        <div class="card-title">API Key Vault</div>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem">
+          Your keys are encrypted with AES-256-GCM and stored securely. Agents never see them &mdash; keys are injected server-side when proxying API calls.
+        </p>
+        <div id="keys-list"></div>
+      </div>
+    </div>
+
+    <!-- Usage Tab -->
+    <div id="tab-usage" class="tab-panel">
+      <div class="period-sel">
+        <button class="period-btn active" data-period="today">Today</button>
+        <button class="period-btn" data-period="week">This Week</button>
+        <button class="period-btn" data-period="month">This Month</button>
+      </div>
+
+      <div class="card-grid" style="margin-bottom:1rem">
+        <div class="stat">
+          <div class="stat-label">Total Requests</div>
+          <div class="stat-value" id="us-requests">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Tokens In</div>
+          <div class="stat-value" id="us-tokens-in">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Tokens Out</div>
+          <div class="stat-value" id="us-tokens-out">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Estimated Cost</div>
+          <div class="stat-value" id="us-cost">--</div>
+          <div class="stat-sub">Prices are estimates based on published rates</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Usage by Provider</div>
+        <div id="us-chart" class="bar-chart"></div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+          <div class="card-title" style="margin-bottom:0">Recent Calls</div>
+          <button class="btn btn-ghost btn-sm" id="export-csv-btn" onclick="exportCsv()">Export CSV</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="usage-table">
+            <thead>
+              <tr>
+                <th>Provider</th>
+                <th>Model</th>
+                <th>In</th>
+                <th>Out</th>
+                <th>Cost</th>
+                <th>Agent</th>
+                <th>When</th>
+              </tr>
+            </thead>
+            <tbody id="us-recent"></tbody>
+          </table>
+        </div>
+        <div id="us-empty" style="text-align:center;padding:2rem;color:var(--muted-soft);font-size:0.85rem" class="hidden">
+          No usage data yet. Use an agent with an API key to see stats here.
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Tab -->
+    <div id="tab-settings" class="tab-panel">
+      <div class="card">
+        <div class="card-title">Preferences</div>
+
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Currency Display</div>
+            <div class="setting-desc">Costs are stored in USD and converted for display</div>
+          </div>
+          <select id="pref-currency" onchange="savePref('currency',this.value)">
+            <option value="USD">USD ($)</option>
+            <option value="EUR">EUR (&euro;)</option>
+            <option value="GBP">GBP (&pound;)</option>
+            <option value="JPY">JPY (&yen;)</option>
+            <option value="CAD">CAD (C$)</option>
+            <option value="AUD">AUD (A$)</option>
+          </select>
+        </div>
+
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Default Provider</div>
+            <div class="setting-desc">Preferred AI provider for new agents</div>
+          </div>
+          <select id="pref-provider" onchange="savePref('defaultProvider',this.value)">
+            <option value="">Auto</option>
+            <option value="openai">OpenAI</option>
+            <option value="anthropic">Anthropic</option>
+            <option value="google">Google AI</option>
+            <option value="groq">Groq</option>
+            <option value="openrouter">OpenRouter</option>
+            <option value="together">Together AI</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Data</div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Clear Local Data</div>
+            <div class="setting-desc">Remove cached preferences and session from this browser</div>
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="clearLocalData()">Clear Data</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Account</div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Sign Out</div>
+            <div class="setting-desc">End your session on this device</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="signOut()">Sign Out</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
+
+<script>
+(function() {
+  var API = '/v1';
+  var user = null;
+  var providers = [];
+  var keyStatus = {};
+  var usageData = null;
+  var prefs = {};
+  var currencyRates = null;
+
+  // ── Session ──────────────────────────────────────────────────────────────
+  function getToken() {
+    // Check URL fragment for fresh login
+    var hash = location.hash;
+    if (hash.indexOf('session=') > -1) {
+      var t = hash.split('session=')[1];
+      if (t) {
+        localStorage.setItem('fags_session', JSON.stringify({ token: t }));
+        history.replaceState(null, '', location.pathname + location.search);
+        return t;
+      }
+    }
+    try {
+      var stored = localStorage.getItem('fags_session');
+      if (stored) { var p = JSON.parse(stored); if (p && p.token) return p.token; }
+    } catch (_) {}
+    return null;
+  }
+
+  function headers() {
+    var token = getToken();
+    return { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Accept': 'application/json' };
+  }
+
+  // ── Init ─────────────────────────────────────────────────────────────────
+  async function init() {
+    loadPrefs();
+    var token = getToken();
+    if (!token) { showSignIn(); return; }
+
+    // Verify session
+    try {
+      var res = await fetch(API + '/auth/me', { headers: headers() });
+      if (!res.ok) { showSignIn(); return; }
+      user = await res.json();
+    } catch (e) { showSignIn(); return; }
+
+    showConsole();
+    loadAll();
+  }
+
+  function showSignIn() {
+    document.getElementById('sign-in-page').classList.remove('hidden');
+    document.getElementById('console-app').classList.add('hidden');
+    document.getElementById('hdr-user').innerHTML = '<a href="/v1/auth/github" class="sign-in-link">Sign in</a>';
+  }
+
+  function showConsole() {
+    document.getElementById('sign-in-page').classList.add('hidden');
+    document.getElementById('console-app').classList.remove('hidden');
+
+    // Header user
+    var avatarHtml = user.avatar
+      ? '<img src="' + esc(user.avatar) + '&s=56" class="avatar" alt="">'
+      : '<span style="font-size:0.82rem;color:var(--muted)">' + esc(user.login || 'User') + '</span>';
+    document.getElementById('hdr-user').innerHTML = avatarHtml;
+
+    // User card
+    if (user.avatar) document.getElementById('user-avatar').src = user.avatar + '&s=112';
+    document.getElementById('user-name').textContent = user.login || 'User';
+    document.getElementById('user-login').textContent = '@' + (user.login || '');
+  }
+
+  async function loadAll() {
+    await Promise.all([loadProviders(), loadUsage()]);
+    renderOverview();
+    renderKeys();
+    renderUsage();
+  }
+
+  // ── Load providers + key status ──────────────────────────────────────────
+  async function loadProviders() {
+    try {
+      var [provRes, statusRes] = await Promise.all([
+        fetch(API + '/keys/providers', { headers: headers() }),
+        fetch(API + '/keys/status', { headers: headers() }),
+      ]);
+      var provData = await provRes.json();
+      providers = provData.providers || [];
+      var statusData = await statusRes.json();
+      keyStatus = {};
+      (statusData.keys || []).forEach(function(k) { keyStatus[k.provider] = k; });
+    } catch (e) {
+      console.error('Failed to load providers:', e);
+    }
+  }
+
+  // ── Load usage ───────────────────────────────────────────────────────────
+  async function loadUsage() {
+    try {
+      var res = await fetch(API + '/usage', { headers: headers() });
+      if (res.ok) usageData = await res.json();
+    } catch (e) {
+      console.error('Failed to load usage:', e);
+    }
+  }
+
+  // ── Render: Overview ─────────────────────────────────────────────────────
+  function renderOverview() {
+    if (!usageData) return;
+    document.getElementById('ov-requests').textContent = formatNumber(usageData.today.requests);
+    document.getElementById('ov-cost').textContent = formatCost(usageData.today.costUsd);
+
+    // Keys summary
+    var html = '';
+    providers.forEach(function(p) {
+      var has = !!keyStatus[p.id];
+      html += '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0">';
+      html += '<span class="provider-dot ' + (has ? 'on' : 'off') + '"></span>';
+      html += '<span style="font-size:0.85rem;' + (has ? '' : 'color:var(--muted-soft)') + '">' + esc(p.name) + '</span>';
+      html += '</div>';
+    });
+    document.getElementById('ov-keys-summary').innerHTML = html;
+  }
+
+  // ── Render: Keys ─────────────────────────────────────────────────────────
+  function renderKeys() {
+    var html = '';
+    providers.forEach(function(p) {
+      var has = !!keyStatus[p.id];
+      html += '<div class="provider-row" id="prov-' + p.id + '">';
+      html += '<span class="provider-dot ' + (has ? 'on' : 'off') + '"></span>';
+      html += '<span class="provider-name">' + esc(p.name) + '</span>';
+      if (has) {
+        html += '<span class="provider-status">Added ' + formatDate(keyStatus[p.id].createdAt) + '</span>';
+      }
+      html += '<div class="provider-actions">';
+      if (p.docsUrl) {
+        html += '<a href="' + esc(p.docsUrl) + '" class="provider-docs" target="_blank" rel="noopener">Get key</a>';
+      }
+      if (has) {
+        html += '<button class="btn btn-ghost btn-sm" onclick="showKeyForm(\'' + p.id + '\')">Update</button>';
+        html += '<button class="btn btn-danger btn-sm" onclick="deleteKey(\'' + p.id + '\')">Remove</button>';
+      } else {
+        html += '<button class="btn btn-primary btn-sm" onclick="showKeyForm(\'' + p.id + '\')">Add key</button>';
+      }
+      html += '</div>';
+      html += '</div>';
+
+      // Hidden form
+      html += '<div id="form-' + p.id + '" class="hidden" style="padding:0.5rem 0 0.75rem 1.5rem">';
+      html += '<div class="input-row">';
+      html += '<input type="password" class="input" id="input-' + p.id + '" placeholder="Paste your ' + esc(p.name) + ' API key">';
+      html += '<button class="toggle-vis" onclick="toggleVis(\'' + p.id + '\')" title="Show/hide">&#128065;</button>';
+      html += '</div>';
+      html += '<div style="display:flex;gap:0.4rem;margin-top:0.4rem">';
+      html += '<button class="btn btn-primary btn-sm" onclick="saveKey(\'' + p.id + '\')">Save</button>';
+      html += '<button class="btn btn-ghost btn-sm" onclick="hideKeyForm(\'' + p.id + '\')">Cancel</button>';
+      html += '</div>';
+      html += '</div>';
+    });
+    document.getElementById('keys-list').innerHTML = html;
+  }
+
+  // ── Render: Usage ────────────────────────────────────────────────────────
+  var currentPeriod = 'today';
+
+  function renderUsage() {
+    if (!usageData) return;
+    var d = usageData[currentPeriod === 'today' ? 'today' : currentPeriod === 'week' ? 'thisWeek' : 'thisMonth'];
+    document.getElementById('us-requests').textContent = formatNumber(d.requests);
+    document.getElementById('us-tokens-in').textContent = formatNumber(d.tokensIn);
+    document.getElementById('us-tokens-out').textContent = formatNumber(d.tokensOut);
+    document.getElementById('us-cost').textContent = formatCost(d.costUsd);
+
+    // Bar chart
+    var bp = usageData.byProvider || [];
+    var maxReq = 1;
+    bp.forEach(function(b) { if (b.requests > maxReq) maxReq = b.requests; });
+    var chartHtml = '';
+    if (bp.length === 0) {
+      chartHtml = '<div style="text-align:center;padding:1rem;color:var(--muted-soft);font-size:0.82rem">No data yet</div>';
+    } else {
+      bp.forEach(function(b) {
+        var pct = Math.round(b.requests / maxReq * 100);
+        var label = esc(b.provider) + (b.model ? ' / ' + esc(b.model) : '');
+        chartHtml += '<div class="bar-row">';
+        chartHtml += '<span class="bar-label" title="' + label + '">' + label + '</span>';
+        chartHtml += '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%"></div></div>';
+        chartHtml += '<span class="bar-value">' + formatNumber(b.requests) + '</span>';
+        chartHtml += '</div>';
+      });
+    }
+    document.getElementById('us-chart').innerHTML = chartHtml;
+
+    // Recent calls table
+    var recent = usageData.recentCalls || [];
+    var tbody = document.getElementById('us-recent');
+    var empty = document.getElementById('us-empty');
+    if (recent.length === 0) {
+      tbody.innerHTML = '';
+      empty.classList.remove('hidden');
+    } else {
+      empty.classList.add('hidden');
+      var rowsHtml = '';
+      recent.forEach(function(r) {
+        rowsHtml += '<tr>';
+        rowsHtml += '<td>' + esc(r.provider) + '</td>';
+        rowsHtml += '<td style="color:var(--muted)">' + esc(r.model || '--') + '</td>';
+        rowsHtml += '<td>' + formatNumber(r.tokensIn) + '</td>';
+        rowsHtml += '<td>' + formatNumber(r.tokensOut) + '</td>';
+        rowsHtml += '<td>' + formatCost(r.costUsd) + '</td>';
+        rowsHtml += '<td style="color:var(--muted)">' + esc(r.agentId || '--') + '</td>';
+        rowsHtml += '<td style="color:var(--muted-soft)">' + timeAgo(r.createdAt) + '</td>';
+        rowsHtml += '</tr>';
+      });
+      tbody.innerHTML = rowsHtml;
+    }
+  }
+
+  // ── Tab switching ────────────────────────────────────────────────────────
+  document.querySelectorAll('.tab-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var tab = btn.getAttribute('data-tab');
+      document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.toggle('active', b === btn); });
+      document.querySelectorAll('.tab-panel').forEach(function(p) {
+        p.classList.toggle('active', p.id === 'tab-' + tab);
+      });
+    });
+  });
+
+  window.switchToTab = function(tab) {
+    var btn = document.querySelector('.tab-btn[data-tab="' + tab + '"]');
+    if (btn) btn.click();
+  };
+
+  // ── Period switching ─────────────────────────────────────────────────────
+  document.querySelectorAll('.period-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      currentPeriod = btn.getAttribute('data-period');
+      document.querySelectorAll('.period-btn').forEach(function(b) { b.classList.toggle('active', b === btn); });
+      renderUsage();
+    });
+  });
+
+  // ── Key management actions ───────────────────────────────────────────────
+  window.showKeyForm = function(id) {
+    document.getElementById('form-' + id).classList.remove('hidden');
+    document.getElementById('input-' + id).focus();
+  };
+
+  window.hideKeyForm = function(id) {
+    document.getElementById('form-' + id).classList.add('hidden');
+    document.getElementById('input-' + id).value = '';
+  };
+
+  window.toggleVis = function(id) {
+    var inp = document.getElementById('input-' + id);
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+  };
+
+  window.saveKey = async function(id) {
+    var val = document.getElementById('input-' + id).value.trim();
+    if (!val) return;
+    try {
+      var res = await fetch(API + '/keys/' + id, {
+        method: 'PUT',
+        headers: headers(),
+        body: JSON.stringify({ key: val }),
+      });
+      var data = await res.json();
+      if (data.ok) {
+        showToast('Key saved successfully', 'success');
+        await loadProviders();
+        renderKeys();
+        renderOverview();
+      } else {
+        showToast(data.error || 'Failed to save key', 'error');
+      }
+    } catch (e) {
+      showToast('Network error', 'error');
+    }
+  };
+
+  window.deleteKey = async function(id) {
+    if (!confirm('Remove this API key? Agents using this provider will stop working.')) return;
+    try {
+      var res = await fetch(API + '/keys/' + id, { method: 'DELETE', headers: headers() });
+      var data = await res.json();
+      if (data.ok) {
+        showToast('Key removed', 'success');
+        await loadProviders();
+        renderKeys();
+        renderOverview();
+      } else {
+        showToast(data.error || 'Failed to remove key', 'error');
+      }
+    } catch (e) {
+      showToast('Network error', 'error');
+    }
+  };
+
+  // ── Export CSV ────────────────────────────────────────────────────────────
+  window.exportCsv = function() {
+    if (!usageData || !usageData.recentCalls || usageData.recentCalls.length === 0) {
+      showToast('No data to export', 'error');
+      return;
+    }
+    var lines = ['provider,model,tokens_in,tokens_out,cost_usd,agent_id,timestamp'];
+    usageData.recentCalls.forEach(function(r) {
+      lines.push([
+        r.provider,
+        r.model || '',
+        r.tokensIn,
+        r.tokensOut,
+        r.costUsd,
+        r.agentId || '',
+        new Date(r.createdAt * 1000).toISOString(),
+      ].join(','));
+    });
+    var blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'fags-usage-' + new Date().toISOString().slice(0, 10) + '.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast('CSV exported', 'success');
+  };
+
+  // ── Settings ─────────────────────────────────────────────────────────────
+  function loadPrefs() {
+    try {
+      prefs = JSON.parse(localStorage.getItem('fags_prefs') || '{}');
+    } catch (_) { prefs = {}; }
+    // Apply saved values
+    if (prefs.currency) {
+      var sel = document.getElementById('pref-currency');
+      if (sel) sel.value = prefs.currency;
+    }
+    if (prefs.defaultProvider) {
+      var sel2 = document.getElementById('pref-provider');
+      if (sel2) sel2.value = prefs.defaultProvider;
+    }
+  }
+
+  window.savePref = function(key, value) {
+    prefs[key] = value;
+    localStorage.setItem('fags_prefs', JSON.stringify(prefs));
+    if (key === 'currency') {
+      loadCurrencyRates().then(function() { renderUsage(); renderOverview(); });
+    }
+    showToast('Preference saved', 'success');
+  };
+
+  window.clearLocalData = function() {
+    if (!confirm('Clear all local data? You will remain signed in but preferences will be reset.')) return;
+    localStorage.removeItem('fags_prefs');
+    localStorage.removeItem('fags_currency_rates');
+    prefs = {};
+    showToast('Local data cleared', 'success');
+  };
+
+  window.signOut = async function() {
+    try {
+      await fetch(API + '/auth/logout', { method: 'POST', headers: headers() });
+    } catch (_) {}
+    localStorage.removeItem('fags_session');
+    location.reload();
+  };
+
+  // ── Currency conversion ──────────────────────────────────────────────────
+  async function loadCurrencyRates() {
+    if (currencyRates) return;
+    try {
+      var cached = localStorage.getItem('fags_currency_rates');
+      if (cached) {
+        var parsed = JSON.parse(cached);
+        if (parsed.ts && Date.now() - parsed.ts < 86400000) { // 24h cache
+          currencyRates = parsed.rates;
+          return;
+        }
+      }
+    } catch (_) {}
+
+    try {
+      var res = await fetch('https://open.er-api.com/v6/latest/USD');
+      if (res.ok) {
+        var data = await res.json();
+        currencyRates = data.rates || {};
+        localStorage.setItem('fags_currency_rates', JSON.stringify({ rates: currencyRates, ts: Date.now() }));
+      }
+    } catch (_) {
+      currencyRates = {};
+    }
+  }
+
+  // ── Formatting helpers ───────────────────────────────────────────────────
+  function formatCost(usd) {
+    var currency = prefs.currency || 'USD';
+    var amount = usd;
+    if (currency !== 'USD' && currencyRates && currencyRates[currency]) {
+      amount = usd * currencyRates[currency];
+    }
+    var symbols = { USD: '$', EUR: '\u20AC', GBP: '\u00A3', JPY: '\u00A5', CAD: 'C$', AUD: 'A$' };
+    var sym = symbols[currency] || currency + ' ';
+    if (currency === 'JPY') return sym + Math.round(amount);
+    if (amount < 0.01) return sym + amount.toFixed(4);
+    return sym + amount.toFixed(2);
+  }
+
+  function formatNumber(n) {
+    if (n == null) return '--';
+    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+    if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+    return String(n);
+  }
+
+  function formatDate(ts) {
+    return new Date(ts * 1000).toLocaleDateString();
+  }
+
+  function timeAgo(ts) {
+    var diff = Math.floor(Date.now() / 1000) - ts;
+    if (diff < 60) return 'just now';
+    if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+    if (diff < 604800) return Math.floor(diff / 86400) + 'd ago';
+    return formatDate(ts);
+  }
+
+  function esc(s) {
+    if (!s) return '';
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  // ── Toast ────────────────────────────────────────────────────────────────
+  var toastTimer = null;
+  function showToast(msg, type) {
+    var el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'toast show ' + (type || '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function() { el.classList.remove('show'); }, 3000);
+  }
+  window.showToast = showToast;
+
+  // ── Boot ─────────────────────────────────────────────────────────────────
+  if (prefs.currency && prefs.currency !== 'USD') {
+    loadCurrencyRates().then(init);
+  } else {
+    init();
+  }
+})();
+</script>
+</body>
+</html>
