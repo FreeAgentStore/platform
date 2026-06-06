@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 // Test the pure functions from the host worker (extracted for testability)
 // The actual worker fetch handler is tested via integration tests.

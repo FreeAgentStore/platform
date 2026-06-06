@@ -28,12 +28,48 @@ interface Provider {
 }
 
 const PROVIDERS: Provider[] = [
-  { id: 'openai', name: 'OpenAI', host: 'api.openai.com', keyPrefix: 'sk-', docsUrl: 'https://platform.openai.com/api-keys' },
-  { id: 'anthropic', name: 'Anthropic', host: 'api.anthropic.com', keyPrefix: 'sk-ant-', docsUrl: 'https://console.anthropic.com/settings/keys' },
-  { id: 'google', name: 'Google AI (Gemini)', host: 'generativelanguage.googleapis.com', keyPrefix: 'AI', docsUrl: 'https://aistudio.google.com/apikey' },
-  { id: 'openrouter', name: 'OpenRouter', host: 'openrouter.ai', keyPrefix: 'sk-or-', docsUrl: 'https://openrouter.ai/keys' },
-  { id: 'groq', name: 'Groq', host: 'api.groq.com', keyPrefix: 'gsk_', docsUrl: 'https://console.groq.com/keys' },
-  { id: 'together', name: 'Together AI', host: 'api.together.xyz', keyPrefix: '', docsUrl: 'https://api.together.xyz/settings/api-keys' },
+  {
+    id: 'openai',
+    name: 'OpenAI',
+    host: 'api.openai.com',
+    keyPrefix: 'sk-',
+    docsUrl: 'https://platform.openai.com/api-keys',
+  },
+  {
+    id: 'anthropic',
+    name: 'Anthropic',
+    host: 'api.anthropic.com',
+    keyPrefix: 'sk-ant-',
+    docsUrl: 'https://console.anthropic.com/settings/keys',
+  },
+  {
+    id: 'google',
+    name: 'Google AI (Gemini)',
+    host: 'generativelanguage.googleapis.com',
+    keyPrefix: 'AI',
+    docsUrl: 'https://aistudio.google.com/apikey',
+  },
+  {
+    id: 'openrouter',
+    name: 'OpenRouter',
+    host: 'openrouter.ai',
+    keyPrefix: 'sk-or-',
+    docsUrl: 'https://openrouter.ai/keys',
+  },
+  {
+    id: 'groq',
+    name: 'Groq',
+    host: 'api.groq.com',
+    keyPrefix: 'gsk_',
+    docsUrl: 'https://console.groq.com/keys',
+  },
+  {
+    id: 'together',
+    name: 'Together AI',
+    host: 'api.together.xyz',
+    keyPrefix: '',
+    docsUrl: 'https://api.together.xyz/settings/api-keys',
+  },
 ];
 
 const HOST_TO_PROVIDER: Record<string, string> = {};
@@ -202,7 +238,9 @@ async function createSession(
   const sig = new Uint8Array(
     await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(payloadB64)),
   );
-  const sigHex = Array.from(sig).map((b) => b.toString(16).padStart(2, '0')).join('');
+  const sigHex = Array.from(sig)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 
   return `${payloadB64}.${sigHex}`;
 }
@@ -222,7 +260,9 @@ const KEK_IV_LENGTH = 12;
 async function importKek(kekBase64: string): Promise<CryptoKey> {
   const raw = base64ToBytes(kekBase64);
   if (raw.byteLength !== KEY_LENGTH) {
-    throw new Error(`KEY_ENCRYPTION_KEY must be ${KEY_LENGTH} bytes base64-encoded (got ${raw.byteLength})`);
+    throw new Error(
+      `KEY_ENCRYPTION_KEY must be ${KEY_LENGTH} bytes base64-encoded (got ${raw.byteLength})`,
+    );
   }
   return crypto.subtle.importKey('raw', raw, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
 }
@@ -299,17 +339,17 @@ function escapeHtml(s: string): string {
 
 const PRICING: Record<string, Record<string, { input: number; output: number }>> = {
   openai: {
-    'gpt-4o-mini': { input: 0.15, output: 0.60 },
-    'gpt-4o': { input: 2.50, output: 10.00 },
-    'gpt-4-turbo': { input: 10.00, output: 30.00 },
+    'gpt-4o-mini': { input: 0.15, output: 0.6 },
+    'gpt-4o': { input: 2.5, output: 10.0 },
+    'gpt-4-turbo': { input: 10.0, output: 30.0 },
   },
   anthropic: {
     'claude-3-haiku-20240307': { input: 0.25, output: 1.25 },
-    'claude-3-5-sonnet-20241022': { input: 3.00, output: 15.00 },
+    'claude-3-5-sonnet-20241022': { input: 3.0, output: 15.0 },
   },
   google: {
-    'gemini-1.5-flash': { input: 0.075, output: 0.30 },
-    'gemini-1.5-pro': { input: 1.25, output: 5.00 },
+    'gemini-1.5-flash': { input: 0.075, output: 0.3 },
+    'gemini-1.5-pro': { input: 1.25, output: 5.0 },
   },
   groq: {
     'llama-3.3-70b-versatile': { input: 0.59, output: 0.79 },
@@ -328,12 +368,15 @@ async function logUsage(
 ): Promise<void> {
   const pricing = PRICING[provider]?.[model ?? ''];
   const costUsd = pricing
-    ? (tokensIn * pricing.input / 1_000_000) + (tokensOut * pricing.output / 1_000_000)
+    ? (tokensIn * pricing.input) / 1_000_000 + (tokensOut * pricing.output) / 1_000_000
     : null;
 
-  await db.prepare(
-    'INSERT INTO usage_log (user_id, provider, model, tokens_in, tokens_out, cost_usd, agent_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, unixepoch())',
-  ).bind(userId, provider, model, tokensIn, tokensOut, costUsd, agentId).run();
+  await db
+    .prepare(
+      'INSERT INTO usage_log (user_id, provider, model, tokens_in, tokens_out, cost_usd, agent_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, unixepoch())',
+    )
+    .bind(userId, provider, model, tokensIn, tokensOut, costUsd, agentId)
+    .run();
 }
 
 // ── Rate limiting ────────────────────────────────────────────────────────────
@@ -363,15 +406,33 @@ async function checkRateLimit(db: D1Database, userId: string): Promise<boolean> 
 // ── Headers to strip from proxy requests/responses ───────────────────────────
 
 const PROXY_FORWARD_SKIP = new Set([
-  'authorization', 'cookie', 'host', 'connection', 'keep-alive',
-  'proxy-authenticate', 'proxy-authorization', 'te', 'trailer',
-  'transfer-encoding', 'upgrade', 'cf-connecting-ip', 'cf-ipcountry',
-  'cf-ray', 'cf-visitor', 'cf-worker', 'x-forwarded-for', 'x-real-ip',
+  'authorization',
+  'cookie',
+  'host',
+  'connection',
+  'keep-alive',
+  'proxy-authenticate',
+  'proxy-authorization',
+  'te',
+  'trailer',
+  'transfer-encoding',
+  'upgrade',
+  'cf-connecting-ip',
+  'cf-ipcountry',
+  'cf-ray',
+  'cf-visitor',
+  'cf-worker',
+  'x-forwarded-for',
+  'x-real-ip',
 ]);
 
 const PROXY_RESPONSE_SKIP = new Set([
-  'set-cookie', 'connection', 'keep-alive', 'transfer-encoding',
-  'content-encoding', 'content-length',
+  'set-cookie',
+  'connection',
+  'keep-alive',
+  'transfer-encoding',
+  'content-encoding',
+  'content-length',
 ]);
 
 // ── Router ───────────────────────────────────────────────────────────────────
@@ -397,8 +458,14 @@ export async function handleApiRoute(request: Request, url: URL, env: Env): Prom
       const ghUrl = `https://github.com/login/oauth/authorize?client_id=${env.GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read:user&state=${state}`;
       const returnTo = url.searchParams.get('return_to') ?? '/';
       const h = new Headers({ Location: ghUrl });
-      h.append('Set-Cookie', `fags_oauth_state=${state}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600`);
-      h.append('Set-Cookie', `fags_return_to=${encodeURIComponent(returnTo)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600`);
+      h.append(
+        'Set-Cookie',
+        `fags_oauth_state=${state}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600`,
+      );
+      h.append(
+        'Set-Cookie',
+        `fags_return_to=${encodeURIComponent(returnTo)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600`,
+      );
       return new Response(null, { status: 302, headers: h });
     }
 
@@ -433,7 +500,9 @@ export async function handleApiRoute(request: Request, url: URL, env: Env): Prom
       });
       const tokenData = await tokenRes.json<{ access_token?: string; error?: string }>();
       if (!tokenData.access_token) {
-        return new Response(`GitHub token exchange failed: ${tokenData.error ?? 'unknown'}`, { status: 502 });
+        return new Response(`GitHub token exchange failed: ${tokenData.error ?? 'unknown'}`, {
+          status: 502,
+        });
       }
 
       // Get user info
@@ -447,25 +516,34 @@ export async function handleApiRoute(request: Request, url: URL, env: Env): Prom
       if (!userRes.ok) {
         return new Response('Failed to fetch GitHub user info', { status: 502 });
       }
-      const ghUser = await userRes.json<{ id: number; login: string; name?: string; avatar_url?: string }>();
+      const ghUser = await userRes.json<{
+        id: number;
+        login: string;
+        name?: string;
+        avatar_url?: string;
+      }>();
       const uid = String(ghUser.id);
 
       // Upsert user in D1
-      await env.DB
-        .prepare(
-          `INSERT INTO users (github_id, login, name, avatar_url, last_login_at)
+      await env.DB.prepare(
+        `INSERT INTO users (github_id, login, name, avatar_url, last_login_at)
            VALUES (?, ?, ?, ?, unixepoch())
            ON CONFLICT (github_id) DO UPDATE SET
              login = excluded.login,
              name = excluded.name,
              avatar_url = excluded.avatar_url,
              last_login_at = unixepoch()`,
-        )
+      )
         .bind(uid, ghUser.login, ghUser.name ?? null, ghUser.avatar_url ?? null)
         .run();
 
       // Create session token
-      const sessionToken = await createSession(uid, ghUser.login, ghUser.avatar_url ?? '', env.SESSION_SIGNING_KEY);
+      const sessionToken = await createSession(
+        uid,
+        ghUser.login,
+        ghUser.avatar_url ?? '',
+        env.SESSION_SIGNING_KEY,
+      );
 
       // Read return_to cookie for post-login redirect
       const returnMatch = cookies.match(/(?:^|;\s*)fags_return_to=([^\s;]+)/);
@@ -474,7 +552,10 @@ export async function handleApiRoute(request: Request, url: URL, env: Env): Prom
 
       // Set cookie + redirect with token in fragment for JS
       const h = new Headers({ Location: `${safeReturn}?login=success#session=${sessionToken}` });
-      h.append('Set-Cookie', `fags_session=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`);
+      h.append(
+        'Set-Cookie',
+        `fags_session=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`,
+      );
       // Clear the state + return_to cookies
       h.append('Set-Cookie', 'fags_oauth_state=; Path=/; Max-Age=0');
       h.append('Set-Cookie', 'fags_return_to=; Path=/; Max-Age=0');
@@ -510,8 +591,9 @@ export async function handleApiRoute(request: Request, url: URL, env: Env): Prom
     // GET /v1/keys/status (auth)
     if (path === '/v1/keys/status' && request.method === 'GET') {
       const uid = await requireAuth(request, env);
-      const rows = await env.DB
-        .prepare('SELECT provider, created_at FROM user_api_keys WHERE user_id = ?')
+      const rows = await env.DB.prepare(
+        'SELECT provider, created_at FROM user_api_keys WHERE user_id = ?',
+      )
         .bind(uid)
         .all<{ provider: string; created_at: number }>();
       return jsonResponse({
@@ -536,7 +618,7 @@ export async function handleApiRoute(request: Request, url: URL, env: Env): Prom
         return jsonResponse({ ok: false, error: `Unknown provider: ${providerId}` }, 400);
       }
 
-      const body = await request.json<{ key?: string }>().catch(() => ({} as { key?: string }));
+      const body = await request.json<{ key?: string }>().catch(() => ({}) as { key?: string });
       if (!body.key || typeof body.key !== 'string' || body.key.length > 500) {
         return jsonResponse({ ok: false, error: 'Invalid key (max 500 chars).' }, 400);
       }
@@ -549,17 +631,23 @@ export async function handleApiRoute(request: Request, url: URL, env: Env): Prom
       }
 
       const sealed = await sealKey(body.key, env.KEY_ENCRYPTION_KEY);
-      await env.DB
-        .prepare(
-          `INSERT INTO user_api_keys (user_id, provider, key_ciphertext, dek_wrapped, iv, created_at)
+      await env.DB.prepare(
+        `INSERT INTO user_api_keys (user_id, provider, key_ciphertext, dek_wrapped, iv, created_at)
            VALUES (?, ?, ?, ?, ?, ?)
            ON CONFLICT (user_id, provider) DO UPDATE SET
              key_ciphertext = excluded.key_ciphertext,
              dek_wrapped = excluded.dek_wrapped,
              iv = excluded.iv,
              created_at = excluded.created_at`,
+      )
+        .bind(
+          uid,
+          providerId,
+          sealed.keyCiphertext,
+          sealed.dekWrapped,
+          sealed.iv,
+          Math.floor(Date.now() / 1000),
         )
-        .bind(uid, providerId, sealed.keyCiphertext, sealed.dekWrapped, sealed.iv, Math.floor(Date.now() / 1000))
         .run();
 
       return jsonResponse({ ok: true });
@@ -570,8 +658,7 @@ export async function handleApiRoute(request: Request, url: URL, env: Env): Prom
     if (delMatch && request.method === 'DELETE') {
       const uid = await requireAuth(request, env);
       const providerId = delMatch[1];
-      await env.DB
-        .prepare('DELETE FROM user_api_keys WHERE user_id = ? AND provider = ?')
+      await env.DB.prepare('DELETE FROM user_api_keys WHERE user_id = ? AND provider = ?')
         .bind(uid, providerId)
         .run();
       return jsonResponse({ ok: true });
@@ -639,8 +726,9 @@ async function handleProxy(
   }
 
   // Look up + decrypt user key
-  const row = await env.DB
-    .prepare('SELECT key_ciphertext, dek_wrapped, iv FROM user_api_keys WHERE user_id = ? AND provider = ?')
+  const row = await env.DB.prepare(
+    'SELECT key_ciphertext, dek_wrapped, iv FROM user_api_keys WHERE user_id = ? AND provider = ?',
+  )
     .bind(uid, providerId)
     .first<{ key_ciphertext: unknown; dek_wrapped: unknown; iv: unknown }>();
 
@@ -694,7 +782,10 @@ async function handleProxy(
   if (request.method !== 'GET' && request.method !== 'HEAD') {
     const buf = await request.arrayBuffer();
     if (buf.byteLength > MAX_REQUEST_BODY) {
-      return jsonResponse({ error: `Request body too large (max ${MAX_REQUEST_BODY} bytes).` }, 413);
+      return jsonResponse(
+        { error: `Request body too large (max ${MAX_REQUEST_BODY} bytes).` },
+        413,
+      );
     }
     forwardBody = buf;
   }
@@ -716,8 +807,7 @@ async function handleProxy(
 
   // Update last_used_at probabilistically (1 in 10)
   if (Math.random() < 0.1) {
-    env.DB
-      .prepare('UPDATE user_api_keys SET last_used_at = ? WHERE user_id = ? AND provider = ?')
+    env.DB.prepare('UPDATE user_api_keys SET last_used_at = ? WHERE user_id = ? AND provider = ?')
       .bind(Math.floor(Date.now() / 1000), uid, providerId)
       .run()
       .catch(() => {});
@@ -763,13 +853,17 @@ async function handleProxy(
             try {
               const parsed = JSON.parse(data);
               if (parsed.usage) lastUsage = parsed.usage;
-            } catch { /* not JSON */ }
+            } catch {
+              /* not JSON */
+            }
           }
         }
         const tokensIn = lastUsage?.prompt_tokens ?? requestTokenEstimate;
         const tokensOut = lastUsage?.completion_tokens ?? 0;
         await logUsage(env.DB, uid, providerId, requestModel, tokensIn, tokensOut, agentId);
-      } catch { /* swallow errors in background logging */ }
+      } catch {
+        /* swallow errors in background logging */
+      }
     })();
 
     return new Response(clientStream, {
@@ -790,7 +884,9 @@ async function handleProxy(
       tokensOut = resJson.usage.completion_tokens ?? tokensOut;
     }
     if (resJson.model && !requestModel) requestModel = resJson.model;
-  } catch { /* not JSON */ }
+  } catch {
+    /* not JSON */
+  }
   logUsage(env.DB, uid, providerId, requestModel, tokensIn, tokensOut, agentId).catch(() => {});
 
   return new Response(responseBody, {
@@ -809,33 +905,65 @@ async function handleUsage(db: D1Database, userId: string): Promise<Response> {
   const startOfMonth = now - (now % 2592000); // ~30 days
 
   const [todayRow, weekRow, monthRow, byProviderRows, recentRows] = await Promise.all([
-    db.prepare(
-      `SELECT COUNT(*) as requests, COALESCE(SUM(tokens_in),0) as tokens_in, COALESCE(SUM(tokens_out),0) as tokens_out, COALESCE(SUM(cost_usd),0) as cost_usd
+    db
+      .prepare(
+        `SELECT COUNT(*) as requests, COALESCE(SUM(tokens_in),0) as tokens_in, COALESCE(SUM(tokens_out),0) as tokens_out, COALESCE(SUM(cost_usd),0) as cost_usd
        FROM usage_log WHERE user_id = ? AND created_at >= ?`,
-    ).bind(userId, startOfDay).first<{ requests: number; tokens_in: number; tokens_out: number; cost_usd: number }>(),
+      )
+      .bind(userId, startOfDay)
+      .first<{ requests: number; tokens_in: number; tokens_out: number; cost_usd: number }>(),
 
-    db.prepare(
-      `SELECT COUNT(*) as requests, COALESCE(SUM(tokens_in),0) as tokens_in, COALESCE(SUM(tokens_out),0) as tokens_out, COALESCE(SUM(cost_usd),0) as cost_usd
+    db
+      .prepare(
+        `SELECT COUNT(*) as requests, COALESCE(SUM(tokens_in),0) as tokens_in, COALESCE(SUM(tokens_out),0) as tokens_out, COALESCE(SUM(cost_usd),0) as cost_usd
        FROM usage_log WHERE user_id = ? AND created_at >= ?`,
-    ).bind(userId, startOfWeek).first<{ requests: number; tokens_in: number; tokens_out: number; cost_usd: number }>(),
+      )
+      .bind(userId, startOfWeek)
+      .first<{ requests: number; tokens_in: number; tokens_out: number; cost_usd: number }>(),
 
-    db.prepare(
-      `SELECT COUNT(*) as requests, COALESCE(SUM(tokens_in),0) as tokens_in, COALESCE(SUM(tokens_out),0) as tokens_out, COALESCE(SUM(cost_usd),0) as cost_usd
+    db
+      .prepare(
+        `SELECT COUNT(*) as requests, COALESCE(SUM(tokens_in),0) as tokens_in, COALESCE(SUM(tokens_out),0) as tokens_out, COALESCE(SUM(cost_usd),0) as cost_usd
        FROM usage_log WHERE user_id = ? AND created_at >= ?`,
-    ).bind(userId, startOfMonth).first<{ requests: number; tokens_in: number; tokens_out: number; cost_usd: number }>(),
+      )
+      .bind(userId, startOfMonth)
+      .first<{ requests: number; tokens_in: number; tokens_out: number; cost_usd: number }>(),
 
-    db.prepare(
-      `SELECT provider, model, COUNT(*) as requests, COALESCE(SUM(tokens_in),0) as tokens_in, COALESCE(SUM(tokens_out),0) as tokens_out, COALESCE(SUM(cost_usd),0) as cost_usd
+    db
+      .prepare(
+        `SELECT provider, model, COUNT(*) as requests, COALESCE(SUM(tokens_in),0) as tokens_in, COALESCE(SUM(tokens_out),0) as tokens_out, COALESCE(SUM(cost_usd),0) as cost_usd
        FROM usage_log WHERE user_id = ? GROUP BY provider, model ORDER BY requests DESC LIMIT 20`,
-    ).bind(userId).all<{ provider: string; model: string; requests: number; tokens_in: number; tokens_out: number; cost_usd: number }>(),
+      )
+      .bind(userId)
+      .all<{
+        provider: string;
+        model: string;
+        requests: number;
+        tokens_in: number;
+        tokens_out: number;
+        cost_usd: number;
+      }>(),
 
-    db.prepare(
-      `SELECT provider, model, tokens_in, tokens_out, cost_usd, agent_id, created_at
+    db
+      .prepare(
+        `SELECT provider, model, tokens_in, tokens_out, cost_usd, agent_id, created_at
        FROM usage_log WHERE user_id = ? ORDER BY created_at DESC LIMIT 50`,
-    ).bind(userId).all<{ provider: string; model: string; tokens_in: number; tokens_out: number; cost_usd: number; agent_id: string | null; created_at: number }>(),
+      )
+      .bind(userId)
+      .all<{
+        provider: string;
+        model: string;
+        tokens_in: number;
+        tokens_out: number;
+        cost_usd: number;
+        agent_id: string | null;
+        created_at: number;
+      }>(),
   ]);
 
-  const fmt = (r: { requests: number; tokens_in: number; tokens_out: number; cost_usd: number } | null) => ({
+  const fmt = (
+    r: { requests: number; tokens_in: number; tokens_out: number; cost_usd: number } | null,
+  ) => ({
     requests: r?.requests ?? 0,
     tokensIn: r?.tokens_in ?? 0,
     tokensOut: r?.tokens_out ?? 0,

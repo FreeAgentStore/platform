@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { handleApiRoute } from './api';
 import type { Env } from './index';
 
@@ -20,7 +20,11 @@ function mockEnv(overrides?: Partial<Env>): Env {
   };
 }
 
-function makeRequest(method: string, path: string, opts?: { headers?: Record<string, string>; body?: string }): Request {
+function makeRequest(
+  method: string,
+  path: string,
+  opts?: { headers?: Record<string, string>; body?: string },
+): Request {
   return new Request(`https://freeagentstore.online${path}`, {
     method,
     headers: opts?.headers ?? {},
@@ -30,7 +34,12 @@ function makeRequest(method: string, path: string, opts?: { headers?: Record<str
 
 // Helper: create a valid session token for testing
 async function createTestToken(uid: string, signingKey: string): Promise<string> {
-  const payload = { uid, login: 'test-user', avatar: '', exp: Math.floor(Date.now() / 1000) + 3600 };
+  const payload = {
+    uid,
+    login: 'test-user',
+    avatar: '',
+    exp: Math.floor(Date.now() / 1000) + 3600,
+  };
   const payloadB64 = btoa(JSON.stringify(payload));
   const key = await crypto.subtle.importKey(
     'raw',
@@ -39,8 +48,12 @@ async function createTestToken(uid: string, signingKey: string): Promise<string>
     false,
     ['sign'],
   );
-  const sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(payloadB64)));
-  const sigHex = Array.from(sig).map(b => b.toString(16).padStart(2, '0')).join('');
+  const sig = new Uint8Array(
+    await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(payloadB64)),
+  );
+  const sigHex = Array.from(sig)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
   return `${payloadB64}.${sigHex}`;
 }
 
@@ -53,12 +66,12 @@ describe('handleApiRoute', () => {
       mockEnv(),
     );
     expect(res.status).toBe(200);
-    const body = await res.json() as { providers: { id: string }[] };
+    const body = (await res.json()) as { providers: { id: string }[] };
     expect(body.providers.length).toBe(6);
-    expect(body.providers.map(p => p.id)).toContain('openai');
-    expect(body.providers.map(p => p.id)).toContain('anthropic');
-    expect(body.providers.map(p => p.id)).toContain('google');
-    expect(body.providers.map(p => p.id)).toContain('groq');
+    expect(body.providers.map((p) => p.id)).toContain('openai');
+    expect(body.providers.map((p) => p.id)).toContain('anthropic');
+    expect(body.providers.map((p) => p.id)).toContain('google');
+    expect(body.providers.map((p) => p.id)).toContain('groq');
   });
 
   // ── Auth required routes ──
@@ -73,7 +86,10 @@ describe('handleApiRoute', () => {
 
   it('PUT /v1/keys/openai without auth returns 401', async () => {
     const res = await handleApiRoute(
-      makeRequest('PUT', '/v1/keys/openai', { body: JSON.stringify({ key: 'sk-test' }), headers: { 'Content-Type': 'application/json' } }),
+      makeRequest('PUT', '/v1/keys/openai', {
+        body: JSON.stringify({ key: 'sk-test' }),
+        headers: { 'Content-Type': 'application/json' },
+      }),
       new URL('https://freeagentstore.online/v1/keys/openai'),
       mockEnv(),
     );
@@ -99,7 +115,7 @@ describe('handleApiRoute', () => {
       mockEnv({ SESSION_SIGNING_KEY: signingKey }),
     );
     expect(res.status).toBe(200);
-    const body = await res.json() as { keys: unknown[] };
+    const body = (await res.json()) as { keys: unknown[] };
     expect(body.keys).toBeInstanceOf(Array);
   });
 
@@ -112,7 +128,7 @@ describe('handleApiRoute', () => {
       mockEnv({ SESSION_SIGNING_KEY: signingKey }),
     );
     expect(res.status).toBe(200);
-    const body = await res.json() as { uid: string; login: string };
+    const body = (await res.json()) as { uid: string; login: string };
     expect(body.uid).toBe('user-123');
     expect(body.login).toBe('test-user');
   });

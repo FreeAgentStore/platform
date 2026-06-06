@@ -50,15 +50,23 @@ export default {
 
     // MCP subdomain — handled by separate worker (wrangler route)
     // Reserved subdomains — 404
-    if (host.startsWith('api.') || host.startsWith('admin.') ||
-        host.startsWith('publish.') || host.startsWith('agent.') ||
-        host.startsWith('create.')) {
+    if (
+      host.startsWith('api.') ||
+      host.startsWith('admin.') ||
+      host.startsWith('publish.') ||
+      host.startsWith('agent.') ||
+      host.startsWith('create.')
+    ) {
       return new Response('Not Found', { status: 404 });
     }
 
     // Redirect old subdomain URLs to path-based: tts.freeagentstore.online → /a/tts/
-    if (host !== 'freeagentstore.online' && host !== 'www.freeagentstore.online' &&
-        !host.startsWith('mcp.') && host.endsWith('.freeagentstore.online')) {
+    if (
+      host !== 'freeagentstore.online' &&
+      host !== 'www.freeagentstore.online' &&
+      !host.startsWith('mcp.') &&
+      host.endsWith('.freeagentstore.online')
+    ) {
       const slug = host.split('.')[0];
       return Response.redirect(`https://freeagentstore.online/a/${slug}${url.pathname}`, 301);
     }
@@ -92,8 +100,7 @@ export default {
       const subpath = agentMatch[2] || '/';
 
       // Verify route exists in D1
-      const route = await env.DB
-        .prepare('SELECT r2_prefix FROM routes WHERE slug = ? AND zone = ?')
+      const route = await env.DB.prepare('SELECT r2_prefix FROM routes WHERE slug = ? AND zone = ?')
         .bind(slug, 'freeagentstore.online')
         .first<{ r2_prefix: string }>();
 
@@ -155,9 +162,12 @@ function respond(request: Request, object: R2ObjectBody, mime: string): Response
   const headers = securityHeaders();
   headers.set('Content-Type', mime);
   headers.set('ETag', object.httpEtag);
-  headers.set('Cache-Control', mime.startsWith('text/html')
-    ? 'public, max-age=60, must-revalidate'
-    : 'public, max-age=31536000, immutable');
+  headers.set(
+    'Cache-Control',
+    mime.startsWith('text/html')
+      ? 'public, max-age=60, must-revalidate'
+      : 'public, max-age=31536000, immutable',
+  );
 
   return new Response(object.body, { headers });
 }
@@ -176,9 +186,14 @@ function contentType(path: string): string {
     css: 'text/css; charset=utf-8',
     json: 'application/json; charset=utf-8',
     svg: 'image/svg+xml',
-    png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg',
-    webp: 'image/webp', gif: 'image/gif', ico: 'image/x-icon',
-    woff: 'font/woff', woff2: 'font/woff2',
+    png: 'image/png',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    webp: 'image/webp',
+    gif: 'image/gif',
+    ico: 'image/x-icon',
+    woff: 'font/woff',
+    woff2: 'font/woff2',
     wasm: 'application/wasm',
     txt: 'text/plain; charset=utf-8',
     xml: 'application/xml',
@@ -194,16 +209,19 @@ function securityHeaders(): Headers {
   h.set('X-Content-Type-Options', 'nosniff');
   h.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   h.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-  h.set('Content-Security-Policy', [
-    "default-src 'self' https: data: blob:",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
-    "style-src 'self' 'unsafe-inline' https:",
-    "img-src 'self' data: blob: https:",
-    "font-src 'self' data: https:",
-    "connect-src 'self' https: wss: http://localhost:11434",
-    "frame-src 'self' https:",
-    "base-uri 'self'",
-    "object-src 'none'",
-  ].join('; '));
+  h.set(
+    'Content-Security-Policy',
+    [
+      "default-src 'self' https: data: blob:",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
+      "style-src 'self' 'unsafe-inline' https:",
+      "img-src 'self' data: blob: https:",
+      "font-src 'self' data: https:",
+      "connect-src 'self' https: wss: http://localhost:11434",
+      "frame-src 'self' https:",
+      "base-uri 'self'",
+      "object-src 'none'",
+    ].join('; '),
+  );
   return h;
 }

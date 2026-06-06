@@ -32,6 +32,6 @@
     }
   },
   "files": {
-    "includes": ["packages/*/src/**"]
+    "includes": ["packages/cli/src/**", "packages/compliance/src/**", "workers/host/src/**"]
   }
 }
