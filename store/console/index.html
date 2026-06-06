@@ -460,6 +460,12 @@
 
     showConsole();
     loadAll();
+
+    // Handle hash routing (#keys, #usage, #settings)
+    var tabHash = location.hash.replace('#', '');
+    if (tabHash && ['keys', 'usage', 'settings'].includes(tabHash)) {
+      switchToTab(tabHash);
+    }
   }
 
   function showSignIn() {

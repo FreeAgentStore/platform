@@ -665,13 +665,12 @@ export async function handleApiRoute(request: Request, url: URL, env: Env): Prom
     }
 
     // GET /v1/keys (auth — HTML key management page)
+    // GET /v1/keys → redirect to Console (API Keys tab)
     if (path === '/v1/keys' && request.method === 'GET') {
-      const returnUrl = url.searchParams.get('return') ?? '';
-      const highlightProvider = url.searchParams.get('provider') ?? '';
-      const h = corsHeaders();
-      h.set('Content-Type', 'text/html; charset=utf-8');
-      h.set('Cache-Control', 'no-store');
-      return new Response(renderKeysPage(returnUrl, highlightProvider), { headers: h });
+      return new Response(null, {
+        status: 302,
+        headers: { Location: '/console/#keys' },
+      });
     }
 
     // GET /v1/usage (auth — usage stats)
