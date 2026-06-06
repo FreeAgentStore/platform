@@ -609,7 +609,7 @@ function SettingsTab({ spec, aiConfig, onSpecChange, onAIConfigChange }: {
       <div>
         <h3 className="text-sm font-semibold text-neutral-400 mb-3">AI Source</h3>
         <p className="text-xs text-neutral-600 mb-3">
-          Priority: Chrome Built-in AI (auto) -> Ollama (auto) -> OpenAI-compatible API (requires key).
+          Priority: Chrome Built-in AI (auto) &gt; Ollama (auto) &gt; OpenAI-compatible API (requires key).
         </p>
         <div className="space-y-3">
           <div>

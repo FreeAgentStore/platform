@@ -18,6 +18,15 @@ GITHUB_CLIENT_ID = "Ov23linoTyxg6znK9LmO"
 binding = "AGENTS"
 bucket_name = "fags-agents"
 
+[durable_objects]
+bindings = [
+  { name = "MIRROR_ROOMS", class_name = "MirrorRoom" }
+]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["MirrorRoom"]
+
 [[d1_databases]]
 binding = "DB"
 database_name = "fags"

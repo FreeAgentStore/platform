@@ -151,7 +151,7 @@
         <span class="icon">&#x1f4f1;</span>
         <p>Open an agent on your desktop and tap the Mirror button to pair with this device.</p>
         <p style="margin-top:0.75rem;font-size:0.8rem">
-          The desktop will show a link or code. Visit that URL to start mirroring.
+          The desktop will show a link or QR code. Visit that URL to start mirroring.
         </p>
       </div>
     </div>
@@ -160,7 +160,7 @@
     <div id="mirror-session" class="hidden">
       <div id="status-bar" class="status-bar">
         <span id="status-dot" class="dot dot-waiting"></span>
-        <span id="status-text">Connecting to desktop...</span>
+        <span id="status-text">Connecting...</span>
       </div>
 
       <div id="agent-card" class="agent-card">
@@ -188,9 +188,6 @@
 
 <script>
 (function() {
-  var API_BASE = location.origin;
-  var POLL_INTERVAL = 2000;
-
   // Parse URL params
   var params = new URLSearchParams(location.search);
   var roomId = params.get('room');
@@ -205,28 +202,13 @@
   document.getElementById('mirror-session').classList.remove('hidden');
   document.getElementById('agent-name').textContent = formatAgentName(agentId);
 
-  var lastPollTs = Date.now();
+  var ws = null;
+  var reconnectTimer = null;
   var desktopSeen = false;
-  var desktopLastSeen = 0;
   var results = [];
-  var pollTimer = null;
-  var bc = null;
 
-  // BroadcastChannel for same-device
-  try {
-    bc = new BroadcastChannel('mirror:' + roomId);
-    bc.onmessage = function(ev) {
-      var msg = ev.data;
-      if (msg.from !== 'mobile') handleMessage(msg);
-    };
-  } catch(e) {}
-
-  // Announce mobile joined
-  sendToRelay({ type: 'status', data: 'mobile_joined', from: 'mobile', timestamp: Date.now() });
-
-  // Start polling
-  poll();
-  pollTimer = setInterval(poll, POLL_INTERVAL);
+  // Connect WebSocket
+  connectWS();
 
   // Notification prompt
   if ('Notification' in window && Notification.permission === 'default') {
@@ -250,47 +232,62 @@
 
   // ── Functions ──
 
-  function poll() {
-    fetch(API_BASE + '/v1/mirror/' + roomId + '?since=' + lastPollTs)
-      .then(function(r) { return r.json(); })
-      .then(function(body) {
-        var prevSeen = desktopSeen;
-        // Check peers
-        if (body.peers > 0 && !desktopSeen) {
-          desktopSeen = true;
-          updateStatus('connected');
-        }
+  function connectWS() {
+    var wsUrl = location.origin.replace(/^http/, 'ws') + '/v1/mirror/' + roomId + '/ws?device=mobile';
+    ws = new WebSocket(wsUrl);
 
-        var msgs = body.messages || [];
-        for (var i = 0; i < msgs.length; i++) {
-          var msg = msgs[i];
-          if (msg.from !== 'mobile') {
-            lastPollTs = Math.max(lastPollTs, msg.timestamp);
-            desktopLastSeen = Date.now();
-            if (!desktopSeen) {
-              desktopSeen = true;
-              updateStatus('connected');
-            }
-            handleMessage(msg);
-          }
-        }
+    ws.onopen = function() {
+      updateStatus('waiting');
+      document.getElementById('status-text').textContent = 'Connected. Waiting for desktop...';
+    };
 
-        // Desktop offline detection (no messages in 30s after we saw it once)
-        if (desktopSeen && desktopLastSeen > 0 && Date.now() - desktopLastSeen > 30000) {
-          // Keep connected status — desktop might just not be sending
-        }
-      })
-      .catch(function() {
-        // Network error — keep trying
-      });
+    ws.onmessage = function(e) {
+      try {
+        var msg = JSON.parse(e.data);
+        handleMessage(msg);
+      } catch(err) {}
+    };
+
+    ws.onclose = function() {
+      updateStatus('offline');
+      document.getElementById('status-text').textContent = 'Disconnected. Reconnecting...';
+      reconnectTimer = setTimeout(function() { connectWS(); }, 3000);
+    };
+
+    ws.onerror = function() {
+      // onclose will fire after this
+    };
   }
 
   function handleMessage(msg) {
-    if (msg.type === 'result') {
+    if (msg.type === 'connected') {
+      // We just connected, check if desktop is already there
+      if (msg.data && msg.data.peers > 1) {
+        desktopSeen = true;
+        updateStatus('connected');
+      }
+    } else if (msg.type === 'peer_joined') {
+      desktopSeen = true;
+      updateStatus('connected');
+    } else if (msg.type === 'peer_left') {
+      if (msg.data && msg.data.peers <= 1) {
+        updateStatus('waiting');
+        document.getElementById('status-text').textContent = 'Desktop disconnected. Waiting...';
+      }
+    } else if (msg.type === 'result') {
+      if (!desktopSeen) {
+        desktopSeen = true;
+        updateStatus('connected');
+      }
       addResult(msg);
       // Send notification if page not visible
       if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
-        var preview = typeof msg.data === 'string' ? msg.data.slice(0, 100) : 'New result available';
+        var preview = 'New result available';
+        if (msg.data && typeof msg.data === 'object' && msg.data.text) {
+          preview = msg.data.text.slice(0, 100);
+        } else if (typeof msg.data === 'string') {
+          preview = msg.data.slice(0, 100);
+        }
         new Notification(formatAgentName(agentId), {
           body: preview,
           icon: '/icon-192.png',
@@ -298,12 +295,6 @@
         });
       }
     } else if (msg.type === 'status') {
-      if (msg.data === 'desktop_joined' || msg.data === 'mobile_joined') {
-        desktopSeen = true;
-        desktopLastSeen = Date.now();
-        updateStatus('connected');
-      }
-      // Show status messages as subtle result cards
       if (typeof msg.data === 'string' && msg.data !== 'mobile_joined' && msg.data !== 'desktop_joined') {
         addStatusCard(msg.data, msg.timestamp);
       }
@@ -319,7 +310,7 @@
     var time = new Date(msg.timestamp).toLocaleTimeString();
     var meta = document.createElement('div');
     meta.className = 'meta';
-    meta.textContent = time + ' from desktop';
+    meta.textContent = time + ' from ' + (msg.from || 'desktop');
     card.appendChild(meta);
 
     var body = document.createElement('div');
@@ -329,7 +320,6 @@
     if (typeof data === 'string') {
       body.textContent = data;
     } else if (data && typeof data === 'object') {
-      // Try to render intelligently
       if (data.text) {
         body.textContent = data.text;
       } else if (data.html) {
@@ -353,13 +343,20 @@
     }
 
     card.appendChild(body);
-    // Prepend (newest first)
-    container.insertBefore(card, container.firstChild.nextSibling || null);
+    // Prepend (newest first), after the empty-state div
+    var firstResult = container.querySelector('.result-card');
+    if (firstResult) {
+      container.insertBefore(card, firstResult);
+    } else {
+      container.appendChild(card);
+    }
 
     results.push(msg);
     // Cap at 50 visible results
-    while (container.children.length > 51) {
-      container.removeChild(container.lastChild);
+    var cards = container.querySelectorAll('.result-card');
+    while (cards.length > 50) {
+      container.removeChild(cards[cards.length - 1]);
+      cards = container.querySelectorAll('.result-card');
     }
   }
 
@@ -382,7 +379,12 @@
     body.textContent = status;
     card.appendChild(body);
 
-    container.insertBefore(card, container.firstChild.nextSibling || null);
+    var firstResult = container.querySelector('.result-card');
+    if (firstResult) {
+      container.insertBefore(card, firstResult);
+    } else {
+      container.appendChild(card);
+    }
   }
 
   function updateStatus(state) {
@@ -394,19 +396,11 @@
       text.textContent = 'Connected to desktop';
     } else if (state === 'offline') {
       dot.classList.add('dot-offline');
-      text.textContent = 'Desktop offline';
+      text.textContent = 'Disconnected';
     } else {
       dot.classList.add('dot-waiting');
-      text.textContent = 'Connecting to desktop...';
+      text.textContent = 'Waiting for desktop...';
     }
-  }
-
-  function sendToRelay(msg) {
-    fetch(API_BASE + '/v1/mirror/' + roomId, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(msg)
-    }).catch(function() {});
   }
 
   function formatAgentName(id) {
@@ -417,8 +411,8 @@
 
   // Cleanup on page unload
   window.addEventListener('beforeunload', function() {
-    if (pollTimer) clearInterval(pollTimer);
-    try { if (bc) bc.close(); } catch(e) {}
+    if (ws) { ws.close(); ws = null; }
+    if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
   });
 })();
 </script>

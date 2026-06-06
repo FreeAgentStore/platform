@@ -13,8 +13,10 @@
  *   GET    /v1/keys              → server-rendered HTML key management page (auth)
  *   GET    /v1/usage             → usage stats (auth)
  *   ALL    /v1/proxy/:host/*     → proxy request with injected user key (auth)
- *   POST   /v1/mirror/:roomId   → store a mirror message (public, room ID = auth)
- *   GET    /v1/mirror/:roomId   → poll for mirror messages (public)
+ *   GET    /v1/mirror.js         → mirror Web Component client script
+ *   GET    /v1/mirror/:roomId/ws → WebSocket upgrade → MirrorRoom DO
+ *   GET    /v1/mirror/:roomId    → room info (peer count)
+ *   POST   /v1/mirror/:roomId    → fallback relay via DO broadcast
  */
 
 import type { Env } from './index';
@@ -331,10 +333,6 @@ function toUint8(v: unknown): Uint8Array {
   if (v instanceof ArrayBuffer) return new Uint8Array(v);
   if (Array.isArray(v)) return Uint8Array.from(v as number[]);
   return new Uint8Array(0);
-}
-
-function escapeHtml(s: string): string {
-  return s.replace(/[<>"'&]/g, (c) => `&#${c.charCodeAt(0)};`);
 }
 
 // ── Pricing table (per 1M tokens) ────────────────────────────────────────────
@@ -699,18 +697,46 @@ export async function handleApiRoute(request: Request, url: URL, env: Env): Prom
       return new Response(svg, { headers: h });
     }
 
-    // ── Mirror relay routes (unauthenticated — room ID = access token) ──
-
-    const mirrorMatch = path.match(/^\/v1\/mirror\/([a-z0-9]{6,16})$/);
-
-    // POST /v1/mirror/:roomId — store a message
-    if (mirrorMatch && request.method === 'POST') {
-      return handleMirrorPost(request, env, mirrorMatch[1]);
+    // GET /v1/mirror.js — serve the mirror Web Component client script
+    if (path === '/v1/mirror.js' && request.method === 'GET') {
+      const { MIRROR_CLIENT_JS } = await import('./mirror-inject');
+      const h = corsHeaders();
+      h.set('Content-Type', 'application/javascript; charset=utf-8');
+      h.set('Cache-Control', 'public, max-age=3600');
+      return new Response(MIRROR_CLIENT_JS, { headers: h });
     }
 
-    // GET /v1/mirror/:roomId — poll for messages
-    if (mirrorMatch && request.method === 'GET') {
-      return handleMirrorPoll(url, env, mirrorMatch[1]);
+    // ── Mirror relay routes (Durable Object WebSocket) ──
+
+    // GET /v1/mirror/:roomId/ws — WebSocket upgrade → Durable Object
+    const mirrorWsMatch = path.match(/^\/v1\/mirror\/([a-z0-9]{6,16})\/ws$/);
+    if (mirrorWsMatch && request.headers.get('Upgrade') === 'websocket') {
+      const roomId = mirrorWsMatch[1];
+      const id = env.MIRROR_ROOMS.idFromName(roomId);
+      const room = env.MIRROR_ROOMS.get(id);
+      return room.fetch(request);
+    }
+
+    // GET /v1/mirror/:roomId — room info (peer count, no WebSocket needed)
+    const mirrorInfoMatch = path.match(/^\/v1\/mirror\/([a-z0-9]{6,16})$/);
+    if (mirrorInfoMatch && request.method === 'GET') {
+      const roomId = mirrorInfoMatch[1];
+      const id = env.MIRROR_ROOMS.idFromName(roomId);
+      const room = env.MIRROR_ROOMS.get(id);
+      const info = await room.fetch(new Request(`${url.origin}/info`));
+      const body = await info.text();
+      const h = corsHeaders();
+      h.set('Content-Type', 'application/json');
+      return new Response(body, { headers: h });
+    }
+
+    // POST /v1/mirror/:roomId — fallback relay via Durable Object broadcast
+    if (mirrorInfoMatch && request.method === 'POST') {
+      const roomId = mirrorInfoMatch[1];
+      const id = env.MIRROR_ROOMS.idFromName(roomId);
+      const room = env.MIRROR_ROOMS.get(id);
+      // Forward the POST body — the DO will broadcast to all connected peers
+      return room.fetch(request);
     }
 
     return jsonResponse({ error: 'Not found' }, 404);
@@ -726,7 +752,6 @@ export async function handleApiRoute(request: Request, url: URL, env: Env): Prom
 // ── Proxy handler ────────────────────────────────────────────────────────────
 
 const MAX_REQUEST_BODY = 512 * 1024; // 512 KB
-const MAX_RESPONSE_BODY = 512 * 1024;
 
 async function handleProxy(
   request: Request,
@@ -791,7 +816,6 @@ async function handleProxy(
   }
 
   // Inject key per provider
-  const provider = PROVIDER_BY_ID[providerId];
   if (providerId === 'anthropic') {
     forwardHeaders.set('x-api-key', apiKey);
     forwardHeaders.set('anthropic-version', '2023-06-01');
@@ -1019,263 +1043,4 @@ async function handleUsage(db: D1Database, userId: string): Promise<Response> {
       createdAt: r.created_at,
     })),
   });
-}
-
-// ── Mirror relay handlers ─────────────────────────────────────────────────────
-
-const MIRROR_TTL_SEC = 300; // 5 minutes
-const MIRROR_MAX_MESSAGES = 50;
-
-async function handleMirrorPost(request: Request, env: Env, roomId: string): Promise<Response> {
-  let body: { type?: string; data?: unknown; from?: string; timestamp?: number };
-  try {
-    body = await request.json();
-  } catch {
-    return jsonResponse({ error: 'Invalid JSON' }, 400);
-  }
-
-  const msgType = body.type ?? 'unknown';
-  const from = body.from ?? 'unknown';
-  const data = JSON.stringify(body.data ?? null);
-
-  if (data.length > 64_000) {
-    return jsonResponse({ error: 'Message too large (max 64KB)' }, 413);
-  }
-
-  // Clean up old messages for this room (older than 5 minutes)
-  const cutoff = Math.floor(Date.now() / 1000) - MIRROR_TTL_SEC;
-  await env.DB.prepare('DELETE FROM mirror_messages WHERE room_id = ? AND created_at < ?')
-    .bind(roomId, cutoff)
-    .run();
-
-  // Enforce max messages per room
-  const countRow = await env.DB.prepare('SELECT COUNT(*) as cnt FROM mirror_messages WHERE room_id = ?')
-    .bind(roomId)
-    .first<{ cnt: number }>();
-
-  if (countRow && countRow.cnt >= MIRROR_MAX_MESSAGES) {
-    // Delete oldest to make room
-    await env.DB.prepare(
-      `DELETE FROM mirror_messages WHERE id IN (
-        SELECT id FROM mirror_messages WHERE room_id = ? ORDER BY created_at ASC LIMIT ?
-      )`,
-    )
-      .bind(roomId, countRow.cnt - MIRROR_MAX_MESSAGES + 1)
-      .run();
-  }
-
-  // Insert new message
-  await env.DB.prepare(
-    'INSERT INTO mirror_messages (room_id, type, data, from_device, created_at) VALUES (?, ?, ?, ?, ?)',
-  )
-    .bind(roomId, msgType, data, from, Math.floor(Date.now() / 1000))
-    .run();
-
-  return jsonResponse({ ok: true });
-}
-
-async function handleMirrorPoll(url: URL, env: Env, roomId: string): Promise<Response> {
-  const sinceParam = url.searchParams.get('since');
-  // Convert millisecond timestamp from client to seconds for D1
-  const sinceMs = sinceParam ? parseInt(sinceParam, 10) : 0;
-  const sinceSec = Math.floor(sinceMs / 1000);
-
-  const rows = await env.DB.prepare(
-    'SELECT type, data, from_device, created_at FROM mirror_messages WHERE room_id = ? AND created_at > ? ORDER BY created_at ASC LIMIT 50',
-  )
-    .bind(roomId, sinceSec)
-    .all<{ type: string; data: string; from_device: string; created_at: number }>();
-
-  // Count distinct from_device values in recent messages as a rough peer count
-  const peerRow = await env.DB.prepare(
-    `SELECT COUNT(DISTINCT from_device) as peers FROM mirror_messages
-     WHERE room_id = ? AND created_at > ?`,
-  )
-    .bind(roomId, Math.floor(Date.now() / 1000) - 30)
-    .first<{ peers: number }>();
-
-  const messages = (rows.results ?? []).map((r) => {
-    let parsed: unknown;
-    try { parsed = JSON.parse(r.data); } catch { parsed = r.data; }
-    return {
-      type: r.type,
-      data: parsed,
-      from: r.from_device,
-      timestamp: r.created_at * 1000, // return as milliseconds for client
-    };
-  });
-
-  return jsonResponse({ messages, peers: peerRow?.peers ?? 0 });
-}
-
-// ── Key management page (server-rendered HTML) ───────────────────────────────
-
-function renderKeysPage(returnUrl: string, highlightProvider: string): string {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>API Keys - FreeAgentStore</title>
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root { --accent: #7c3aed; --bg: #0a0a0a; --surface: #171717; --ink: #fafafa; --muted: #a3a3a3; --border: #262626; --danger: #dc2626; --success: #16a34a; }
-    *, *::before, *::after { box-sizing: border-box; }
-    body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'Manrope', system-ui, sans-serif; font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
-    .topbar { border-bottom: 1px solid var(--border); padding: 0.75rem 0; }
-    .topbar-inner { max-width: 32rem; margin: 0 auto; padding: 0 1rem; display: flex; align-items: center; gap: 1rem; }
-    .topbar a { color: var(--muted); text-decoration: none; font-size: 0.85rem; font-weight: 600; }
-    .topbar a:hover { color: var(--ink); }
-    .topbar .brand { display: flex; align-items: center; gap: 0.5rem; color: var(--ink); text-decoration: none; }
-    .topbar .brand-mark { width: 28px; height: 28px; border-radius: 7px; background: linear-gradient(135deg, #7c3aed, #a855f7); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; }
-    .topbar .brand-name { font-family: 'Fraunces', Georgia, serif; font-size: 1rem; font-weight: 700; }
-    .topbar nav { display: flex; gap: 1rem; margin-left: auto; }
-    .wrap { max-width: 32rem; margin: 0 auto; padding: 2rem 1rem; }
-    h1 { font-size: 1.5rem; font-weight: 800; margin: 0 0 0.25rem; font-family: 'Fraunces', Georgia, serif; }
-    .sub { color: var(--muted); font-size: 0.85rem; margin-bottom: 1.5rem; }
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1rem; margin-bottom: 0.75rem; }
-    .card h3 { margin: 0 0 0.25rem; font-size: 0.95rem; font-weight: 700; }
-    .card .meta { font-size: 0.75rem; color: var(--muted); }
-    .row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
-    .badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 700; }
-    .badge-on { background: #052e16; color: var(--success); }
-    .badge-off { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
-    input[type="password"], input[type="text"] { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 0.5rem; background: var(--bg); color: var(--ink); font-size: 0.85rem; font-family: inherit; margin: 0.5rem 0; }
-    input:focus { outline: none; border-color: var(--accent); }
-    .btn { display: inline-block; padding: 0.45rem 1rem; border: none; border-radius: 0.5rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; font-family: inherit; }
-    .btn-primary { background: var(--accent); color: #fff; }
-    .btn-ghost { background: transparent; color: var(--ink); border: 1px solid var(--border); }
-    .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
-    .alert { padding: 0.75rem 1rem; border-radius: 0.5rem; font-size: 0.85rem; margin-bottom: 1rem; }
-    .alert-info { background: rgba(124,58,237,0.1); color: #a78bfa; border: 1px solid rgba(124,58,237,0.3); }
-    .back { display: inline-block; margin-top: 1.5rem; color: var(--accent); text-decoration: none; font-size: 0.85rem; font-weight: 600; }
-    .docs-link { font-size: 0.75rem; color: var(--accent); text-decoration: none; }
-    #status { font-size: 0.8rem; color: var(--muted); margin-top: 0.5rem; }
-    .hidden { display: none; }
-  </style>
-</head>
-<body>
-<div class="topbar"><div class="topbar-inner">
-  <a href="/" class="brand"><span class="brand-mark">&#x1f916;</span><span class="brand-name">AgentStore</span></a>
-  <nav><a href="/">Agents</a><a href="/console/">Console</a><a href="/create/">Create</a><a href="/docs/">Docs</a></nav>
-</div></div>
-<div class="wrap">
-  <h1>API Keys</h1>
-  <p class="sub">Your keys are encrypted and stored on the FreeAgentStore platform. Agents never see them — they're injected server-side when agents make API calls through the proxy.</p>
-
-  <div id="auth-gate" class="alert alert-info"><a href="/v1/auth/github?return_to=/v1/keys" style="color:#a5b4fc;font-weight:600">Sign in with GitHub</a> to manage your API keys.</div>
-  <div id="keys-list" class="hidden"></div>
-  <div id="status"></div>
-
-  ${returnUrl ? `<a class="back" href="${escapeHtml(returnUrl)}">Back to app</a>` : ''}
-</div>
-<script>
-(function() {
-  var API = '/v1';
-  var token = null;
-  var highlightProvider = ${JSON.stringify(highlightProvider)};
-
-  function getToken() {
-    try {
-      var stored = localStorage.getItem('fags_session');
-      if (stored) { var p = JSON.parse(stored); if (p && p.token) return p.token; }
-    } catch (_) {}
-    return null;
-  }
-
-  function headers() {
-    return { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Accept': 'application/json' };
-  }
-
-  function setStatus(msg) { document.getElementById('status').textContent = msg; }
-
-  async function load() {
-    token = getToken();
-    if (!token) return;
-    document.getElementById('auth-gate').classList.add('hidden');
-    document.getElementById('keys-list').classList.remove('hidden');
-
-    var [provRes, statusRes] = await Promise.all([
-      fetch(API + '/keys/providers', { headers: headers() }),
-      fetch(API + '/keys/status', { headers: headers() }),
-    ]);
-    var providers = (await provRes.json()).providers || [];
-    var existing = (await statusRes.json()).keys || [];
-    var existingMap = {};
-    existing.forEach(function(k) { existingMap[k.provider] = k; });
-
-    var html = '';
-    providers.forEach(function(p) {
-      var has = !!existingMap[p.id];
-      var highlight = p.id === highlightProvider ? ' style="border-color: var(--accent); box-shadow: 0 0 0 2px rgba(139,92,246,0.25);"' : '';
-      html += '<div class="card" id="card-' + p.id + '"' + highlight + '>';
-      html += '<div class="row"><div>';
-      html += '<h3>' + esc(p.name) + '</h3>';
-      if (p.docsUrl) html += '<a class="docs-link" href="' + esc(p.docsUrl) + '" target="_blank" rel="noopener">Get API key &#8599;</a>';
-      html += '</div>';
-      html += '<span class="badge ' + (has ? 'badge-on' : 'badge-off') + '">' + (has ? 'configured' : 'not set') + '</span>';
-      html += '</div>';
-      if (has) {
-        html += '<p class="meta">Added ' + new Date(existingMap[p.id].createdAt * 1000).toLocaleDateString() + '</p>';
-        html += '<div class="actions">';
-        html += '<button class="btn btn-ghost" onclick="editKey(\\''+p.id+'\\')">Update</button>';
-        html += '<button class="btn btn-danger" onclick="deleteKey(\\''+p.id+'\\')">Remove</button>';
-        html += '</div>';
-      } else {
-        html += '<div class="actions"><button class="btn btn-primary" onclick="editKey(\\''+p.id+'\\')">Add key</button></div>';
-      }
-      html += '<div id="form-' + p.id + '" class="hidden" style="margin-top:0.75rem">';
-      html += '<input type="password" id="input-' + p.id + '" placeholder="Paste your ' + esc(p.name) + ' API key">';
-      html += '<div class="actions">';
-      html += '<button class="btn btn-primary" onclick="saveKey(\\''+p.id+'\\')">Save</button>';
-      html += '<button class="btn btn-ghost" onclick="cancelEdit(\\''+p.id+'\\')">Cancel</button>';
-      html += '</div></div>';
-      html += '</div>';
-    });
-    document.getElementById('keys-list').innerHTML = html;
-
-    if (highlightProvider) {
-      var el = document.getElementById('card-' + highlightProvider);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  }
-
-  function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-
-  window.editKey = function(id) {
-    document.getElementById('form-' + id).classList.remove('hidden');
-    document.getElementById('input-' + id).focus();
-  };
-  window.cancelEdit = function(id) {
-    document.getElementById('form-' + id).classList.add('hidden');
-    document.getElementById('input-' + id).value = '';
-  };
-  window.saveKey = async function(id) {
-    var val = document.getElementById('input-' + id).value.trim();
-    if (!val) return;
-    setStatus('Saving...');
-    var res = await fetch(API + '/keys/' + id, { method: 'PUT', headers: headers(), body: JSON.stringify({ key: val }) });
-    var data = await res.json();
-    if (data.ok) { setStatus('Saved!'); load(); }
-    else { setStatus('Error: ' + (data.error || 'unknown')); }
-  };
-  window.deleteKey = async function(id) {
-    if (!confirm('Remove this API key?')) return;
-    setStatus('Removing...');
-    var res = await fetch(API + '/keys/' + id, { method: 'DELETE', headers: headers() });
-    var data = await res.json();
-    if (data.ok) { setStatus('Removed.'); load(); }
-    else { setStatus('Error: ' + (data.error || 'unknown')); }
-  };
-
-  load();
-})();
-</script>
-</body>
-</html>`;
 }

@@ -14,6 +14,7 @@ function mockEnv(overrides?: Partial<Env>): Env {
       }),
     } as unknown as D1Database,
     AGENTS: {} as unknown as R2Bucket,
+    MIRROR_ROOMS: {} as unknown as DurableObjectNamespace,
     KEY_ENCRYPTION_KEY: 'dGVzdGtleTMyYnl0ZXMxMjM0NTY3ODkw', // valid base64, 24 bytes decoded — will fail length check
     SESSION_SIGNING_KEY: 'test-signing-key-for-hmac',
     ...overrides,
@@ -228,5 +229,244 @@ describe('handleApiRoute', () => {
     );
     expect(res.status).toBe(302);
     expect(res.headers.get('Location')).toBe('/console/#keys');
+  });
+
+  // ── Expired token ──
+  it('expired token returns 401', async () => {
+    const signingKey = 'test-signing-key-for-hmac';
+    const payload = {
+      uid: 'user-123',
+      login: 'test-user',
+      avatar: '',
+      exp: Math.floor(Date.now() / 1000) - 3600, // expired 1 hour ago
+    };
+    const payloadB64 = btoa(JSON.stringify(payload));
+    const key = await crypto.subtle.importKey(
+      'raw',
+      new TextEncoder().encode(signingKey),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign'],
+    );
+    const sig = new Uint8Array(
+      await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(payloadB64)),
+    );
+    const sigHex = Array.from(sig)
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+    const token = `${payloadB64}.${sigHex}`;
+
+    const res = await handleApiRoute(
+      makeRequest('GET', '/v1/auth/me', { headers: { Authorization: `Bearer ${token}` } }),
+      new URL('https://freeagentstore.online/v1/auth/me'),
+      mockEnv({ SESSION_SIGNING_KEY: signingKey }),
+    );
+    expect(res.status).toBe(401);
+  });
+
+  // ── Invalid token ──
+  it('tampered token returns 401', async () => {
+    const res = await handleApiRoute(
+      makeRequest('GET', '/v1/auth/me', {
+        headers: { Authorization: 'Bearer dGVzdA==.0000000000' },
+      }),
+      new URL('https://freeagentstore.online/v1/auth/me'),
+      mockEnv(),
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it('malformed token (no dot) returns 401', async () => {
+    const res = await handleApiRoute(
+      makeRequest('GET', '/v1/auth/me', {
+        headers: { Authorization: 'Bearer nodottoken' },
+      }),
+      new URL('https://freeagentstore.online/v1/auth/me'),
+      mockEnv(),
+    );
+    expect(res.status).toBe(401);
+  });
+
+  // ── Cookie auth ──
+  it('auth via cookie works', async () => {
+    const signingKey = 'test-signing-key-for-hmac';
+    const token = await createTestToken('user-456', signingKey);
+    const res = await handleApiRoute(
+      makeRequest('GET', '/v1/auth/me', { headers: { Cookie: `fags_session=${token}` } }),
+      new URL('https://freeagentstore.online/v1/auth/me'),
+      mockEnv({ SESSION_SIGNING_KEY: signingKey }),
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { uid: string };
+    expect(body.uid).toBe('user-456');
+  });
+
+  // ── PUT /v1/keys/:provider validation ──
+  it('PUT /v1/keys/unknown-provider returns 400', async () => {
+    const signingKey = 'test-signing-key-for-hmac';
+    const token = await createTestToken('user-123', signingKey);
+    const res = await handleApiRoute(
+      makeRequest('PUT', '/v1/keys/nonexistent', {
+        body: JSON.stringify({ key: 'test-key' }),
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      }),
+      new URL('https://freeagentstore.online/v1/keys/nonexistent'),
+      mockEnv({ SESSION_SIGNING_KEY: signingKey }),
+    );
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toContain('Unknown provider');
+  });
+
+  it('PUT /v1/keys/openai with wrong prefix returns 400', async () => {
+    const signingKey = 'test-signing-key-for-hmac';
+    const token = await createTestToken('user-123', signingKey);
+    const res = await handleApiRoute(
+      makeRequest('PUT', '/v1/keys/openai', {
+        body: JSON.stringify({ key: 'wrong-prefix-key' }),
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      }),
+      new URL('https://freeagentstore.online/v1/keys/openai'),
+      mockEnv({ SESSION_SIGNING_KEY: signingKey }),
+    );
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toContain('sk-');
+  });
+
+  it('PUT /v1/keys/openai with empty key returns 400', async () => {
+    const signingKey = 'test-signing-key-for-hmac';
+    const token = await createTestToken('user-123', signingKey);
+    const res = await handleApiRoute(
+      makeRequest('PUT', '/v1/keys/openai', {
+        body: JSON.stringify({ key: '' }),
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      }),
+      new URL('https://freeagentstore.online/v1/keys/openai'),
+      mockEnv({ SESSION_SIGNING_KEY: signingKey }),
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it('PUT /v1/keys/openai with no body returns 400', async () => {
+    const signingKey = 'test-signing-key-for-hmac';
+    const token = await createTestToken('user-123', signingKey);
+    const res = await handleApiRoute(
+      makeRequest('PUT', '/v1/keys/openai', {
+        body: 'not json',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      }),
+      new URL('https://freeagentstore.online/v1/keys/openai'),
+      mockEnv({ SESSION_SIGNING_KEY: signingKey }),
+    );
+    expect(res.status).toBe(400);
+  });
+
+  // ── QR endpoint ──
+  it('GET /v1/qr without data param returns 400', async () => {
+    const res = await handleApiRoute(
+      makeRequest('GET', '/v1/qr'),
+      new URL('https://freeagentstore.online/v1/qr'),
+      mockEnv(),
+    );
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toContain('data');
+  });
+
+  it('GET /v1/qr with data returns SVG', async () => {
+    const res = await handleApiRoute(
+      makeRequest('GET', '/v1/qr'),
+      new URL('https://freeagentstore.online/v1/qr?data=https://example.com'),
+      mockEnv(),
+    );
+    expect(res.status).toBe(200);
+    expect(res.headers.get('Content-Type')).toBe('image/svg+xml');
+    const svg = await res.text();
+    expect(svg).toContain('<svg');
+  });
+
+  // ── Mirror.js ──
+  it('GET /v1/mirror.js returns JavaScript', async () => {
+    const res = await handleApiRoute(
+      makeRequest('GET', '/v1/mirror.js'),
+      new URL('https://freeagentstore.online/v1/mirror.js'),
+      mockEnv(),
+    );
+    expect(res.status).toBe(200);
+    expect(res.headers.get('Content-Type')).toContain('application/javascript');
+    const js = await res.text();
+    expect(js).toContain('FagsMirrorElement');
+  });
+
+  // ── Mirror room info ──
+  it('GET /v1/mirror/:roomId returns room info', async () => {
+    const mockRoomFetch = async () =>
+      new Response(JSON.stringify({ peers: 0, devices: [] }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    const mirrorRooms = {
+      idFromName: () => ({ toString: () => 'test-id' }),
+      get: () => ({ fetch: mockRoomFetch }),
+    } as unknown as DurableObjectNamespace;
+
+    const res = await handleApiRoute(
+      makeRequest('GET', '/v1/mirror/abcdef12'),
+      new URL('https://freeagentstore.online/v1/mirror/abcdef12'),
+      mockEnv({ MIRROR_ROOMS: mirrorRooms }),
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { peers: number };
+    expect(body.peers).toBe(0);
+  });
+
+  // ── OAuth state cookie ──
+  it('GET /v1/auth/github sets state cookie', async () => {
+    const res = await handleApiRoute(
+      makeRequest('GET', '/v1/auth/github'),
+      new URL('https://freeagentstore.online/v1/auth/github'),
+      mockEnv({ GITHUB_CLIENT_ID: 'test-id' } as unknown as Env),
+    );
+    expect(res.status).toBe(302);
+    const cookies = res.headers.getSetCookie();
+    const stateCookie = cookies.find((c) => c.startsWith('fags_oauth_state='));
+    expect(stateCookie).toBeDefined();
+    expect(stateCookie).toContain('HttpOnly');
+    expect(stateCookie).toContain('Secure');
+  });
+
+  // ── OAuth return_to param ──
+  it('GET /v1/auth/github with return_to sets cookie', async () => {
+    const res = await handleApiRoute(
+      makeRequest('GET', '/v1/auth/github'),
+      new URL('https://freeagentstore.online/v1/auth/github?return_to=/console/'),
+      mockEnv({ GITHUB_CLIENT_ID: 'test-id' } as unknown as Env),
+    );
+    const cookies = res.headers.getSetCookie();
+    const returnCookie = cookies.find((c) => c.startsWith('fags_return_to='));
+    expect(returnCookie).toBeDefined();
+    expect(returnCookie).toContain('%2Fconsole%2F');
+  });
+
+  // ── Providers list content ──
+  it('providers include all 6 with required fields', async () => {
+    const res = await handleApiRoute(
+      makeRequest('GET', '/v1/keys/providers'),
+      new URL('https://freeagentstore.online/v1/keys/providers'),
+      mockEnv(),
+    );
+    const body = (await res.json()) as {
+      providers: { id: string; name: string; host: string; docsUrl: string }[];
+    };
+    expect(body.providers).toHaveLength(6);
+    for (const p of body.providers) {
+      expect(p.id).toBeTruthy();
+      expect(p.name).toBeTruthy();
+      expect(p.host).toBeTruthy();
+      expect(p.docsUrl).toMatch(/^https:\/\//);
+    }
+    const ids = body.providers.map((p) => p.id);
+    expect(ids).toContain('openrouter');
+    expect(ids).toContain('together');
   });
 });

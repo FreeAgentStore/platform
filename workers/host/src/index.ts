@@ -19,20 +19,16 @@
 import { handleApiRoute } from './api';
 import { injectMirror } from './mirror-inject';
 
+export { MirrorRoom } from './mirror-do';
+
 export interface Env {
   DB: D1Database;
   AGENTS: R2Bucket;
+  MIRROR_ROOMS: DurableObjectNamespace;
   KEY_ENCRYPTION_KEY: string;
   SESSION_SIGNING_KEY: string;
   GITHUB_CLIENT_ID?: string;
   GITHUB_CLIENT_SECRET?: string;
-}
-
-interface Route {
-  slug: string;
-  zone: string;
-  r2_prefix: string;
-  store: string;
 }
 
 export default {
