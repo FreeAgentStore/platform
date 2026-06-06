@@ -1,139 +1,136 @@
-import { execSync } from 'node:child_process';
+import { execFileSync, execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
 const ORG = 'FreeAgentStore';
 const DOMAIN = 'freeagentstore.online';
-const API_BASE = 'https://api.github.com';
+
+function run(
+  cmd: string,
+  args: string[],
+  opts?: { cwd?: string; stdio?: 'pipe' | 'inherit'; encoding?: 'utf-8' },
+): string {
+  return execFileSync(cmd, args, { stdio: 'pipe', ...opts })?.toString() ?? '';
+}
 
 export async function publish(opts: { name?: string; category?: string }) {
-  // 1. Detect agent from current directory
   const agentJsonPath = path.resolve('agent.json');
   if (!fs.existsSync(agentJsonPath)) {
-    console.error('No agent.json found. Run this from an agent directory.');
+    process.stderr.write('No agent.json found. Run this from an agent directory.\n');
     process.exit(1);
   }
 
-  const manifest = JSON.parse(fs.readFileSync(agentJsonPath, 'utf-8'));
+  const manifest = JSON.parse(fs.readFileSync(agentJsonPath, 'utf-8')) as { description?: string };
   const agentId = opts.name ?? detectAgentId();
 
   if (!agentId) {
-    console.error('Could not detect agent ID. Pass --name <id> explicitly.');
+    process.stderr.write('Could not detect agent ID. Pass --name <id> explicitly.\n');
     process.exit(1);
   }
 
-  console.log(`Publishing ${agentId} to FreeAgentStore...\n`);
+  process.stdout.write(`Publishing ${agentId} to FreeAgentStore...\n\n`);
 
-  // 2. Check gh CLI is available and authenticated
+  // Check gh CLI auth
   try {
-    execSync('gh auth status', { stdio: 'pipe' });
+    run('gh', ['auth', 'status']);
   } catch {
-    console.error('Not authenticated with GitHub. Run: gh auth login');
+    process.stderr.write('Not authenticated with GitHub. Run: gh auth login\n');
     process.exit(1);
   }
 
-  // 3. Check if repo already exists
+  // Check if repo exists
   const repoExists = checkRepoExists(agentId);
 
   if (repoExists) {
-    console.log(`Repo ${ORG}/${agentId} already exists. Pushing updates...`);
+    process.stdout.write(`Repo ${ORG}/${agentId} already exists. Pushing updates...\n`);
   } else {
-    // 4. Create repo
-    console.log(`Creating repo ${ORG}/${agentId}...`);
+    process.stdout.write(`Creating repo ${ORG}/${agentId}...\n`);
     try {
-      execSync(
-        `gh repo create ${ORG}/${agentId} --public --description "${manifest.description ?? agentId}" --clone=false`,
-        { stdio: 'pipe' },
+      run('gh', [
+        'repo',
+        'create',
+        `${ORG}/${agentId}`,
+        '--public',
+        '--description',
+        manifest.description ?? agentId,
+        '--clone=false',
+      ]);
+      process.stdout.write(`  Created https://github.com/${ORG}/${agentId}\n`);
+    } catch (e) {
+      process.stderr.write(
+        `Failed to create repo: ${e instanceof Error ? e.message : String(e)}\n`,
       );
-      console.log(`  Created https://github.com/${ORG}/${agentId}`);
-    } catch (e: any) {
-      console.error(`Failed to create repo: ${e.message}`);
       process.exit(1);
     }
   }
 
-  // 5. Set up git remote and push
+  // Set up git + push
   const cwd = process.cwd();
-  const hasGit = fs.existsSync(path.join(cwd, '.git'));
-
-  if (!hasGit) {
-    execSync('git init', { cwd, stdio: 'pipe' });
-    execSync('git add -A', { cwd, stdio: 'pipe' });
-    execSync('git commit -m "Initial commit"', { cwd, stdio: 'pipe' });
+  if (!fs.existsSync(path.join(cwd, '.git'))) {
+    run('git', ['init'], { cwd });
+    run('git', ['add', '-A'], { cwd });
+    run('git', ['commit', '-m', 'Initial commit'], { cwd });
   }
 
-  // Set remote
   try {
-    execSync(`git remote get-url origin`, { cwd, stdio: 'pipe' });
-    execSync(`git remote set-url origin https://github.com/${ORG}/${agentId}.git`, {
+    run('git', ['remote', 'get-url', 'origin'], { cwd });
+    run('git', ['remote', 'set-url', 'origin', `https://github.com/${ORG}/${agentId}.git`], {
       cwd,
-      stdio: 'pipe',
     });
   } catch {
-    execSync(`git remote add origin https://github.com/${ORG}/${agentId}.git`, {
-      cwd,
-      stdio: 'pipe',
-    });
+    run('git', ['remote', 'add', 'origin', `https://github.com/${ORG}/${agentId}.git`], { cwd });
   }
 
-  // Push
-  console.log(`Pushing to ${ORG}/${agentId}...`);
+  process.stdout.write(`Pushing to ${ORG}/${agentId}...\n`);
   try {
-    execSync('git push -u origin main', { cwd, stdio: 'inherit' });
+    execFileSync('git', ['push', '-u', 'origin', 'main'], { cwd, stdio: 'inherit' });
   } catch {
-    // Try with current branch name
     try {
-      const branch = execSync('git branch --show-current', { cwd, encoding: 'utf-8' }).trim();
-      execSync(`git push -u origin ${branch}:main`, { cwd, stdio: 'inherit' });
-    } catch (e: any) {
-      console.error(`Push failed: ${e.message}`);
+      const branch = run('git', ['branch', '--show-current'], { cwd }).trim();
+      execFileSync('git', ['push', '-u', 'origin', `${branch}:main`], { cwd, stdio: 'inherit' });
+    } catch (e) {
+      process.stderr.write(`Push failed: ${e instanceof Error ? e.message : String(e)}\n`);
       process.exit(1);
     }
   }
 
-  // 6. Insert D1 route (via wrangler if available)
-  console.log(`\nRegistering route...`);
+  // Register D1 route
+  process.stdout.write('\nRegistering route...\n');
   try {
     execSync(
       `npx wrangler d1 execute fags --remote --command "INSERT OR IGNORE INTO routes (slug, zone, r2_prefix, store, hosted_on, created_at, updated_at) VALUES ('${agentId}', '${DOMAIN}', 'agents/${agentId}', 'agents', 'r2', strftime('%s','now'), strftime('%s','now'))"`,
-      { stdio: 'pipe', env: { ...process.env } },
+      { stdio: 'pipe' },
     );
-    console.log(`  Route registered: /a/${agentId}/`);
+    process.stdout.write(`  Route registered: /a/${agentId}/\n`);
   } catch {
-    console.log(`  Could not register route automatically.`);
-    console.log(`  The deploy workflow will handle it, or run manually:`);
-    console.log(
-      `  npx wrangler d1 execute fags --remote --command "INSERT OR IGNORE INTO routes (slug, zone, r2_prefix, store, hosted_on, created_at, updated_at) VALUES ('${agentId}', '${DOMAIN}', 'agents/${agentId}', 'agents', 'r2', strftime('%s','now'), strftime('%s','now'))"`,
+    process.stdout.write(
+      '  Could not register route automatically. Deploy workflow will handle it.\n',
     );
   }
 
-  console.log(`\nPublished!`);
-  console.log(`  Repo:  https://github.com/${ORG}/${agentId}`);
-  console.log(`  Live:  https://${DOMAIN}/a/${agentId}/ (after first deploy)`);
-  console.log(`  Store: https://${DOMAIN}/agents/${agentId}/`);
+  process.stdout.write(`\nPublished!\n`);
+  process.stdout.write(`  Repo:  https://github.com/${ORG}/${agentId}\n`);
+  process.stdout.write(`  Live:  https://${DOMAIN}/a/${agentId}/ (after first deploy)\n`);
+  process.stdout.write(`  Store: https://${DOMAIN}/agents/${agentId}/\n`);
 }
 
 function detectAgentId(): string | null {
-  // Try git remote
   try {
-    const remote = execSync('git remote get-url origin', {
-      encoding: 'utf-8',
-      stdio: 'pipe',
-    }).trim();
+    const remote = run('git', ['remote', 'get-url', 'origin']).trim();
     const match = remote.match(/\/([a-z0-9-]+?)(?:\.git)?$/);
     if (match) return match[1];
-  } catch {}
+  } catch {
+    /* no git remote */
+  }
 
-  // Try directory name
   const dirName = path.basename(process.cwd());
   if (/^[a-z0-9-]+$/.test(dirName)) return dirName;
-
   return null;
 }
 
 function checkRepoExists(agentId: string): boolean {
   try {
-    execSync(`gh repo view ${ORG}/${agentId} --json name`, { stdio: 'pipe' });
+    run('gh', ['repo', 'view', `${ORG}/${agentId}`, '--json', 'name']);
     return true;
   } catch {
     return false;
