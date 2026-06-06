@@ -39,10 +39,27 @@ export default function App() {
 
   // Init
   useEffect(() => {
-    setHasSession(!!localStorage.getItem('fags_session'));
-    Promise.all([getDocuments(), getMessages(), getConfig()]).then(([d, m, c]) => {
+    const sessionStored = localStorage.getItem('fags_session');
+    let hasToken = false;
+    try {
+      if (sessionStored) { const p = JSON.parse(sessionStored); hasToken = !!p?.token; }
+    } catch { hasToken = !!sessionStored; }
+    setHasSession(hasToken);
+
+    Promise.all([getDocuments(), getMessages(), getConfig()]).then(async ([d, m, c]) => {
       setDocs(d);
       setMessages(m);
+
+      // Auto-detect: if no session (can't use proxy), check Chrome AI and default to it
+      if (!hasToken && c.provider !== 'built-in-ai' && c.provider !== 'ollama') {
+        const g = globalThis as any;
+        const LM = g.LanguageModel ?? g.ai?.languageModel;
+        if (LM?.create) {
+          c = { ...c, provider: 'built-in-ai', model: 'gemini-nano' };
+          await saveConfig(c);
+        }
+      }
+
       setConfig(c);
       setConfigDraft(c);
     });
