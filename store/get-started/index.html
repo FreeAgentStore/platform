@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Get Started — FreeAgentStore</title>
+  <meta name="description" content="Start using AI tools in your browser, or build your own and publish to the store.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#7c3aed">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{--font-body:'Manrope',system-ui,sans-serif;--font-display:'Fraunces',Georgia,serif;--paper:#0a0a0a;--panel:#171717;--ink:#fafafa;--muted:#a3a3a3;--accent:#7c3aed;--line:#262626;--radius:0.75rem}
+    body{font-family:var(--font-body);background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;min-height:100vh}
+    .container{max-width:720px;margin:0 auto;padding:0 1.5rem}
+    a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+    header{border-bottom:1px solid var(--line);padding:0.75rem 0}
+    header .container{display:flex;align-items:center;gap:1.25rem}
+    .brand{display:flex;align-items:center;gap:0.6rem;text-decoration:none;color:var(--ink)}
+    .brand-mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#a855f7);display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+    .brand-name{font-family:var(--font-display);font-size:1.15rem;font-weight:700}
+    nav{display:flex;gap:1.25rem;font-size:0.88rem;font-weight:600;margin-left:auto}
+    nav a{color:var(--muted);text-decoration:none}nav a:hover{color:var(--ink)}
+    h1{font-family:var(--font-display);font-size:2rem;font-weight:700;margin:2rem 0 1rem}
+    h2{font-family:var(--font-display);font-size:1.3rem;font-weight:700;margin:2rem 0 0.75rem}
+    p,li{color:var(--muted);line-height:1.7;font-size:0.95rem}
+    p{margin-bottom:1rem}
+    ol,ul{margin-bottom:1rem;padding-left:1.5rem}
+    li{margin-bottom:0.5rem}
+    pre{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:1rem;overflow-x:auto;font-size:0.85rem;margin-bottom:1rem;color:var(--ink)}
+    code{font-family:'JetBrains Mono',monospace;font-size:0.88em;background:var(--panel);padding:0.15rem 0.4rem;border-radius:4px}
+    .step{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem}
+    .step h3{font-size:1rem;font-weight:600;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.5rem}
+    .step-num{width:24px;height:24px;border-radius:50%;background:var(--accent);color:white;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0}
+    footer{border-top:1px solid var(--line);padding:1.5rem 0;margin-top:3rem;text-align:center;font-size:0.8rem;color:#737373}
+    footer a{color:var(--muted)}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="/" class="brand"><span class="brand-mark">&#x1f916;</span><span class="brand-name">AgentStore</span></a>
+      <nav><a href="/">Agents</a><a href="/about/">About</a><a href="/get-started/">Get Started</a><a href="/console/">Console</a><a href="https://github.com/FreeAgentStore">GitHub</a></nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <h1>Get Started</h1>
+    <p>Use AI tools in your browser, or build your own and publish to the store.</p>
+
+    <h2>Use an agent</h2>
+    <div class="step">
+      <h3><span class="step-num">1</span> Browse the store</h3>
+      <p>Visit <a href="/">freeagentstore.online</a> and pick an agent. Filter by Libraries, Models, or Agents.</p>
+    </div>
+    <div class="step">
+      <h3><span class="step-num">2</span> Try it</h3>
+      <p>Click "Open" to use the agent directly. Libraries and models work instantly — no sign-up needed.</p>
+    </div>
+    <div class="step">
+      <h3><span class="step-num">3</span> Add to your app</h3>
+      <p>Import via npm or direct ESM URL:</p>
+      <pre>npm install @freeagentstore/sentiment
+
+import { analyzeSentiment } from '@freeagentstore/sentiment'</pre>
+      <p>Or import directly (zero install):</p>
+      <pre>&lt;script type="module"&gt;
+  import { analyzeSentiment } from 'https://freeagentstore.online/pkg/sentiment/index.js'
+&lt;/script&gt;</pre>
+    </div>
+
+    <h2>Build your own agent</h2>
+    <div class="step">
+      <h3><span class="step-num">1</span> Scaffold</h3>
+      <pre>npx @freeagentstore/cli init my-agent --template heuristic</pre>
+      <p>Templates: <code>heuristic</code> (pure TS), <code>built-in-ai</code> (Chrome AI), <code>model</code> (ONNX)</p>
+    </div>
+    <div class="step">
+      <h3><span class="step-num">2</span> Develop</h3>
+      <pre>cd my-agent
+npm install
+npm run dev</pre>
+      <p>Edit <code>src/index.ts</code> — your agent's core logic. Keep it pure TypeScript (no DOM deps) so it works as both a library and a webapp.</p>
+    </div>
+    <div class="step">
+      <h3><span class="step-num">3</span> Publish</h3>
+      <pre>npx @freeagentstore/cli publish</pre>
+      <p>Creates a GitHub repo, deploys to R2, registers the route. Your agent is live at <code>freeagentstore.online/a/my-agent/</code>.</p>
+    </div>
+
+    <h2>For agents that need AI</h2>
+    <p>If your agent calls OpenAI, Claude, or Gemini:</p>
+    <ol>
+      <li><a href="/v1/auth/github">Sign in with GitHub</a></li>
+      <li>Go to <a href="/v1/keys">API Keys</a> and add your provider key</li>
+      <li>Your agent calls the platform proxy — the key is injected server-side</li>
+      <li>You pay your provider directly. The platform charges nothing.</li>
+    </ol>
+
+    <h2>MCP integration</h2>
+    <p>Connect FreeAgentStore to Claude, Cursor, or any MCP-compatible tool:</p>
+    <pre>npx mcp-remote https://mcp.freeagentstore.online/mcp</pre>
+  </main>
+
+  <footer><div class="container"><a href="/">FreeAgentStore</a> &middot; <a href="https://github.com/FreeAgentStore">GitHub</a></div></footer>
+</body>
+</html>
