@@ -160,9 +160,14 @@ export default function App() {
     if (!rag || !query.trim()) return;
     setSearching(true);
     setAnswer(null);
+    setSearchResults([]);
+    setStatusMsg('Embedding query...');
     try {
       const results = await rag.search(query, 5);
       setSearchResults(results);
+      setStatusMsg(results.length === 0 ? 'No matching chunks found. Try different keywords.' : `Found ${results.length} relevant chunks.`);
+    } catch (err: any) {
+      setStatusMsg(`Search error: ${err.message}`);
     } finally {
       setSearching(false);
     }
@@ -173,10 +178,15 @@ export default function App() {
     if (!rag || !query.trim()) return;
     setAsking(true);
     setSearchResults([]);
+    setAnswer(null);
+    setStatusMsg('Searching documents + generating answer...');
     try {
       const result = await rag.ask(query, { topK: 5 });
       setAnswer(result);
       setSearchResults(result.sources);
+      setStatusMsg(result.sources.length === 0 ? 'No relevant documents found.' : `Answer from ${result.source} using ${result.sources.length} sources.`);
+    } catch (err: any) {
+      setStatusMsg(`Ask error: ${err.message}`);
     } finally {
       setAsking(false);
     }
@@ -362,6 +372,19 @@ export default function App() {
                 <p className="text-sm text-neutral-200 leading-relaxed whitespace-pre-wrap">{answer.answer}</p>
               </div>
             </section>
+          )}
+
+          {/* Status */}
+          {statusMsg && !searching && !asking && (searchResults.length > 0 || answer) && (
+            <p className="text-xs text-neutral-500">{statusMsg}</p>
+          )}
+
+          {/* No results */}
+          {!searching && !asking && searchResults.length === 0 && !answer && query.trim() && statusMsg.includes('No') && (
+            <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-4 text-center">
+              <p className="text-sm text-neutral-400">No matching chunks found for "{query}".</p>
+              <p className="text-xs text-neutral-600 mt-1">Try different keywords or add more documents.</p>
+            </div>
           )}
 
           {/* Search results */}
