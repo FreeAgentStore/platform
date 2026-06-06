@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Build a Heuristic Library — FreeAgentStore</title>
+  <meta name="description" content="Complete guide to building heuristic AI libraries on FreeAgentStore. Pure TypeScript, zero model, instant results.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta name="theme-color" content="#7c3aed">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{--font-body:'Manrope',system-ui,sans-serif;--font-display:'Fraunces',Georgia,serif;--paper:#0a0a0a;--panel:#171717;--ink:#fafafa;--muted:#a3a3a3;--accent:#7c3aed;--line:#262626;--radius:0.75rem}
+    body{font-family:var(--font-body);background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;min-height:100vh}
+    .container{max-width:720px;margin:0 auto;padding:0 1.5rem}
+    a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+    header{border-bottom:1px solid var(--line);padding:0.75rem 0}
+    header .container{display:flex;align-items:center;gap:1.25rem}
+    .brand{display:flex;align-items:center;gap:0.6rem;text-decoration:none;color:var(--ink)}
+    .brand-mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#a855f7);display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+    .brand-name{font-family:var(--font-display);font-size:1.15rem;font-weight:700}
+    nav{display:flex;gap:1.25rem;font-size:0.88rem;font-weight:600;margin-left:auto}
+    nav a{color:var(--muted);text-decoration:none}nav a:hover{color:var(--ink)}
+    h1{font-family:var(--font-display);font-size:2rem;font-weight:700;margin:2rem 0 1rem}
+    h2{font-family:var(--font-display);font-size:1.3rem;font-weight:700;margin:2rem 0 0.75rem}
+    h3{font-size:1rem;font-weight:600;margin:1.5rem 0 0.5rem}
+    p,li{color:var(--muted);line-height:1.7;font-size:0.95rem}
+    p{margin-bottom:1rem}
+    ol,ul{margin-bottom:1rem;padding-left:1.5rem}
+    li{margin-bottom:0.5rem}
+    pre{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:1rem;overflow-x:auto;font-size:0.82rem;margin-bottom:1rem;color:var(--ink);line-height:1.6}
+    code{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:0.88em;background:var(--panel);padding:0.15rem 0.4rem;border-radius:4px}
+    pre code{background:none;padding:0;font-size:inherit}
+    .step{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem}
+    .step h3{font-size:1rem;font-weight:600;margin:0 0 0.5rem;display:flex;align-items:center;gap:0.5rem}
+    .step-num{width:24px;height:24px;border-radius:50%;background:var(--accent);color:white;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0}
+    .callout{background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:var(--radius);padding:1rem;margin-bottom:1rem;font-size:0.9rem}
+    .callout strong{color:var(--ink)}
+    .back{display:inline-flex;align-items:center;gap:0.3rem;font-size:0.88rem;color:var(--muted);margin-top:1.5rem;text-decoration:none}
+    .back:hover{color:var(--ink)}
+    footer{border-top:1px solid var(--line);padding:1.5rem 0;margin-top:3rem;text-align:center;font-size:0.8rem;color:#737373}
+    footer a{color:var(--muted)}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="/" class="brand"><span class="brand-mark">&#x1f916;</span><span class="brand-name">AgentStore</span></a>
+      <nav><a href="/">Agents</a><a href="/docs/">Docs</a><a href="/get-started/">Get Started</a><a href="/console/">Console</a><a href="https://github.com/FreeAgentStore">GitHub</a></nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <a href="/docs/" class="back">&larr; All guides</a>
+    <h1>Build a Heuristic Library</h1>
+    <p>A heuristic library is a pure TypeScript function that classifies, scores, or parses text using weighted keyword dictionaries, structural patterns, and rule-based logic. No model download, no API key, sub-millisecond results.</p>
+
+    <div class="callout">
+      <strong>How heuristic agents evolve:</strong> You start with hand-written rules. Collect failure cases from users. Feed the examples to an LLM with "write better code." Eval the new code against all examples. Ship if accuracy improves. Repeat. Each version gets better without ever downloading a model.
+    </div>
+
+    <h2>What makes a good heuristic</h2>
+    <ul>
+      <li>The task has clear categories (spam/not-spam, positive/negative, urgent/normal)</li>
+      <li>Keyword signals are strong enough to get 85%+ accuracy</li>
+      <li>Speed matters more than perfection (filtering, triage, pre-processing)</li>
+      <li>Zero dependencies -- pure TypeScript, no model, no API key</li>
+    </ul>
+    <p>Examples on the store: <a href="/agents/sentiment/">sentiment</a>, <a href="/agents/clickbait-detector/">clickbait-detector</a>, <a href="/agents/urgency-detector/">urgency-detector</a>, <a href="/agents/sarcasm-detector/">sarcasm-detector</a>, <a href="/agents/email-classifier/">email-classifier</a>.</p>
+
+    <h2>Step by step</h2>
+
+    <div class="step">
+      <h3><span class="step-num">1</span> Scaffold the project</h3>
+      <pre><code>npx @freeagentstore/cli init spam-detector --template heuristic
+cd spam-detector
+npm install
+npm run dev</code></pre>
+      <p>This creates a React + Vite project with the standard FAGS structure: <code>web/src/heuristic.ts</code> for logic, <code>web/src/App.tsx</code> for the UI, and <code>agent.json</code> for metadata.</p>
+    </div>
+
+    <div class="step">
+      <h3><span class="step-num">2</span> Write the heuristic</h3>
+      <p>Replace <code>web/src/heuristic.ts</code> with your classifier logic. Here is a complete, working spam detector:</p>
+    </div>
+
+    <h2>Full example: Spam Detector</h2>
+    <p>This heuristic scores text on multiple dimensions -- keyword presence, structural signals, and contextual patterns -- then normalizes to a 0-1 spam probability.</p>
+
+    <h3>web/src/heuristic.ts</h3>
+    <pre><code>/**
+ * Spam Detector heuristic -- LLM-evolved, deterministic, no model needed.
+ * v1: keyword scoring + structural analysis + negation handling
+ */
+
+// ── Types ────────────────────────────────────────────────────────────────────
+
+export interface SpamResult {
+  isSpam: boolean;
+  score: number;       // 0 (ham) to 1 (spam)
+  confidence: number;  // 0 (no signal) to 1 (strong signal)
+  reasons: string[];
+}
+
+// ── Keyword dictionaries ─────────────────────────────────────────────────────
+
+const SPAM_WORDS: Record&lt;string, number&gt; = {
+  // Financial bait
+  'free': 2, 'winner': 3, 'prize': 3, 'lottery': 3, 'jackpot': 3,
+  'cash': 2, 'money': 2, 'earn': 2, 'income': 2, 'profit': 2,
+  'millionaire': 3, 'billion': 2, 'investment': 1, 'crypto': 2,
+  // Urgency / pressure
+  'urgent': 3, 'immediately': 2, 'expires': 2, 'limited': 2,
+  'act now': 3, 'hurry': 2, 'deadline': 1, 'last chance': 3,
+  // Action demands
+  'click here': 3, 'subscribe': 1, 'unsubscribe': 1, 'buy now': 3,
+  'order now': 3, 'sign up': 1, 'apply now': 2, 'claim': 2,
+  // Shady offers
+  'viagra': 3, 'pharmacy': 2, 'pills': 2, 'weight loss': 2,
+  'miracle': 3, 'guaranteed': 2, 'no obligation': 2, 'risk free': 2,
+  'no cost': 2, 'double your': 3, 'congratulations': 3,
+  // Phishing
+  'verify your account': 3, 'confirm your identity': 3,
+  'suspended': 2, 'unauthorized': 2, 'security alert': 2,
+  'password': 1, 'ssn': 3, 'social security': 3,
+};
+
+const LEGIT_WORDS: Record&lt;string, number&gt; = {
+  // Professional
+  'meeting': 2, 'schedule': 2, 'agenda': 2, 'project': 2,
+  'deadline': 1, 'review': 1, 'update': 1, 'team': 2,
+  'report': 2, 'quarterly': 2, 'budget': 1, 'proposal': 2,
+  // Personal
+  'thanks': 1, 'appreciate': 1, 'regards': 1, 'sincerely': 1,
+  'attached': 1, 'following up': 1, 'discussed': 1, 'agreed': 1,
+  // Technical
+  'repository': 2, 'pull request': 2, 'commit': 2, 'deploy': 2,
+  'merge': 2, 'branch': 1, 'documentation': 1, 'release': 1,
+};
+
+const NEGATORS = new Set([
+  'not', "n't", 'no', 'never', 'neither', 'nor',
+  'hardly', 'barely', 'without',
+]);
+
+// ── Structural scoring ───────────────────────────────────────────────────────
+
+function scoreStructure(text: string): { score: number; reasons: string[] } {
+  let score = 0;
+  const reasons: string[] = [];
+
+  // ALL CAPS ratio
+  const words = text.split(/\s+/).filter(Boolean);
+  const capsWords = words.filter(w =&gt; w.length &gt; 2 &amp;&amp; w === w.toUpperCase() &amp;&amp; /[A-Z]/.test(w));
+  const capsRatio = words.length &gt; 0 ? capsWords.length / words.length : 0;
+  if (capsRatio &gt; 0.3) {
+    score += 3;
+    reasons.push('excessive ALL CAPS');
+  }
+
+  // Excessive punctuation
+  const exclamations = (text.match(/!/g) || []).length;
+  const questions = (text.match(/\?/g) || []).length;
+  if (exclamations &gt; 3) {
+    score += 2;
+    reasons.push('excessive exclamation marks');
+  }
+  if (questions &gt; 3 &amp;&amp; exclamations &gt; 1) {
+    score += 1;
+    reasons.push('mixed excessive punctuation');
+  }
+
+  // Dollar signs / currency patterns
+  const moneyPatterns = (text.match(/\$[\d,]+/g) || []).length;
+  if (moneyPatterns &gt; 1) {
+    score += 2;
+    reasons.push('multiple money amounts');
+  }
+
+  // URLs count
+  const urlCount = (text.match(/https?:\/\/\S+/gi) || []).length;
+  if (urlCount &gt; 3) {
+    score += 2;
+    reasons.push('excessive URLs');
+  }
+
+  // Email address harvesting patterns
+  if (/reply to .+@/i.test(text) || /send .+@/i.test(text)) {
+    score += 2;
+    reasons.push('suspicious email reference');
+  }
+
+  return { score, reasons };
+}
+
+// ── Main classifier ──────────────────────────────────────────────────────────
+
+export function detectSpam(text: string): SpamResult {
+  if (!text.trim()) {
+    return { isSpam: false, score: 0, confidence: 0, reasons: [] };
+  }
+
+  const lower = text.toLowerCase();
+  const words = lower.replace(/[^a-z'\s-]/g, ' ').split(/\s+/).filter(Boolean);
+  const reasons: string[] = [];
+
+  let spamScore = 0;
+  let legitScore = 0;
+  let totalWeight = 0;
+
+  // ── Multi-word phrase matching ──
+  for (const [phrase, weight] of Object.entries(SPAM_WORDS)) {
+    if (phrase.includes(' ') &amp;&amp; lower.includes(phrase)) {
+      spamScore += weight;
+      totalWeight += weight;
+      reasons.push(`spam phrase: "${phrase}"`);
+    }
+  }
+  for (const [phrase, weight] of Object.entries(LEGIT_WORDS)) {
+    if (phrase.includes(' ') &amp;&amp; lower.includes(phrase)) {
+      legitScore += weight;
+      totalWeight += weight;
+    }
+  }
+
+  // ── Single-word scoring with negation ──
+  for (let i = 0; i &lt; words.length; i++) {
+    const word = words[i];
+    const sw = SPAM_WORDS[word] ?? 0;
+    const lw = LEGIT_WORDS[word] ?? 0;
+    if (sw === 0 &amp;&amp; lw === 0) continue;
+
+    // Check for negation in previous 3 words
+    let negated = false;
+    for (let j = Math.max(0, i - 3); j &lt; i; j++) {
+      if (NEGATORS.has(words[j]) || words[j].endsWith("n't")) {
+        negated = true;
+        break;
+      }
+    }
+
+    if (negated) {
+      // Negation weakens the signal rather than fully flipping it
+      legitScore += sw * 0.3;
+      spamScore += lw * 0.3;
+      totalWeight += Math.max(sw, lw) * 0.3;
+    } else {
+      spamScore += sw;
+      legitScore += lw;
+      totalWeight += Math.max(sw, lw);
+      if (sw &gt;= 3) reasons.push(`spam keyword: "${word}"`);
+    }
+  }
+
+  // ── Structural analysis ──
+  const structural = scoreStructure(text);
+  spamScore += structural.score;
+  totalWeight += structural.score;
+  reasons.push(...structural.reasons);
+
+  // ── Normalize to 0-1 ──
+  const raw = totalWeight &gt; 0 ? (spamScore - legitScore) / totalWeight : 0;
+  const score = Math.max(0, Math.min(1, (raw + 1) / 2));
+  const confidence = Math.min(totalWeight / 8, 1);
+  const isSpam = score &gt; 0.55 &amp;&amp; confidence &gt; 0.2;
+
+  return {
+    isSpam,
+    score: Math.round(score * 100) / 100,
+    confidence: Math.round(confidence * 100) / 100,
+    reasons: isSpam ? reasons.slice(0, 5) : [],
+  };
+}</code></pre>
+
+    <h3>Key design patterns</h3>
+    <ul>
+      <li><strong>Weighted dictionaries</strong> -- high-weight words (3) are strong signals, low-weight words (1) only contribute in aggregate</li>
+      <li><strong>Negation window</strong> -- checks the previous 3 words for negators ("not free" should not trigger spam)</li>
+      <li><strong>Multi-word phrases</strong> -- "click here" and "act now" are matched as phrases, not individual words</li>
+      <li><strong>Structural scoring</strong> -- ALL CAPS ratio, punctuation abuse, money patterns, URL density</li>
+      <li><strong>Score normalization</strong> -- raw score is normalized to 0-1 range with a confidence measure</li>
+      <li><strong>Threshold + confidence gate</strong> -- both score and confidence must pass thresholds to flag as spam</li>
+    </ul>
+
+    <div class="step">
+      <h3><span class="step-num">3</span> Write tests</h3>
+      <p>Create <code>web/src/heuristic.test.ts</code>:</p>
+    </div>
+
+    <pre><code>import { describe, it, expect } from 'vitest';
+import { detectSpam } from './heuristic';
+
+describe('spam detector', () =&gt; {
+  it('detects obvious spam', () =&gt; {
+    const r = detectSpam('CONGRATULATIONS! You have WON $1,000,000!!! Click here to claim your prize NOW!');
+    expect(r.isSpam).toBe(true);
+    expect(r.score).toBeGreaterThan(0.7);
+    expect(r.reasons.length).toBeGreaterThan(0);
+  });
+
+  it('passes legitimate email', () =&gt; {
+    const r = detectSpam('Hi team, attached is the quarterly report. Please review before our meeting on Thursday.');
+    expect(r.isSpam).toBe(false);
+    expect(r.score).toBeLessThan(0.5);
+  });
+
+  it('handles negation', () =&gt; {
+    const r = detectSpam('This is not free and there is no prize');
+    expect(r.isSpam).toBe(false);
+  });
+
+  it('catches structural spam signals', () =&gt; {
+    const r = detectSpam('BUY NOW!!! BEST DEAL EVER!!! CLICK HERE!!! $$$');
+    expect(r.isSpam).toBe(true);
+    expect(r.reasons).toContain('excessive ALL CAPS');
+  });
+
+  it('detects phishing language', () =&gt; {
+    const r = detectSpam('Your account has been suspended. Verify your account immediately to avoid losing access.');
+    expect(r.isSpam).toBe(true);
+  });
+
+  it('passes technical discussion', () =&gt; {
+    const r = detectSpam('Opened a pull request for the new deploy pipeline. Merged the branch after review.');
+    expect(r.isSpam).toBe(false);
+  });
+
+  it('handles empty input', () =&gt; {
+    const r = detectSpam('');
+    expect(r.isSpam).toBe(false);
+    expect(r.score).toBe(0);
+  });
+
+  it('returns confidence based on signal density', () =&gt; {
+    const strong = detectSpam('Free cash prize winner lottery jackpot congratulations');
+    const weak = detectSpam('The free tier includes basic features');
+    expect(strong.confidence).toBeGreaterThan(weak.confidence);
+  });
+});</code></pre>
+
+    <p>Run tests:</p>
+    <pre><code>npx vitest run</code></pre>
+
+    <div class="step">
+      <h3><span class="step-num">4</span> Set metadata</h3>
+      <p>Edit <code>agent.json</code>:</p>
+    </div>
+    <pre><code>{
+  "id": "spam-detector",
+  "name": "Spam Detector",
+  "tagline": "Detect spam, phishing, and scam messages instantly",
+  "description": "Scores text for spam signals using keyword dictionaries, structural analysis, and negation handling. Pure TypeScript, zero model.",
+  "category": "text",
+  "type": "heuristic",
+  "icon": "shield",
+  "color": "#f59e0b",
+  "evolution": {
+    "versions": 1,
+    "examples": 200,
+    "accuracy": 88
+  }
+}</code></pre>
+
+    <div class="step">
+      <h3><span class="step-num">5</span> Publish</h3>
+      <pre><code>npx @freeagentstore/cli check   # all 9 checks must pass
+npx @freeagentstore/cli publish</code></pre>
+      <p>Creates a GitHub repo in FreeAgentStore, deploys to R2, registers the route. Your library is live.</p>
+    </div>
+
+    <h2>Evolving accuracy</h2>
+    <p>Heuristic agents improve through an LLM-driven evolution loop:</p>
+    <ol>
+      <li><strong>Collect failures</strong> -- users report "this was flagged as spam but it's not" or "this spam got through"</li>
+      <li><strong>Accumulate examples</strong> -- store input/expected pairs in a test file</li>
+      <li><strong>Feed to LLM</strong> -- "Here is the current code and these failing examples. Write improved code that passes all examples while keeping existing accuracy."</li>
+      <li><strong>Evaluate</strong> -- run the full test suite. If accuracy improves, ship it.</li>
+      <li><strong>Repeat</strong> -- each version gets better. Track accuracy in <code>agent.json</code>.</li>
+    </ol>
+    <p>The code is the model. There is no training step, no weights file, no model download. The LLM writes better TypeScript each iteration.</p>
+
+    <h2>Accuracy tracking</h2>
+    <p>Every heuristic agent tracks its evolution in <code>agent.json</code>:</p>
+    <pre><code>"evolution": {
+  "versions": 3,      // how many evolution cycles
+  "examples": 500,    // total labeled examples used
+  "accuracy": 92      // % correct on held-out test set
+}</code></pre>
+    <p>This is displayed on the agent's store page so users can see how mature the heuristic is. Higher versions + more examples = more trustworthy.</p>
+
+    <h2>Exporting as a library</h2>
+    <p>Your heuristic is automatically available as an importable library:</p>
+    <pre><code>// npm
+npm install @freeagentstore/spam-detector
+import { detectSpam } from '@freeagentstore/spam-detector';
+
+// ESM URL (zero install)
+import { detectSpam } from 'https://freeagentstore.online/pkg/spam-detector/index.js';</code></pre>
+    <p>Keep your core logic in <code>heuristic.ts</code> with no DOM or React dependencies so it works in any JavaScript runtime -- browser, Node, Deno, Bun, Workers.</p>
+
+    <a href="/docs/" class="back">&larr; All guides</a>
+  </main>
+
+  <footer><div class="container"><a href="/">FreeAgentStore</a> &middot; <a href="/docs/">Docs</a> &middot; <a href="https://github.com/FreeAgentStore">GitHub</a></div></footer>
+</body>
+</html>

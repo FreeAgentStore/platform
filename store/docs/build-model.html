@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Build a Model Agent — FreeAgentStore</title>
+  <meta name="description" content="Complete guide to building model-based AI agents on FreeAgentStore. Transformers.js, TensorFlow.js, ONNX Runtime — all running in the browser.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta name="theme-color" content="#7c3aed">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{--font-body:'Manrope',system-ui,sans-serif;--font-display:'Fraunces',Georgia,serif;--paper:#0a0a0a;--panel:#171717;--ink:#fafafa;--muted:#a3a3a3;--accent:#7c3aed;--line:#262626;--radius:0.75rem}
+    body{font-family:var(--font-body);background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;min-height:100vh}
+    .container{max-width:720px;margin:0 auto;padding:0 1.5rem}
+    a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+    header{border-bottom:1px solid var(--line);padding:0.75rem 0}
+    header .container{display:flex;align-items:center;gap:1.25rem}
+    .brand{display:flex;align-items:center;gap:0.6rem;text-decoration:none;color:var(--ink)}
+    .brand-mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#a855f7);display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+    .brand-name{font-family:var(--font-display);font-size:1.15rem;font-weight:700}
+    nav{display:flex;gap:1.25rem;font-size:0.88rem;font-weight:600;margin-left:auto}
+    nav a{color:var(--muted);text-decoration:none}nav a:hover{color:var(--ink)}
+    h1{font-family:var(--font-display);font-size:2rem;font-weight:700;margin:2rem 0 1rem}
+    h2{font-family:var(--font-display);font-size:1.3rem;font-weight:700;margin:2rem 0 0.75rem}
+    h3{font-size:1rem;font-weight:600;margin:1.5rem 0 0.5rem}
+    p,li{color:var(--muted);line-height:1.7;font-size:0.95rem}
+    p{margin-bottom:1rem}
+    ol,ul{margin-bottom:1rem;padding-left:1.5rem}
+    li{margin-bottom:0.5rem}
+    pre{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:1rem;overflow-x:auto;font-size:0.82rem;margin-bottom:1rem;color:var(--ink);line-height:1.6}
+    code{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:0.88em;background:var(--panel);padding:0.15rem 0.4rem;border-radius:4px}
+    pre code{background:none;padding:0;font-size:inherit}
+    .step{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem}
+    .step h3{font-size:1rem;font-weight:600;margin:0 0 0.5rem;display:flex;align-items:center;gap:0.5rem}
+    .step-num{width:24px;height:24px;border-radius:50%;background:var(--accent);color:white;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0}
+    .callout{background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:var(--radius);padding:1rem;margin-bottom:1rem;font-size:0.9rem}
+    .callout strong{color:var(--ink)}
+    .back{display:inline-flex;align-items:center;gap:0.3rem;font-size:0.88rem;color:var(--muted);margin-top:1.5rem;text-decoration:none}
+    .back:hover{color:var(--ink)}
+    table{width:100%;border-collapse:collapse;font-size:0.85rem;margin-bottom:1.5rem}
+    th{text-align:left;padding:0.5rem;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line)}
+    td{padding:0.5rem;color:var(--muted);border-bottom:1px solid var(--line)}
+    footer{border-top:1px solid var(--line);padding:1.5rem 0;margin-top:3rem;text-align:center;font-size:0.8rem;color:#737373}
+    footer a{color:var(--muted)}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="/" class="brand"><span class="brand-mark">&#x1f916;</span><span class="brand-name">AgentStore</span></a>
+      <nav><a href="/">Agents</a><a href="/docs/">Docs</a><a href="/get-started/">Get Started</a><a href="/console/">Console</a><a href="https://github.com/FreeAgentStore">GitHub</a></nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <a href="/docs/" class="back">&larr; All guides</a>
+    <h1>Build a Model Agent</h1>
+    <p>A model agent runs ML inference directly in the browser using WebGPU or WASM. The model downloads once, caches in the browser, and runs entirely on the user's device. Zero server cost, full privacy.</p>
+
+    <div class="callout">
+      <strong>Model + heuristic = real value.</strong> The best model agents don't just return raw model output. They map model predictions to domain-specific knowledge -- turning ImageNet labels into breed info, or food classifications into calorie estimates.
+    </div>
+
+    <h2>Supported frameworks</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Framework</th>
+          <th>Package</th>
+          <th>Best for</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Transformers.js</strong></td>
+          <td><code>@huggingface/transformers</code></td>
+          <td>HuggingFace models -- classification, NLP, vision, audio. Primary choice.</td>
+        </tr>
+        <tr>
+          <td><strong>TensorFlow.js</strong></td>
+          <td><code>@tensorflow/tfjs</code></td>
+          <td>TF-specific models -- MoveNet (pose), BlazeFace, speech commands.</td>
+        </tr>
+        <tr>
+          <td><strong>ONNX Runtime Web</strong></td>
+          <td><code>onnxruntime-web</code></td>
+          <td>Custom ONNX models, fine-tuned models, specialized architectures.</td>
+        </tr>
+      </tbody>
+    </table>
+    <p>Transformers.js is the recommended default. It has the largest model library, automatic WebGPU/WASM fallback, and built-in caching. Use TensorFlow.js or ONNX Runtime only when your model requires them.</p>
+
+    <h2>Model size guidelines</h2>
+    <ul>
+      <li><strong>Under 50 MB</strong> -- ideal. Fast download, works on mobile. Examples: MiniLM (23 MB), MobileViT-small (24 MB).</li>
+      <li><strong>50-200 MB</strong> -- acceptable. Show download progress. Examples: Whisper-small (150 MB), ViT-base (85 MB).</li>
+      <li><strong>200-500 MB</strong> -- use with caution. Warn users about download size. Examples: Kokoro TTS (82 MB quantized).</li>
+      <li><strong>Over 500 MB</strong> -- generally too large for browser use. Consider a smaller variant or quantized version.</li>
+    </ul>
+
+    <h2>Step by step</h2>
+
+    <div class="step">
+      <h3><span class="step-num">1</span> Scaffold the project</h3>
+      <pre><code>npx @freeagentstore/cli init breed-identifier --template model
+cd breed-identifier
+npm install
+npm install @huggingface/transformers</code></pre>
+    </div>
+
+    <div class="step">
+      <h3><span class="step-num">2</span> Write the classifier</h3>
+      <p>Create <code>web/src/classifier.ts</code> with model loading, inference, and domain mapping.</p>
+    </div>
+
+    <h2>Full example: Breed Identifier</h2>
+    <p>This agent loads MobileViT-small (24 MB), classifies images, maps ImageNet labels to dog/cat breeds, and adds breed-specific information (size, temperament, exercise needs).</p>
+
+    <h3>web/src/classifier.ts</h3>
+    <pre><code>import { pipeline, type ImageClassificationPipeline } from '@huggingface/transformers';
+
+// ── Types ────────────────────────────────────────────────────────────────────
+
+export interface BreedResult {
+  breed: string;
+  confidence: number;
+  info: BreedInfo | null;
+  rawLabel: string;
+  isAnimal: boolean;
+}
+
+export interface BreedInfo {
+  species: 'dog' | 'cat';
+  size: 'small' | 'medium' | 'large';
+  temperament: string[];
+  exerciseNeeds: 'low' | 'moderate' | 'high';
+  lifespan: string;
+  weight: string;
+}
+
+// ── Model management ─────────────────────────────────────────────────────────
+
+let classifier: ImageClassificationPipeline | null = null;
+
+export async function initModel(
+  onProgress?: (progress: number) =&gt; void
+): Promise&lt;void&gt; {
+  if (classifier) return;
+
+  classifier = await pipeline(
+    'image-classification',
+    'Xenova/mobilevit-small',
+    {
+      progress_callback: (data: { progress?: number }) =&gt; {
+        if (data.progress !== undefined &amp;&amp; onProgress) {
+          onProgress(Math.round(data.progress));
+        }
+      },
+    },
+  );
+}
+
+export async function identifyBreed(
+  image: HTMLImageElement | HTMLCanvasElement
+): Promise&lt;BreedResult&gt; {
+  if (!classifier) throw new Error('Model not loaded. Call initModel() first.');
+
+  const results = await classifier(image, { topk: 5 });
+  const top = results[0];
+  const rawLabel = top.label.toLowerCase();
+  const confidence = Math.round(top.score * 100) / 100;
+
+  // Try to match against breed database
+  const breed = matchBreed(rawLabel);
+
+  if (breed) {
+    return {
+      breed: breed.name,
+      confidence,
+      info: breed.info,
+      rawLabel: top.label,
+      isAnimal: true,
+    };
+  }
+
+  return {
+    breed: formatLabel(top.label),
+    confidence,
+    info: null,
+    rawLabel: top.label,
+    isAnimal: isAnimalLabel(rawLabel),
+  };
+}
+
+// ── Breed database ───────────────────────────────────────────────────────────
+
+interface BreedEntry {
+  name: string;
+  info: BreedInfo;
+}
+
+const BREED_DB: Record&lt;string, BreedEntry&gt; = {
+  // ── Dogs ──
+  'golden retriever': {
+    name: 'Golden Retriever',
+    info: { species: 'dog', size: 'large', temperament: ['friendly', 'reliable', 'trustworthy'], exerciseNeeds: 'high', lifespan: '10-12 years', weight: '55-75 lbs' },
+  },
+  'labrador retriever': {
+    name: 'Labrador Retriever',
+    info: { species: 'dog', size: 'large', temperament: ['outgoing', 'active', 'gentle'], exerciseNeeds: 'high', lifespan: '10-12 years', weight: '55-80 lbs' },
+  },
+  'german shepherd': {
+    name: 'German Shepherd',
+    info: { species: 'dog', size: 'large', temperament: ['confident', 'courageous', 'smart'], exerciseNeeds: 'high', lifespan: '9-13 years', weight: '50-90 lbs' },
+  },
+  'french bulldog': {
+    name: 'French Bulldog',
+    info: { species: 'dog', size: 'small', temperament: ['adaptable', 'playful', 'alert'], exerciseNeeds: 'low', lifespan: '10-12 years', weight: '16-28 lbs' },
+  },
+  'beagle': {
+    name: 'Beagle',
+    info: { species: 'dog', size: 'medium', temperament: ['friendly', 'curious', 'merry'], exerciseNeeds: 'high', lifespan: '10-15 years', weight: '20-30 lbs' },
+  },
+  'poodle': {
+    name: 'Poodle',
+    info: { species: 'dog', size: 'medium', temperament: ['intelligent', 'active', 'alert'], exerciseNeeds: 'moderate', lifespan: '12-15 years', weight: '40-70 lbs' },
+  },
+  'bulldog': {
+    name: 'Bulldog',
+    info: { species: 'dog', size: 'medium', temperament: ['calm', 'courageous', 'friendly'], exerciseNeeds: 'low', lifespan: '8-10 years', weight: '40-50 lbs' },
+  },
+  'yorkshire terrier': {
+    name: 'Yorkshire Terrier',
+    info: { species: 'dog', size: 'small', temperament: ['affectionate', 'sprightly', 'tomboyish'], exerciseNeeds: 'moderate', lifespan: '11-15 years', weight: '4-7 lbs' },
+  },
+  'dachshund': {
+    name: 'Dachshund',
+    info: { species: 'dog', size: 'small', temperament: ['clever', 'stubborn', 'devoted'], exerciseNeeds: 'moderate', lifespan: '12-16 years', weight: '16-32 lbs' },
+  },
+  'boxer': {
+    name: 'Boxer',
+    info: { species: 'dog', size: 'large', temperament: ['bright', 'fun-loving', 'active'], exerciseNeeds: 'high', lifespan: '10-12 years', weight: '50-80 lbs' },
+  },
+  'siberian husky': {
+    name: 'Siberian Husky',
+    info: { species: 'dog', size: 'large', temperament: ['loyal', 'mischievous', 'outgoing'], exerciseNeeds: 'high', lifespan: '12-14 years', weight: '35-60 lbs' },
+  },
+  'pomeranian': {
+    name: 'Pomeranian',
+    info: { species: 'dog', size: 'small', temperament: ['inquisitive', 'bold', 'lively'], exerciseNeeds: 'low', lifespan: '12-16 years', weight: '3-7 lbs' },
+  },
+  'chihuahua': {
+    name: 'Chihuahua',
+    info: { species: 'dog', size: 'small', temperament: ['charming', 'graceful', 'sassy'], exerciseNeeds: 'low', lifespan: '14-16 years', weight: '2-6 lbs' },
+  },
+  'corgi': {
+    name: 'Pembroke Welsh Corgi',
+    info: { species: 'dog', size: 'small', temperament: ['affectionate', 'smart', 'alert'], exerciseNeeds: 'moderate', lifespan: '12-13 years', weight: '25-30 lbs' },
+  },
+  'pembroke': {
+    name: 'Pembroke Welsh Corgi',
+    info: { species: 'dog', size: 'small', temperament: ['affectionate', 'smart', 'alert'], exerciseNeeds: 'moderate', lifespan: '12-13 years', weight: '25-30 lbs' },
+  },
+  'shih-tzu': {
+    name: 'Shih Tzu',
+    info: { species: 'dog', size: 'small', temperament: ['affectionate', 'playful', 'outgoing'], exerciseNeeds: 'low', lifespan: '10-18 years', weight: '9-16 lbs' },
+  },
+  'great dane': {
+    name: 'Great Dane',
+    info: { species: 'dog', size: 'large', temperament: ['friendly', 'patient', 'dependable'], exerciseNeeds: 'moderate', lifespan: '7-10 years', weight: '110-175 lbs' },
+  },
+  'rottweiler': {
+    name: 'Rottweiler',
+    info: { species: 'dog', size: 'large', temperament: ['loyal', 'confident', 'loving'], exerciseNeeds: 'high', lifespan: '9-10 years', weight: '80-135 lbs' },
+  },
+  'doberman': {
+    name: 'Doberman Pinscher',
+    info: { species: 'dog', size: 'large', temperament: ['loyal', 'fearless', 'alert'], exerciseNeeds: 'high', lifespan: '10-12 years', weight: '60-100 lbs' },
+  },
+  'dalmatian': {
+    name: 'Dalmatian',
+    info: { species: 'dog', size: 'large', temperament: ['dignified', 'smart', 'outgoing'], exerciseNeeds: 'high', lifespan: '11-13 years', weight: '45-70 lbs' },
+  },
+  // ── Cats ──
+  'persian cat': {
+    name: 'Persian',
+    info: { species: 'cat', size: 'medium', temperament: ['quiet', 'sweet', 'gentle'], exerciseNeeds: 'low', lifespan: '12-17 years', weight: '7-12 lbs' },
+  },
+  'siamese cat': {
+    name: 'Siamese',
+    info: { species: 'cat', size: 'medium', temperament: ['social', 'vocal', 'intelligent'], exerciseNeeds: 'moderate', lifespan: '15-20 years', weight: '6-14 lbs' },
+  },
+  'tabby': {
+    name: 'Tabby',
+    info: { species: 'cat', size: 'medium', temperament: ['affectionate', 'playful', 'social'], exerciseNeeds: 'moderate', lifespan: '12-18 years', weight: '8-12 lbs' },
+  },
+  'egyptian cat': {
+    name: 'Egyptian Mau',
+    info: { species: 'cat', size: 'medium', temperament: ['active', 'loyal', 'playful'], exerciseNeeds: 'moderate', lifespan: '12-15 years', weight: '6-14 lbs' },
+  },
+  'tiger cat': {
+    name: 'Tiger Cat (Mackerel Tabby)',
+    info: { species: 'cat', size: 'medium', temperament: ['friendly', 'outgoing', 'independent'], exerciseNeeds: 'moderate', lifespan: '12-18 years', weight: '8-12 lbs' },
+  },
+};
+
+// ── Label matching ───────────────────────────────────────────────────────────
+
+function matchBreed(label: string): BreedEntry | null {
+  // Direct match
+  if (BREED_DB[label]) return BREED_DB[label];
+
+  // Partial match -- check if label contains a known breed name
+  for (const [key, entry] of Object.entries(BREED_DB)) {
+    if (label.includes(key) || key.includes(label)) {
+      return entry;
+    }
+  }
+
+  return null;
+}
+
+function isAnimalLabel(label: string): boolean {
+  const animalKeywords = [
+    'dog', 'puppy', 'hound', 'terrier', 'spaniel', 'retriever', 'shepherd',
+    'poodle', 'bulldog', 'collie', 'setter', 'pointer', 'mastiff',
+    'cat', 'kitten', 'tabby', 'persian', 'siamese',
+  ];
+  return animalKeywords.some(k =&gt; label.includes(k));
+}
+
+function formatLabel(label: string): string {
+  return label
+    .split(/[_,]/)
+    .map(w =&gt; w.trim())
+    .filter(Boolean)
+    .map(w =&gt; w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}</code></pre>
+
+    <h3>web/src/App.tsx</h3>
+    <pre><code>import { useState, useRef, useCallback } from 'react';
+import { initModel, identifyBreed, type BreedResult } from './classifier';
+
+type ModelState = 'idle' | 'downloading' | 'ready' | 'error';
+
+export default function App() {
+  const [modelState, setModelState] = useState&lt;ModelState&gt;('idle');
+  const [progress, setProgress] = useState(0);
+  const [result, setResult] = useState&lt;BreedResult | null&gt;(null);
+  const [imageUrl, setImageUrl] = useState&lt;string | null&gt;(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const fileInputRef = useRef&lt;HTMLInputElement&gt;(null);
+
+  const loadAndAnalyze = useCallback(async (imgEl: HTMLImageElement) =&gt; {
+    if (modelState !== 'ready') {
+      setModelState('downloading');
+      try {
+        await initModel((p) =&gt; setProgress(p));
+        setModelState('ready');
+      } catch {
+        setModelState('error');
+        return;
+      }
+    }
+    setAnalyzing(true);
+    try {
+      const r = await identifyBreed(imgEl);
+      setResult(r);
+    } finally {
+      setAnalyzing(false);
+    }
+  }, [modelState]);
+
+  const processImage = useCallback((file: File) =&gt; {
+    if (!file.type.startsWith('image/')) return;
+    const url = URL.createObjectURL(file);
+    setImageUrl(url);
+    setResult(null);
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () =&gt; loadAndAnalyze(img);
+    img.src = url;
+  }, [loadAndAnalyze]);
+
+  const handleFileChange = (e: React.ChangeEvent&lt;HTMLInputElement&gt;) =&gt; {
+    const file = e.target.files?.[0];
+    if (file) processImage(file);
+  };
+
+  return (
+    &lt;div style={{ maxWidth: 480, margin: '2rem auto', padding: '0 1rem' }}&gt;
+      &lt;h1&gt;Breed Identifier&lt;/h1&gt;
+      &lt;p&gt;Upload a photo of a dog or cat to identify the breed.&lt;/p&gt;
+
+      &lt;input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileChange}
+        style={{ marginBottom: '1rem' }}
+      /&gt;
+
+      {modelState === 'downloading' &amp;&amp; (
+        &lt;div&gt;
+          &lt;p&gt;Downloading model... {progress}%&lt;/p&gt;
+          &lt;div style={{ background: '#262626', borderRadius: 8, height: 8 }}&gt;
+            &lt;div style={{ width: `${progress}%`, background: '#7c3aed', height: 8, borderRadius: 8, transition: 'width 0.3s' }} /&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      )}
+
+      {imageUrl &amp;&amp; &lt;img src={imageUrl} alt="Preview" style={{ maxWidth: '100%', borderRadius: 12, margin: '1rem 0' }} /&gt;}
+
+      {analyzing &amp;&amp; &lt;p&gt;Analyzing...&lt;/p&gt;}
+
+      {result &amp;&amp; (
+        &lt;div style={{ background: '#171717', border: '1px solid #262626', borderRadius: 12, padding: '1rem' }}&gt;
+          &lt;h2&gt;{result.breed}&lt;/h2&gt;
+          &lt;p&gt;Confidence: {Math.round(result.confidence * 100)}%&lt;/p&gt;
+          {result.info &amp;&amp; (
+            &lt;ul&gt;
+              &lt;li&gt;Species: {result.info.species}&lt;/li&gt;
+              &lt;li&gt;Size: {result.info.size}&lt;/li&gt;
+              &lt;li&gt;Temperament: {result.info.temperament.join(', ')}&lt;/li&gt;
+              &lt;li&gt;Exercise: {result.info.exerciseNeeds}&lt;/li&gt;
+              &lt;li&gt;Lifespan: {result.info.lifespan}&lt;/li&gt;
+              &lt;li&gt;Weight: {result.info.weight}&lt;/li&gt;
+            &lt;/ul&gt;
+          )}
+          {!result.info &amp;&amp; &lt;p style={{ color: '#a3a3a3' }}&gt;Raw classification: {result.rawLabel}&lt;/p&gt;}
+        &lt;/div&gt;
+      )}
+    &lt;/div&gt;
+  );
+}</code></pre>
+
+    <div class="step">
+      <h3><span class="step-num">3</span> Add model download progress</h3>
+      <p>Always show download progress. Models range from 23 MB to 500 MB. Users need to know what's happening.</p>
+      <p>The <code>progress_callback</code> in Transformers.js fires during model download. Cache Storage holds the model after first download -- subsequent loads are instant.</p>
+    </div>
+
+    <h2>Caching</h2>
+    <p>Transformers.js uses the browser's Cache Storage API automatically. After the first download, the model loads from cache. Users can verify cached models in DevTools &rarr; Application &rarr; Cache Storage.</p>
+    <p>For ONNX Runtime or TensorFlow.js, implement caching manually:</p>
+    <pre><code>async function loadModelWithCache(url: string): Promise&lt;ArrayBuffer&gt; {
+  const cache = await caches.open('model-cache-v1');
+  const cached = await cache.match(url);
+  if (cached) return cached.arrayBuffer();
+
+  const response = await fetch(url);
+  cache.put(url, response.clone());
+  return response.arrayBuffer();
+}</code></pre>
+
+    <h2>WebGPU vs WASM</h2>
+    <p>Transformers.js automatically selects the best backend:</p>
+    <ul>
+      <li><strong>WebGPU</strong> -- 5-20x faster than WASM. Available in Chrome 113+, Edge 113+, Firefox Nightly. Hardware-accelerated on GPU.</li>
+      <li><strong>WASM</strong> -- universal fallback. Works in all browsers. Runs on CPU. Slower but reliable.</li>
+    </ul>
+    <p>You can force a specific backend if needed:</p>
+    <pre><code>import { env } from '@huggingface/transformers';
+
+// Force WebGPU (will fail if unavailable)
+env.backends.onnx.wasm.proxy = false;
+
+// Force WASM (skip WebGPU detection)
+env.backends.onnx.wasm.proxy = true;</code></pre>
+    <p>In practice, let Transformers.js auto-detect. The fallback is seamless.</p>
+
+    <h2>Available models</h2>
+    <p>Browse models at <a href="https://huggingface.co/models?library=transformers.js">huggingface.co/models?library=transformers.js</a>. Popular choices for FAGS agents:</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Task</th>
+          <th>Model</th>
+          <th>Size</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Image classification</td>
+          <td><code>Xenova/mobilevit-small</code></td>
+          <td>24 MB</td>
+        </tr>
+        <tr>
+          <td>Object detection</td>
+          <td><code>Xenova/detr-resnet-50</code></td>
+          <td>160 MB</td>
+        </tr>
+        <tr>
+          <td>Background removal</td>
+          <td><code>briaai/RMBG-1.4</code></td>
+          <td>170 MB</td>
+        </tr>
+        <tr>
+          <td>Text embeddings</td>
+          <td><code>Xenova/all-MiniLM-L6-v2</code></td>
+          <td>23 MB</td>
+        </tr>
+        <tr>
+          <td>Sentiment</td>
+          <td><code>Xenova/distilbert-base-uncased-finetuned-sst-2-english</code></td>
+          <td>67 MB</td>
+        </tr>
+        <tr>
+          <td>Speech to text</td>
+          <td><code>Xenova/whisper-small</code></td>
+          <td>150 MB</td>
+        </tr>
+        <tr>
+          <td>Text to speech</td>
+          <td><code>onnx-community/Kokoro-82M-v1.0-ONNX</code></td>
+          <td>82 MB</td>
+        </tr>
+        <tr>
+          <td>Translation</td>
+          <td><code>Xenova/nllb-200-distilled-600M</code></td>
+          <td>600 MB</td>
+        </tr>
+        <tr>
+          <td>Zero-shot classification</td>
+          <td><code>Xenova/mobilebert-uncased-mnli</code></td>
+          <td>95 MB</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Using TensorFlow.js</h2>
+    <p>For models only available in TensorFlow format (pose estimation, face detection, audio classification):</p>
+    <pre><code>import * as tf from '@tensorflow/tfjs';
+import '@tensorflow/tfjs-backend-webgl';
+import * as poseDetection from '@tensorflow-models/pose-detection';
+
+// Load MoveNet for pose estimation
+const detector = await poseDetection.createDetector(
+  poseDetection.SupportedModels.MoveNet,
+  {
+    modelType: poseDetection.movenet.modelType.SINGLEPOSE_THUNDER,
+    enableSmoothing: true,
+  }
+);
+
+// Detect poses from video frame
+const poses = await detector.estimatePoses(videoElement);
+for (const pose of poses) {
+  for (const keypoint of pose.keypoints) {
+    console.log(`${keypoint.name}: (${keypoint.x}, ${keypoint.y}) score=${keypoint.score}`);
+  }
+}</code></pre>
+
+    <h2>Using ONNX Runtime Web</h2>
+    <p>For custom or fine-tuned ONNX models:</p>
+    <pre><code>import * as ort from 'onnxruntime-web';
+
+// Load model (with Cache Storage caching)
+const modelBuffer = await loadModelWithCache('/models/my-model.onnx');
+const session = await ort.InferenceSession.create(modelBuffer, {
+  executionProviders: ['webgpu', 'wasm'],  // fallback chain
+});
+
+// Run inference
+const inputTensor = new ort.Tensor('float32', inputData, [1, 3, 224, 224]);
+const results = await session.run({ input: inputTensor });
+const output = results['output'].data;</code></pre>
+
+    <div class="step">
+      <h3><span class="step-num">4</span> Publish</h3>
+      <pre><code>npx @freeagentstore/cli check
+npx @freeagentstore/cli publish</code></pre>
+      <p>Models are not bundled in R2 -- they download from HuggingFace CDN at runtime and cache in the browser.</p>
+    </div>
+
+    <a href="/docs/" class="back">&larr; All guides</a>
+  </main>
+
+  <footer><div class="container"><a href="/">FreeAgentStore</a> &middot; <a href="/docs/">Docs</a> &middot; <a href="https://github.com/FreeAgentStore">GitHub</a></div></footer>
+</body>
+</html>

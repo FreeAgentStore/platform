@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Build an AI Agent — FreeAgentStore</title>
+  <meta name="description" content="Complete guide to building AI agents on FreeAgentStore. OpenAI, Claude, Gemini via the platform proxy. LangChain.js, Vercel AI SDK, Chrome Built-in AI.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta name="theme-color" content="#7c3aed">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{--font-body:'Manrope',system-ui,sans-serif;--font-display:'Fraunces',Georgia,serif;--paper:#0a0a0a;--panel:#171717;--ink:#fafafa;--muted:#a3a3a3;--accent:#7c3aed;--line:#262626;--radius:0.75rem}
+    body{font-family:var(--font-body);background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;min-height:100vh}
+    .container{max-width:720px;margin:0 auto;padding:0 1.5rem}
+    a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+    header{border-bottom:1px solid var(--line);padding:0.75rem 0}
+    header .container{display:flex;align-items:center;gap:1.25rem}
+    .brand{display:flex;align-items:center;gap:0.6rem;text-decoration:none;color:var(--ink)}
+    .brand-mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#a855f7);display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+    .brand-name{font-family:var(--font-display);font-size:1.15rem;font-weight:700}
+    nav{display:flex;gap:1.25rem;font-size:0.88rem;font-weight:600;margin-left:auto}
+    nav a{color:var(--muted);text-decoration:none}nav a:hover{color:var(--ink)}
+    h1{font-family:var(--font-display);font-size:2rem;font-weight:700;margin:2rem 0 1rem}
+    h2{font-family:var(--font-display);font-size:1.3rem;font-weight:700;margin:2rem 0 0.75rem}
+    h3{font-size:1rem;font-weight:600;margin:1.5rem 0 0.5rem}
+    p,li{color:var(--muted);line-height:1.7;font-size:0.95rem}
+    p{margin-bottom:1rem}
+    ol,ul{margin-bottom:1rem;padding-left:1.5rem}
+    li{margin-bottom:0.5rem}
+    pre{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:1rem;overflow-x:auto;font-size:0.82rem;margin-bottom:1rem;color:var(--ink);line-height:1.6}
+    code{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:0.88em;background:var(--panel);padding:0.15rem 0.4rem;border-radius:4px}
+    pre code{background:none;padding:0;font-size:inherit}
+    .step{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem}
+    .step h3{font-size:1rem;font-weight:600;margin:0 0 0.5rem;display:flex;align-items:center;gap:0.5rem}
+    .step-num{width:24px;height:24px;border-radius:50%;background:var(--accent);color:white;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0}
+    .callout{background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:var(--radius);padding:1rem;margin-bottom:1rem;font-size:0.9rem}
+    .callout strong{color:var(--ink)}
+    .callout-warn{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2)}
+    .back{display:inline-flex;align-items:center;gap:0.3rem;font-size:0.88rem;color:var(--muted);margin-top:1.5rem;text-decoration:none}
+    .back:hover{color:var(--ink)}
+    table{width:100%;border-collapse:collapse;font-size:0.85rem;margin-bottom:1.5rem}
+    th{text-align:left;padding:0.5rem;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line)}
+    td{padding:0.5rem;color:var(--muted);border-bottom:1px solid var(--line)}
+    footer{border-top:1px solid var(--line);padding:1.5rem 0;margin-top:3rem;text-align:center;font-size:0.8rem;color:#737373}
+    footer a{color:var(--muted)}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="/" class="brand"><span class="brand-mark">&#x1f916;</span><span class="brand-name">AgentStore</span></a>
+      <nav><a href="/">Agents</a><a href="/docs/">Docs</a><a href="/get-started/">Get Started</a><a href="/console/">Console</a><a href="https://github.com/FreeAgentStore">GitHub</a></nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <a href="/docs/" class="back">&larr; All guides</a>
+    <h1>Build an AI Agent</h1>
+    <p>An AI agent uses a large language model (OpenAI, Claude, Gemini, Groq, etc.) via the user's own API key. The platform stores keys encrypted (AES-256-GCM) and injects them server-side through a proxy -- your agent never sees the key.</p>
+
+    <h2>How the proxy works</h2>
+    <div class="callout">
+      <strong>The inference cascade:</strong> Your agent calls the FAGS proxy. If the user has an API key configured, the proxy decrypts it and forwards the request to the provider. If no key is configured, the agent can fall back to Chrome Built-in AI (free, local) or Ollama (local LLM). The user pays their provider directly -- the platform charges nothing.
+    </div>
+
+    <ol>
+      <li>User signs in with GitHub and adds their API key at <a href="/v1/keys">/v1/keys</a></li>
+      <li>Key is encrypted with AES-256-GCM (envelope encryption) and stored in D1</li>
+      <li>Your agent sends requests to <code>/v1/proxy/{provider-host}/{path}</code></li>
+      <li>The proxy decrypts the key, injects it into the request headers, forwards to the provider</li>
+      <li>Response streams back through the proxy to the browser</li>
+    </ol>
+
+    <h3>Supported providers</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Provider</th>
+          <th>Proxy host</th>
+          <th>Example path</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>OpenAI</td>
+          <td><code>api.openai.com</code></td>
+          <td><code>/v1/proxy/api.openai.com/v1/chat/completions</code></td>
+        </tr>
+        <tr>
+          <td>Anthropic</td>
+          <td><code>api.anthropic.com</code></td>
+          <td><code>/v1/proxy/api.anthropic.com/v1/messages</code></td>
+        </tr>
+        <tr>
+          <td>Google (Gemini)</td>
+          <td><code>generativelanguage.googleapis.com</code></td>
+          <td><code>/v1/proxy/generativelanguage.googleapis.com/v1beta/models/...</code></td>
+        </tr>
+        <tr>
+          <td>Groq</td>
+          <td><code>api.groq.com</code></td>
+          <td><code>/v1/proxy/api.groq.com/openai/v1/chat/completions</code></td>
+        </tr>
+        <tr>
+          <td>OpenRouter</td>
+          <td><code>openrouter.ai</code></td>
+          <td><code>/v1/proxy/openrouter.ai/api/v1/chat/completions</code></td>
+        </tr>
+        <tr>
+          <td>Together AI</td>
+          <td><code>api.together.xyz</code></td>
+          <td><code>/v1/proxy/api.together.xyz/v1/chat/completions</code></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Step by step</h2>
+
+    <div class="step">
+      <h3><span class="step-num">1</span> Scaffold the project</h3>
+      <pre><code>npx @freeagentstore/cli init code-reviewer --template built-in-ai
+cd code-reviewer
+npm install</code></pre>
+    </div>
+
+    <div class="step">
+      <h3><span class="step-num">2</span> Write the inference layer</h3>
+      <p>Create <code>web/src/inference.ts</code> with proxy calls and fallback chain.</p>
+    </div>
+
+    <h2>Full example: Code Reviewer</h2>
+    <p>This agent takes code as input, sends it to OpenAI via the proxy for review, streams the response, and displays issues, suggestions, and a quality score.</p>
+
+    <h3>web/src/inference.ts</h3>
+    <pre><code>const PROXY_BASE = 'https://freeagentstore.online/v1/proxy';
+
+function getSession(): string | null {
+  return localStorage.getItem('fags_session');
+}
+
+// ── Check if user has a key for a provider ───────────────────────────────────
+
+export async function checkKeyStatus(): Promise&lt;Record&lt;string, boolean&gt;&gt; {
+  const session = getSession();
+  if (!session) return {};
+
+  const res = await fetch('https://freeagentstore.online/v1/keys/status', {
+    headers: { Authorization: `Bearer ${session}` },
+  });
+  if (!res.ok) return {};
+
+  const data = await res.json();
+  return data.providers ?? {};
+}
+
+// ── Redirect to key management if no key ─────────────────────────────────────
+
+export function redirectToKeySetup(provider: string): void {
+  const returnUrl = encodeURIComponent(window.location.href);
+  window.location.href = `/v1/keys?provider=${provider}&amp;return=${returnUrl}`;
+}
+
+// ── Main inference: proxy with streaming ─────────────────────────────────────
+
+export interface ReviewResult {
+  issues: Array&lt;{ severity: 'error' | 'warning' | 'info'; line?: number; message: string }&gt;;
+  suggestions: string[];
+  score: number;
+  summary: string;
+}
+
+export async function reviewCode(
+  code: string,
+  language: string,
+  onChunk?: (text: string) =&gt; void,
+): Promise&lt;string&gt; {
+  // Try proxy first, then fallbacks
+  try {
+    return await reviewViaProxy(code, language, onChunk);
+  } catch (err: any) {
+    if (err.message === 'no-key') {
+      // User has no key -- try free fallbacks
+    } else if (err.message === 'no-session') {
+      // Not logged in -- try free fallbacks
+    } else {
+      throw err;
+    }
+  }
+
+  // Fallback 1: Chrome Built-in AI
+  try {
+    return await reviewViaBuiltInAI(code, language, onChunk);
+  } catch {
+    // Not available
+  }
+
+  // Fallback 2: Ollama (local)
+  try {
+    return await reviewViaOllama(code, language, onChunk);
+  } catch {
+    // Not available
+  }
+
+  throw new Error(
+    'No AI backend available. Add your API key at /v1/keys, ' +
+    'enable Chrome Built-in AI, or run Ollama locally.'
+  );
+}
+
+// ── Proxy-based review (OpenAI) ──────────────────────────────────────────────
+
+async function reviewViaProxy(
+  code: string,
+  language: string,
+  onChunk?: (text: string) =&gt; void,
+): Promise&lt;string&gt; {
+  const session = getSession();
+  if (!session) throw new Error('no-session');
+
+  const response = await fetch(
+    `${PROXY_BASE}/api.openai.com/v1/chat/completions`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        temperature: 0.3,
+        stream: true,
+        messages: [
+          {
+            role: 'system',
+            content: `You are a senior code reviewer. Review the provided ${language} code.
+Respond with a JSON object:
+{
+  "issues": [{ "severity": "error"|"warning"|"info", "line": number|null, "message": "..." }],
+  "suggestions": ["..."],
+  "score": 0-100,
+  "summary": "one paragraph summary"
+}
+Be specific about line numbers when possible. Focus on bugs, security issues, performance, and readability.`,
+          },
+          {
+            role: 'user',
+            content: `Review this ${language} code:\n\n\`\`\`${language}\n${code}\n\`\`\``,
+          },
+        ],
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    const text = await response.text().catch(() =&gt; '');
+    if (response.status === 401 || response.status === 403) {
+      throw new Error('no-key');
+    }
+    throw new Error(`Proxy error ${response.status}: ${text}`);
+  }
+
+  // Stream the response
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error('No response body');
+
+  const decoder = new TextDecoder();
+  let fullText = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    const chunk = decoder.decode(value, { stream: true });
+
+    for (const line of chunk.split('\n')) {
+      if (!line.startsWith('data: ')) continue;
+      const data = line.slice(6).trim();
+      if (data === '[DONE]') continue;
+      try {
+        const json = JSON.parse(data);
+        const token = json.choices?.[0]?.delta?.content ?? '';
+        if (token) {
+          fullText += token;
+          onChunk?.(fullText);
+        }
+      } catch {}
+    }
+  }
+
+  return fullText;
+}
+
+// ── Chrome Built-in AI fallback ──────────────────────────────────────────────
+
+async function reviewViaBuiltInAI(
+  code: string,
+  language: string,
+  onChunk?: (text: string) =&gt; void,
+): Promise&lt;string&gt; {
+  const g = globalThis as any;
+  const LM = g.LanguageModel ?? g.ai?.languageModel;
+  if (!LM?.create) throw new Error('not-available');
+
+  const session = await LM.create({
+    systemPrompt: `You are a code reviewer. Review ${language} code for bugs, issues, and improvements. Keep it concise.`,
+  });
+
+  const result = await session.prompt(
+    `Review this code:\n\n\`\`\`${language}\n${code}\n\`\`\``
+  );
+  session.destroy?.();
+  onChunk?.(result);
+  return result;
+}
+
+// ── Ollama fallback ──────────────────────────────────────────────────────────
+
+async function reviewViaOllama(
+  code: string,
+  language: string,
+  onChunk?: (text: string) =&gt; void,
+): Promise&lt;string&gt; {
+  const response = await fetch('http://localhost:11434/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'llama3.2',
+      stream: true,
+      messages: [
+        { role: 'system', content: `You are a code reviewer. Review ${language} code for bugs and improvements.` },
+        { role: 'user', content: `Review this:\n\n\`\`\`${language}\n${code}\n\`\`\`` },
+      ],
+    }),
+  });
+
+  if (!response.ok) throw new Error('Ollama unavailable');
+
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error('No response body');
+
+  const decoder = new TextDecoder();
+  let fullText = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    const chunk = decoder.decode(value, { stream: true });
+    for (const line of chunk.split('\n')) {
+      if (!line.trim()) continue;
+      try {
+        const json = JSON.parse(line);
+        const token = json.message?.content ?? '';
+        if (token) {
+          fullText += token;
+          onChunk?.(fullText);
+        }
+      } catch {}
+    }
+  }
+
+  return fullText;
+}
+
+// ── Parse structured review from LLM response ───────────────────────────────
+
+export function parseReview(raw: string): ReviewResult {
+  // Try to extract JSON from the response
+  const jsonMatch = raw.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    try {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        issues: Array.isArray(parsed.issues) ? parsed.issues : [],
+        suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions : [],
+        score: typeof parsed.score === 'number' ? parsed.score : 50,
+        summary: typeof parsed.summary === 'string' ? parsed.summary : raw,
+      };
+    } catch {}
+  }
+
+  // Fallback: return raw text as summary
+  return { issues: [], suggestions: [], score: 50, summary: raw };
+}</code></pre>
+
+    <h3>web/src/App.tsx</h3>
+    <pre><code>import { useState, useEffect } from 'react';
+import { reviewCode, parseReview, checkKeyStatus, redirectToKeySetup, type ReviewResult } from './inference';
+
+export default function App() {
+  const [code, setCode] = useState('');
+  const [language, setLanguage] = useState('typescript');
+  const [reviewing, setReviewing] = useState(false);
+  const [stream, setStream] = useState('');
+  const [result, setResult] = useState&lt;ReviewResult | null&gt;(null);
+  const [hasKey, setHasKey] = useState&lt;boolean | null&gt;(null);
+  const [error, setError] = useState&lt;string | null&gt;(null);
+
+  // Check key status on mount
+  useEffect(() =&gt; {
+    checkKeyStatus().then(providers =&gt; {
+      setHasKey(Object.values(providers).some(Boolean));
+    });
+  }, []);
+
+  const handleReview = async () =&gt; {
+    if (!code.trim()) return;
+    setReviewing(true);
+    setStream('');
+    setResult(null);
+    setError(null);
+
+    try {
+      const raw = await reviewCode(code, language, (text) =&gt; setStream(text));
+      setResult(parseReview(raw));
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setReviewing(false);
+    }
+  };
+
+  return (
+    &lt;div style={{ maxWidth: 640, margin: '2rem auto', padding: '0 1rem' }}&gt;
+      &lt;h1&gt;Code Reviewer&lt;/h1&gt;
+      &lt;p&gt;Paste your code for an AI-powered review. Uses your API key via the platform proxy.&lt;/p&gt;
+
+      {hasKey === false &amp;&amp; (
+        &lt;div style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 12, padding: '1rem', marginBottom: '1rem' }}&gt;
+          &lt;p style={{ margin: 0, fontSize: '0.9rem' }}&gt;
+            No API key configured.{' '}
+            &lt;a href="#" onClick={(e) =&gt; { e.preventDefault(); redirectToKeySetup('openai'); }}&gt;
+              Add your OpenAI key
+            &lt;/a&gt;
+            {' '}for the best experience, or use Chrome Built-in AI / Ollama as a free fallback.
+          &lt;/p&gt;
+        &lt;/div&gt;
+      )}
+
+      &lt;select value={language} onChange={e =&gt; setLanguage(e.target.value)}
+        style={{ background: '#171717', color: '#fafafa', border: '1px solid #262626', borderRadius: 8, padding: '0.5rem', marginBottom: '0.5rem', width: '100%' }}&gt;
+        &lt;option value="typescript"&gt;TypeScript&lt;/option&gt;
+        &lt;option value="javascript"&gt;JavaScript&lt;/option&gt;
+        &lt;option value="python"&gt;Python&lt;/option&gt;
+        &lt;option value="rust"&gt;Rust&lt;/option&gt;
+        &lt;option value="go"&gt;Go&lt;/option&gt;
+      &lt;/select&gt;
+
+      &lt;textarea
+        value={code}
+        onChange={e =&gt; setCode(e.target.value)}
+        placeholder="Paste your code here..."
+        rows={12}
+        style={{ width: '100%', background: '#171717', color: '#fafafa', border: '1px solid #262626', borderRadius: 12, padding: '1rem', fontFamily: 'monospace', fontSize: '0.85rem', resize: 'vertical' }}
+      /&gt;
+
+      &lt;button onClick={handleReview} disabled={reviewing || !code.trim()}
+        style={{ marginTop: '0.5rem', padding: '0.6rem 1.5rem', background: '#7c3aed', color: 'white', border: 'none', borderRadius: 10, fontWeight: 600, cursor: 'pointer', opacity: reviewing ? 0.6 : 1 }}&gt;
+        {reviewing ? 'Reviewing...' : 'Review Code'}
+      &lt;/button&gt;
+
+      {stream &amp;&amp; !result &amp;&amp; (
+        &lt;pre style={{ marginTop: '1rem', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}&gt;{stream}&lt;/pre&gt;
+      )}
+
+      {error &amp;&amp; &lt;p style={{ color: '#ef4444', marginTop: '1rem' }}&gt;{error}&lt;/p&gt;}
+
+      {result &amp;&amp; (
+        &lt;div style={{ marginTop: '1rem' }}&gt;
+          &lt;div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}&gt;
+            &lt;div style={{ fontSize: '2rem', fontWeight: 700, color: result.score &gt;= 80 ? '#4ade80' : result.score &gt;= 50 ? '#fbbf24' : '#ef4444' }}&gt;
+              {result.score}/100
+            &lt;/div&gt;
+            &lt;p style={{ margin: 0 }}&gt;{result.summary}&lt;/p&gt;
+          &lt;/div&gt;
+
+          {result.issues.length &gt; 0 &amp;&amp; (
+            &lt;div&gt;
+              &lt;h3&gt;Issues&lt;/h3&gt;
+              {result.issues.map((issue, i) =&gt; (
+                &lt;div key={i} style={{ background: '#171717', border: '1px solid #262626', borderRadius: 8, padding: '0.75rem', marginBottom: '0.5rem' }}&gt;
+                  &lt;span style={{ color: issue.severity === 'error' ? '#ef4444' : issue.severity === 'warning' ? '#fbbf24' : '#60a5fa', fontWeight: 600, fontSize: '0.82rem' }}&gt;
+                    {issue.severity.toUpperCase()}
+                  &lt;/span&gt;
+                  {issue.line &amp;&amp; &lt;span style={{ color: '#737373', fontSize: '0.82rem' }}&gt; line {issue.line}&lt;/span&gt;}
+                  &lt;p style={{ margin: '0.25rem 0 0', fontSize: '0.88rem' }}&gt;{issue.message}&lt;/p&gt;
+                &lt;/div&gt;
+              ))}
+            &lt;/div&gt;
+          )}
+
+          {result.suggestions.length &gt; 0 &amp;&amp; (
+            &lt;div&gt;
+              &lt;h3&gt;Suggestions&lt;/h3&gt;
+              &lt;ul&gt;{result.suggestions.map((s, i) =&gt; &lt;li key={i}&gt;{s}&lt;/li&gt;)}&lt;/ul&gt;
+            &lt;/div&gt;
+          )}
+        &lt;/div&gt;
+      )}
+    &lt;/div&gt;
+  );
+}</code></pre>
+
+    <h2>Key vault SDK patterns</h2>
+    <p>The standard flow for agents that need an API key:</p>
+    <pre><code>// 1. Check if user has a key
+const status = await checkKeyStatus();
+const hasOpenAI = status['openai'] === true;
+
+// 2. If no key, prompt the user
+if (!hasOpenAI) {
+  // Option A: Redirect to key management page
+  redirectToKeySetup('openai');
+
+  // Option B: Show inline prompt with link
+  const manageUrl = '/v1/keys?provider=openai&amp;return=' + encodeURIComponent(location.href);
+}
+
+// 3. Call proxy (key is injected server-side)
+const response = await fetch('/v1/proxy/api.openai.com/v1/chat/completions', {
+  method: 'POST',
+  headers: {
+    Authorization: `Bearer ${session}`,  // FAGS session token, NOT the API key
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({ model: 'gpt-4o-mini', messages: [...] }),
+});
+
+// 4. Handle "no key" error gracefully
+if (response.status === 403) {
+  const data = await response.json();
+  if (data.error === 'no_key') {
+    // Redirect to: data.manage_url
+  }
+}</code></pre>
+
+    <div class="callout callout-warn">
+      <strong>Never ask users for their API key directly.</strong> The platform handles key storage and injection. Your agent sends requests to the proxy with the FAGS session token. The proxy decrypts the user's key and injects it. The key never touches browser JavaScript.
+    </div>
+
+    <h2>Inference cascade</h2>
+    <p>The recommended pattern is to try the proxy first, then fall back to free alternatives:</p>
+    <ol>
+      <li><strong>Proxy</strong> (best quality) -- user's own API key, full model selection</li>
+      <li><strong>Chrome Built-in AI</strong> (free, local) -- available in Chrome 131+, limited capability</li>
+      <li><strong>Ollama</strong> (free, local) -- user must install and run Ollama separately</li>
+    </ol>
+    <p>This pattern is implemented in the Code Reviewer example above. The <code>reviewCode()</code> function tries each backend in order and returns the first successful result.</p>
+
+    <h2>Using LangChain.js</h2>
+    <p>LangChain.js works in the browser. Point it at the FAGS proxy as the base URL:</p>
+    <pre><code>import { ChatOpenAI } from '@langchain/openai';
+import { HumanMessage, SystemMessage } from '@langchain/core/messages';
+import { StringOutputParser } from '@langchain/core/output_parsers';
+
+const session = localStorage.getItem('fags_session');
+
+const model = new ChatOpenAI({
+  configuration: {
+    baseURL: 'https://freeagentstore.online/v1/proxy/api.openai.com/v1',
+    defaultHeaders: {
+      Authorization: `Bearer ${session}`,
+    },
+  },
+  modelName: 'gpt-4o-mini',
+  temperature: 0.3,
+});
+
+// Simple chain
+const parser = new StringOutputParser();
+const chain = model.pipe(parser);
+
+const result = await chain.invoke([
+  new SystemMessage('You are a helpful assistant.'),
+  new HumanMessage('Explain WebGPU in one paragraph.'),
+]);
+console.log(result);</code></pre>
+
+    <h3>LangChain.js with RAG</h3>
+    <p>Combine the <a href="/agents/smart-search/">smart-search</a> agent (MiniLM embeddings) with LangChain for retrieval-augmented generation:</p>
+    <pre><code>import { ChatOpenAI } from '@langchain/openai';
+import { PromptTemplate } from '@langchain/core/prompts';
+import { StringOutputParser } from '@langchain/core/output_parsers';
+
+// Use the smart-search agent for embeddings + retrieval
+import { createIndex, search } from '@freeagentstore/smart-search';
+
+// Build an index from your documents
+const index = await createIndex([
+  'WebGPU is a modern graphics API for the web.',
+  'WASM provides near-native performance in browsers.',
+  'Transformers.js runs HuggingFace models in the browser.',
+  // ... more documents
+]);
+
+// Retrieve relevant context
+const query = 'How do I run ML models in the browser?';
+const relevant = await search(index, query, { topK: 3 });
+const context = relevant.map(r =&gt; r.text).join('\n\n');
+
+// Generate answer with context
+const session = localStorage.getItem('fags_session');
+const model = new ChatOpenAI({
+  configuration: {
+    baseURL: 'https://freeagentstore.online/v1/proxy/api.openai.com/v1',
+    defaultHeaders: { Authorization: `Bearer ${session}` },
+  },
+  modelName: 'gpt-4o-mini',
+});
+
+const prompt = PromptTemplate.fromTemplate(
+  `Answer based on this context:\n\n{context}\n\nQuestion: {question}`
+);
+
+const chain = prompt.pipe(model).pipe(new StringOutputParser());
+const answer = await chain.invoke({ context, question: query });</code></pre>
+
+    <h2>Using the Vercel AI SDK</h2>
+    <p>The <code>ai</code> package provides streaming, tool calling, and multi-provider support:</p>
+    <pre><code>import { createOpenAI } from '@ai-sdk/openai';
+import { streamText } from 'ai';
+
+const session = localStorage.getItem('fags_session');
+
+const openai = createOpenAI({
+  baseURL: 'https://freeagentstore.online/v1/proxy/api.openai.com/v1',
+  apiKey: session ?? '',  // session token acts as auth
+});
+
+const result = streamText({
+  model: openai('gpt-4o-mini'),
+  system: 'You are a code reviewer.',
+  prompt: `Review this code:\n\n${code}`,
+});
+
+for await (const chunk of result.textStream) {
+  process.stdout.write(chunk);
+}</code></pre>
+
+    <h2>Using Chrome Built-in AI</h2>
+    <p>Chrome 131+ includes a built-in language model. Zero cost, zero download, fully local:</p>
+    <pre><code>// Check availability
+const g = globalThis as any;
+const LM = g.LanguageModel ?? g.ai?.languageModel;
+
+if (LM?.create) {
+  // Create a session with a system prompt
+  const session = await LM.create({
+    systemPrompt: 'You are a helpful assistant.',
+  });
+
+  // Simple prompt
+  const result = await session.prompt('What is WebGPU?');
+  console.log(result);
+
+  // Streaming
+  const stream = session.promptStreaming('Explain WASM.');
+  for await (const chunk of stream) {
+    console.log(chunk);  // cumulative text
+  }
+
+  // Clean up
+  session.destroy();
+} else {
+  console.log('Chrome Built-in AI not available');
+}</code></pre>
+    <p>Limitations: smaller model, no vision, no tool calling, Chrome-only. Good as a free fallback for simple tasks.</p>
+
+    <h2>Conversation memory</h2>
+    <p>For chat-style agents, store conversation history in IndexedDB:</p>
+    <pre><code>// Simple conversation store using IndexedDB
+const DB_NAME = 'code-reviewer-chats';
+const STORE = 'messages';
+
+async function openDB(): Promise&lt;IDBDatabase&gt; {
+  return new Promise((resolve, reject) =&gt; {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = () =&gt; {
+      req.result.createObjectStore(STORE, { keyPath: 'id', autoIncrement: true });
+    };
+    req.onsuccess = () =&gt; resolve(req.result);
+    req.onerror = () =&gt; reject(req.error);
+  });
+}
+
+export async function saveMessage(role: string, content: string): Promise&lt;void&gt; {
+  const db = await openDB();
+  const tx = db.transaction(STORE, 'readwrite');
+  tx.objectStore(STORE).add({ role, content, timestamp: Date.now() });
+}
+
+export async function getHistory(): Promise&lt;Array&lt;{ role: string; content: string }&gt;&gt; {
+  const db = await openDB();
+  const tx = db.transaction(STORE, 'readonly');
+  return new Promise((resolve, reject) =&gt; {
+    const req = tx.objectStore(STORE).getAll();
+    req.onsuccess = () =&gt; resolve(req.result);
+    req.onerror = () =&gt; reject(req.error);
+  });
+}</code></pre>
+
+    <div class="step">
+      <h3><span class="step-num">3</span> Publish</h3>
+      <pre><code>npx @freeagentstore/cli check
+npx @freeagentstore/cli publish</code></pre>
+    </div>
+
+    <a href="/docs/" class="back">&larr; All guides</a>
+  </main>
+
+  <footer><div class="container"><a href="/">FreeAgentStore</a> &middot; <a href="/docs/">Docs</a> &middot; <a href="https://github.com/FreeAgentStore">GitHub</a></div></footer>
+</body>
+</html>

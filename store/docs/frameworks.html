@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supported AI Frameworks — FreeAgentStore</title>
+  <meta name="description" content="All AI frameworks you can use to build agents on FreeAgentStore — Transformers.js, TensorFlow.js, ONNX Runtime, LangChain.js, Vercel AI SDK, Chrome Built-in AI, Ollama.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta name="theme-color" content="#7c3aed">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{--font-body:'Manrope',system-ui,sans-serif;--font-display:'Fraunces',Georgia,serif;--paper:#0a0a0a;--panel:#171717;--ink:#fafafa;--muted:#a3a3a3;--accent:#7c3aed;--line:#262626;--radius:0.75rem}
+    body{font-family:var(--font-body);background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;min-height:100vh}
+    .container{max-width:720px;margin:0 auto;padding:0 1.5rem}
+    a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+    header{border-bottom:1px solid var(--line);padding:0.75rem 0}
+    header .container{display:flex;align-items:center;gap:1.25rem}
+    .brand{display:flex;align-items:center;gap:0.6rem;text-decoration:none;color:var(--ink)}
+    .brand-mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#a855f7);display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+    .brand-name{font-family:var(--font-display);font-size:1.15rem;font-weight:700}
+    nav{display:flex;gap:1.25rem;font-size:0.88rem;font-weight:600;margin-left:auto}
+    nav a{color:var(--muted);text-decoration:none}nav a:hover{color:var(--ink)}
+    h1{font-family:var(--font-display);font-size:2rem;font-weight:700;margin:2rem 0 1rem}
+    h2{font-family:var(--font-display);font-size:1.3rem;font-weight:700;margin:2rem 0 0.75rem}
+    h3{font-size:1rem;font-weight:600;margin:1.5rem 0 0.5rem}
+    p,li{color:var(--muted);line-height:1.7;font-size:0.95rem}
+    p{margin-bottom:1rem}
+    ol,ul{margin-bottom:1rem;padding-left:1.5rem}
+    li{margin-bottom:0.5rem}
+    pre{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:1rem;overflow-x:auto;font-size:0.82rem;margin-bottom:1rem;color:var(--ink);line-height:1.6}
+    code{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:0.88em;background:var(--panel);padding:0.15rem 0.4rem;border-radius:4px}
+    pre code{background:none;padding:0;font-size:inherit}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem}
+    .card h3{margin-top:0;margin-bottom:0.4rem}
+    .card p{margin-bottom:0.5rem}
+    .card p:last-child{margin-bottom:0}
+    .tag{display:inline-block;font-size:0.72rem;padding:0.1rem 0.5rem;border-radius:999px;font-weight:600}
+    .tag-fags{background:rgba(16,185,129,0.15);color:#34d399}
+    .tag-pags{background:rgba(59,130,246,0.15);color:#60a5fa}
+    .tag-both{background:rgba(124,58,237,0.15);color:#a78bfa}
+    .callout{background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:var(--radius);padding:1rem;margin-bottom:1rem;font-size:0.9rem}
+    .callout strong{color:var(--ink)}
+    .back{display:inline-flex;align-items:center;gap:0.3rem;font-size:0.88rem;color:var(--muted);margin-top:1.5rem;text-decoration:none}
+    .back:hover{color:var(--ink)}
+    table{width:100%;border-collapse:collapse;font-size:0.82rem;margin-bottom:1.5rem}
+    th{text-align:left;padding:0.5rem;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line)}
+    td{padding:0.5rem;color:var(--muted);border-bottom:1px solid var(--line)}
+    footer{border-top:1px solid var(--line);padding:1.5rem 0;margin-top:3rem;text-align:center;font-size:0.8rem;color:#737373}
+    footer a{color:var(--muted)}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="/" class="brand"><span class="brand-mark">&#x1f916;</span><span class="brand-name">AgentStore</span></a>
+      <nav><a href="/">Agents</a><a href="/docs/">Docs</a><a href="/get-started/">Get Started</a><a href="/console/">Console</a><a href="https://github.com/FreeAgentStore">GitHub</a></nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <a href="/docs/" class="back">&larr; All guides</a>
+    <h1>Supported AI Frameworks</h1>
+    <p>Every framework that works in FAGS agents. All run in the browser. Some need the platform proxy (for API key injection), some run entirely on-device.</p>
+
+    <h2>At a glance</h2>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>Framework</th>
+            <th>Package</th>
+            <th>Use case</th>
+            <th>Browser?</th>
+            <th>Store</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Transformers.js</strong></td>
+            <td><code>@huggingface/transformers</code></td>
+            <td>HuggingFace models (classification, NLP, vision, audio)</td>
+            <td>Yes</td>
+            <td><span class="tag tag-fags">FAGS</span></td>
+          </tr>
+          <tr>
+            <td><strong>TensorFlow.js</strong></td>
+            <td><code>@tensorflow/tfjs</code></td>
+            <td>TF models (pose, face, audio)</td>
+            <td>Yes</td>
+            <td><span class="tag tag-fags">FAGS</span></td>
+          </tr>
+          <tr>
+            <td><strong>ONNX Runtime</strong></td>
+            <td><code>onnxruntime-web</code></td>
+            <td>Custom ONNX models</td>
+            <td>Yes</td>
+            <td><span class="tag tag-fags">FAGS</span></td>
+          </tr>
+          <tr>
+            <td><strong>LangChain.js</strong></td>
+            <td><code>langchain</code></td>
+            <td>Chains, RAG, agents, memory</td>
+            <td>Yes (with proxy)</td>
+            <td><span class="tag tag-fags">FAGS</span></td>
+          </tr>
+          <tr>
+            <td><strong>Vercel AI SDK</strong></td>
+            <td><code>ai</code></td>
+            <td>Streaming, tool calling, multi-provider</td>
+            <td>Yes (with proxy)</td>
+            <td><span class="tag tag-fags">FAGS</span></td>
+          </tr>
+          <tr>
+            <td><strong>Chrome Built-in AI</strong></td>
+            <td>Browser API</td>
+            <td>Simple generation, summarization</td>
+            <td>Yes (Chrome only)</td>
+            <td><span class="tag tag-fags">FAGS</span></td>
+          </tr>
+          <tr>
+            <td><strong>Ollama</strong></td>
+            <td>localhost:11434</td>
+            <td>Local LLM (user installs)</td>
+            <td>Yes (local server)</td>
+            <td><span class="tag tag-fags">FAGS</span></td>
+          </tr>
+          <tr>
+            <td><strong>Workers AI</strong></td>
+            <td>CF binding</td>
+            <td>Server-side models</td>
+            <td>No</td>
+            <td><span class="tag tag-pags">PAGS</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <strong>FAGS vs PAGS:</strong> FAGS (FreeAgentStore) runs everything in the browser -- zero server cost. PAGS (ProAgentStore) runs server-side on Cloudflare Workers AI with D1, R2, Durable Objects. If your agent needs server-side inference, it belongs on PAGS.
+    </div>
+
+    <!-- ── Transformers.js ────────────────────────────────────────────────── -->
+
+    <h2>Transformers.js</h2>
+    <div class="card">
+      <h3>The primary framework for FAGS model agents</h3>
+      <p>Run HuggingFace models in the browser with WebGPU acceleration and WASM fallback. 1000+ models available. Automatic caching via Cache Storage.</p>
+      <p><code>npm install @huggingface/transformers</code></p>
+    </div>
+
+    <h3>Image classification</h3>
+    <pre><code>import { pipeline } from '@huggingface/transformers';
+
+const classifier = await pipeline('image-classification', 'Xenova/mobilevit-small');
+
+// From an &lt;img&gt; element
+const results = await classifier(imageElement, { topk: 3 });
+// [{ label: 'golden retriever', score: 0.92 }, ...]
+
+// From a URL
+const results2 = await classifier('https://example.com/photo.jpg');</code></pre>
+
+    <h3>Text classification (sentiment)</h3>
+    <pre><code>import { pipeline } from '@huggingface/transformers';
+
+const sentiment = await pipeline(
+  'sentiment-analysis',
+  'Xenova/distilbert-base-uncased-finetuned-sst-2-english'
+);
+
+const result = await sentiment('This product is amazing!');
+// [{ label: 'POSITIVE', score: 0.9998 }]</code></pre>
+
+    <h3>Text embeddings (for semantic search)</h3>
+    <pre><code>import { pipeline } from '@huggingface/transformers';
+
+const embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+
+const output = await embedder('How do I use WebGPU?', {
+  pooling: 'mean',
+  normalize: true,
+});
+const embedding = Array.from(output.data);
+// 384-dimensional vector -- use for cosine similarity search</code></pre>
+
+    <h3>Speech to text</h3>
+    <pre><code>import { pipeline } from '@huggingface/transformers';
+
+const transcriber = await pipeline('automatic-speech-recognition', 'Xenova/whisper-small');
+
+// From an audio file (Blob, ArrayBuffer, or URL)
+const result = await transcriber(audioBlob);
+// { text: 'Hello, this is a test.' }</code></pre>
+
+    <h3>Object detection</h3>
+    <pre><code>import { pipeline } from '@huggingface/transformers';
+
+const detector = await pipeline('object-detection', 'Xenova/detr-resnet-50');
+
+const results = await detector(imageElement);
+// [{ label: 'cat', score: 0.98, box: { xmin: 10, ymin: 20, xmax: 200, ymax: 300 } }, ...]</code></pre>
+
+    <h3>Zero-shot classification</h3>
+    <pre><code>import { pipeline } from '@huggingface/transformers';
+
+const classifier = await pipeline(
+  'zero-shot-classification',
+  'Xenova/mobilebert-uncased-mnli'
+);
+
+const result = await classifier(
+  'I need to book a flight to New York next week.',
+  ['travel', 'finance', 'food', 'technology']
+);
+// { labels: ['travel', ...], scores: [0.95, ...] }</code></pre>
+
+    <!-- ── TensorFlow.js ──────────────────────────────────────────────────── -->
+
+    <h2>TensorFlow.js</h2>
+    <div class="card">
+      <h3>For TF-specific models and task libraries</h3>
+      <p>Use when a model is only available in TensorFlow format, or when using TF task-specific libraries (pose detection, face mesh, hand tracking, audio classification).</p>
+      <p><code>npm install @tensorflow/tfjs</code></p>
+    </div>
+
+    <h3>Pose estimation (MoveNet)</h3>
+    <pre><code>import * as tf from '@tensorflow/tfjs';
+import '@tensorflow/tfjs-backend-webgl';
+import * as poseDetection from '@tensorflow-models/pose-detection';
+
+await tf.ready();
+
+const detector = await poseDetection.createDetector(
+  poseDetection.SupportedModels.MoveNet,
+  { modelType: poseDetection.movenet.modelType.SINGLEPOSE_THUNDER }
+);
+
+// From video element
+const poses = await detector.estimatePoses(videoElement);
+for (const pose of poses) {
+  for (const kp of pose.keypoints) {
+    if (kp.score &gt; 0.3) {
+      console.log(`${kp.name}: (${kp.x}, ${kp.y})`);
+    }
+  }
+}</code></pre>
+
+    <h3>Face detection (BlazeFace)</h3>
+    <pre><code>import '@tensorflow/tfjs-backend-webgl';
+import * as blazeface from '@tensorflow-models/blazeface';
+
+const model = await blazeface.load();
+const predictions = await model.estimateFaces(videoElement, false);
+
+for (const face of predictions) {
+  const [x1, y1] = face.topLeft as [number, number];
+  const [x2, y2] = face.bottomRight as [number, number];
+  console.log(`Face at (${x1}, ${y1}) to (${x2}, ${y2}), confidence: ${face.probability}`);
+}</code></pre>
+
+    <!-- ── ONNX Runtime ───────────────────────────────────────────────────── -->
+
+    <h2>ONNX Runtime Web</h2>
+    <div class="card">
+      <h3>For custom or fine-tuned ONNX models</h3>
+      <p>Run any ONNX model in the browser. WebGPU backend for GPU acceleration, WASM fallback for universal support. Ideal for models you've trained and exported to ONNX format.</p>
+      <p><code>npm install onnxruntime-web</code></p>
+    </div>
+
+    <pre><code>import * as ort from 'onnxruntime-web';
+
+// Load model with WebGPU, fallback to WASM
+const session = await ort.InferenceSession.create('/models/my-model.onnx', {
+  executionProviders: ['webgpu', 'wasm'],
+});
+
+// Prepare input (example: image classification, batch=1, channels=3, 224x224)
+const inputData = new Float32Array(1 * 3 * 224 * 224);
+// ... fill with preprocessed image data ...
+const inputTensor = new ort.Tensor('float32', inputData, [1, 3, 224, 224]);
+
+// Run inference
+const results = await session.run({ input: inputTensor });
+const output = results['output'];
+const predictions = Array.from(output.data as Float32Array);
+
+// Find top prediction
+const maxIdx = predictions.indexOf(Math.max(...predictions));
+console.log(`Predicted class: ${maxIdx}, confidence: ${predictions[maxIdx]}`);</code></pre>
+
+    <!-- ── LangChain.js ───────────────────────────────────────────────────── -->
+
+    <h2>LangChain.js</h2>
+    <div class="card">
+      <h3>Chains, RAG, tools, and memory -- in the browser</h3>
+      <p>Build complex AI workflows with prompt chains, retrieval-augmented generation, tool calling, and conversation memory. Works with the FAGS proxy for API key injection.</p>
+      <p><code>npm install langchain @langchain/openai @langchain/core</code></p>
+    </div>
+
+    <h3>Simple chain</h3>
+    <pre><code>import { ChatOpenAI } from '@langchain/openai';
+import { ChatPromptTemplate } from '@langchain/core/prompts';
+import { StringOutputParser } from '@langchain/core/output_parsers';
+
+const session = localStorage.getItem('fags_session');
+
+const model = new ChatOpenAI({
+  configuration: {
+    baseURL: 'https://freeagentstore.online/v1/proxy/api.openai.com/v1',
+    defaultHeaders: { Authorization: `Bearer ${session}` },
+  },
+  modelName: 'gpt-4o-mini',
+});
+
+const prompt = ChatPromptTemplate.fromMessages([
+  ['system', 'You are an expert at {topic}. Be concise.'],
+  ['human', '{question}'],
+]);
+
+const chain = prompt.pipe(model).pipe(new StringOutputParser());
+const result = await chain.invoke({
+  topic: 'web development',
+  question: 'What is the difference between WebGPU and WebGL?',
+});</code></pre>
+
+    <h3>Structured output</h3>
+    <pre><code>import { ChatOpenAI } from '@langchain/openai';
+import { z } from 'zod';
+
+const session = localStorage.getItem('fags_session');
+
+const model = new ChatOpenAI({
+  configuration: {
+    baseURL: 'https://freeagentstore.online/v1/proxy/api.openai.com/v1',
+    defaultHeaders: { Authorization: `Bearer ${session}` },
+  },
+  modelName: 'gpt-4o-mini',
+});
+
+const ReviewSchema = z.object({
+  score: z.number().min(0).max(100).describe('Code quality score'),
+  issues: z.array(z.object({
+    severity: z.enum(['error', 'warning', 'info']),
+    message: z.string(),
+  })),
+  summary: z.string(),
+});
+
+const structured = model.withStructuredOutput(ReviewSchema);
+const review = await structured.invoke('Review this: function add(a,b){return a+b}');
+// { score: 75, issues: [...], summary: '...' }</code></pre>
+
+    <h3>Tool calling</h3>
+    <pre><code>import { ChatOpenAI } from '@langchain/openai';
+import { tool } from '@langchain/core/tools';
+import { z } from 'zod';
+
+const session = localStorage.getItem('fags_session');
+
+const weatherTool = tool(
+  async ({ city }) =&gt; {
+    // In a real agent, call a weather API here
+    return `Weather in ${city}: 22C, sunny`;
+  },
+  {
+    name: 'get_weather',
+    description: 'Get current weather for a city',
+    schema: z.object({ city: z.string().describe('City name') }),
+  }
+);
+
+const model = new ChatOpenAI({
+  configuration: {
+    baseURL: 'https://freeagentstore.online/v1/proxy/api.openai.com/v1',
+    defaultHeaders: { Authorization: `Bearer ${session}` },
+  },
+  modelName: 'gpt-4o-mini',
+}).bindTools([weatherTool]);
+
+const result = await model.invoke('What is the weather in Tokyo?');
+// Model may return a tool call -- handle it in your agent loop</code></pre>
+
+    <!-- ── Vercel AI SDK ──────────────────────────────────────────────────── -->
+
+    <h2>Vercel AI SDK</h2>
+    <div class="card">
+      <h3>Streaming-first, multi-provider AI SDK</h3>
+      <p>Unified API for OpenAI, Anthropic, Google, and more. Streaming out of the box. Works with the FAGS proxy.</p>
+      <p><code>npm install ai @ai-sdk/openai</code></p>
+    </div>
+
+    <h3>Streaming text</h3>
+    <pre><code>import { createOpenAI } from '@ai-sdk/openai';
+import { streamText } from 'ai';
+
+const session = localStorage.getItem('fags_session');
+
+const openai = createOpenAI({
+  baseURL: 'https://freeagentstore.online/v1/proxy/api.openai.com/v1',
+  apiKey: session ?? '',
+});
+
+const result = streamText({
+  model: openai('gpt-4o-mini'),
+  system: 'You are a helpful assistant.',
+  prompt: 'Explain how WebGPU works in 3 sentences.',
+});
+
+// Stream chunks to the UI
+for await (const chunk of result.textStream) {
+  document.getElementById('output')!.textContent += chunk;
+}</code></pre>
+
+    <h3>Generate structured data</h3>
+    <pre><code>import { createOpenAI } from '@ai-sdk/openai';
+import { generateObject } from 'ai';
+import { z } from 'zod';
+
+const session = localStorage.getItem('fags_session');
+
+const openai = createOpenAI({
+  baseURL: 'https://freeagentstore.online/v1/proxy/api.openai.com/v1',
+  apiKey: session ?? '',
+});
+
+const { object } = await generateObject({
+  model: openai('gpt-4o-mini'),
+  schema: z.object({
+    name: z.string(),
+    ingredients: z.array(z.string()),
+    steps: z.array(z.string()),
+  }),
+  prompt: 'Generate a recipe for chocolate chip cookies.',
+});
+// { name: 'Chocolate Chip Cookies', ingredients: [...], steps: [...] }</code></pre>
+
+    <!-- ── Chrome Built-in AI ─────────────────────────────────────────────── -->
+
+    <h2>Chrome Built-in AI</h2>
+    <div class="card">
+      <h3>Zero-cost local AI in Chrome</h3>
+      <p>Chrome 131+ includes a built-in language model (Gemini Nano). No download, no API key, runs entirely on-device. Limited capability but perfect as a free fallback.</p>
+      <p>No npm install needed -- it's a browser API.</p>
+    </div>
+
+    <h3>Check availability and generate</h3>
+    <pre><code>async function generateWithBuiltInAI(prompt: string): Promise&lt;string | null&gt; {
+  const g = globalThis as any;
+  const LM = g.LanguageModel ?? g.ai?.languageModel;
+
+  if (!LM?.create) {
+    console.log('Chrome Built-in AI not available');
+    return null;
+  }
+
+  const session = await LM.create({
+    systemPrompt: 'You are a helpful assistant. Be concise.',
+  });
+
+  try {
+    return await session.prompt(prompt);
+  } finally {
+    session.destroy?.();
+  }
+}
+
+// Use it
+const answer = await generateWithBuiltInAI('Summarize the benefits of WebGPU.');
+if (answer) {
+  console.log(answer);
+} else {
+  // Fall back to another method
+}</code></pre>
+
+    <h3>Streaming response</h3>
+    <pre><code>const g = globalThis as any;
+const LM = g.LanguageModel ?? g.ai?.languageModel;
+
+if (LM?.create) {
+  const session = await LM.create({ systemPrompt: 'Be helpful and concise.' });
+
+  const stream = session.promptStreaming('List 5 uses for WebAssembly.');
+  for await (const text of stream) {
+    // `text` is the cumulative response so far
+    document.getElementById('output')!.textContent = text;
+  }
+
+  session.destroy?.();
+}</code></pre>
+
+    <p><strong>Limitations:</strong> Small model (Gemini Nano), no vision, no tool calling, no structured output, Chrome-only. Best used as a free fallback when the user has no API key configured.</p>
+
+    <!-- ── Ollama ─────────────────────────────────────────────────────────── -->
+
+    <h2>Ollama</h2>
+    <div class="card">
+      <h3>Local LLM server</h3>
+      <p>Users install Ollama on their machine and run models locally. Your agent calls <code>localhost:11434</code>. Completely free, fully private, but requires user setup.</p>
+      <p>User installs from <a href="https://ollama.com">ollama.com</a>, then runs <code>ollama run llama3.2</code></p>
+    </div>
+
+    <h3>Chat completion with streaming</h3>
+    <pre><code>async function chatWithOllama(
+  messages: Array&lt;{ role: string; content: string }&gt;,
+  onChunk?: (text: string) =&gt; void,
+): Promise&lt;string&gt; {
+  const response = await fetch('http://localhost:11434/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'llama3.2',
+      messages,
+      stream: true,
+    }),
+  });
+
+  if (!response.ok) throw new Error('Ollama not running or model not installed');
+
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error('No response body');
+
+  const decoder = new TextDecoder();
+  let fullText = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    const chunk = decoder.decode(value, { stream: true });
+
+    for (const line of chunk.split('\n')) {
+      if (!line.trim()) continue;
+      try {
+        const json = JSON.parse(line);
+        const token = json.message?.content ?? '';
+        if (token) {
+          fullText += token;
+          onChunk?.(fullText);
+        }
+      } catch {}
+    }
+  }
+
+  return fullText;
+}
+
+// Check if Ollama is available
+async function isOllamaAvailable(): Promise&lt;boolean&gt; {
+  try {
+    const res = await fetch('http://localhost:11434/api/tags');
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+// List installed models
+async function listModels(): Promise&lt;string[]&gt; {
+  const res = await fetch('http://localhost:11434/api/tags');
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.models?.map((m: any) =&gt; m.name) ?? [];
+}</code></pre>
+
+    <!-- ── Workers AI ─────────────────────────────────────────────────────── -->
+
+    <h2>Workers AI (PAGS only)</h2>
+    <div class="card">
+      <h3>Server-side inference on Cloudflare</h3>
+      <p>Workers AI runs models on Cloudflare's GPU fleet. Not available for FAGS (browser-only agents). If your agent needs server-side AI, build it on <a href="https://proagentstore.online">ProAgentStore</a> (PAGS) instead.</p>
+      <p>Access via Cloudflare Worker binding -- no npm install needed.</p>
+    </div>
+
+    <pre><code>// This runs in a Cloudflare Worker (PAGS), NOT in the browser
+export default {
+  async fetch(request: Request, env: Env) {
+    const result = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+      messages: [
+        { role: 'system', content: 'You are a helpful assistant.' },
+        { role: 'user', content: 'Explain quantum computing briefly.' },
+      ],
+    });
+
+    return Response.json(result);
+  },
+};</code></pre>
+
+    <h2>Choosing the right framework</h2>
+    <ul>
+      <li><strong>Pure classification/scoring?</strong> Write a <a href="/docs/build-heuristic.html">heuristic</a> -- no framework needed.</li>
+      <li><strong>Image/audio/text ML?</strong> Use <strong>Transformers.js</strong>. It has the largest model library and best browser support.</li>
+      <li><strong>Pose/face/hand tracking?</strong> Use <strong>TensorFlow.js</strong> task libraries (MoveNet, BlazeFace, MediaPipe).</li>
+      <li><strong>Custom trained model?</strong> Export to ONNX and use <strong>ONNX Runtime Web</strong>.</li>
+      <li><strong>Need LLM reasoning?</strong> Use <strong>direct proxy calls</strong> for simplicity, or <strong>LangChain.js</strong> for chains/RAG/tools.</li>
+      <li><strong>Streaming UI?</strong> <strong>Vercel AI SDK</strong> has the cleanest streaming API.</li>
+      <li><strong>Free fallback?</strong> <strong>Chrome Built-in AI</strong> for simple tasks, <strong>Ollama</strong> for full models.</li>
+      <li><strong>Server-side AI?</strong> Build on <strong>PAGS</strong> with Workers AI.</li>
+    </ul>
+
+    <a href="/docs/" class="back">&larr; All guides</a>
+  </main>
+
+  <footer><div class="container"><a href="/">FreeAgentStore</a> &middot; <a href="/docs/">Docs</a> &middot; <a href="https://github.com/FreeAgentStore">GitHub</a></div></footer>
+</body>
+</html>
