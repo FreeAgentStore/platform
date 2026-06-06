@@ -1,4 +1,4 @@
-import { execFileSync, execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -97,10 +97,10 @@ export async function publish(opts: { name?: string; category?: string }) {
   // Register D1 route
   process.stdout.write('\nRegistering route...\n');
   try {
-    execSync(
-      `npx wrangler d1 execute fags --remote --command "INSERT OR IGNORE INTO routes (slug, zone, r2_prefix, store, hosted_on, created_at, updated_at) VALUES ('${agentId}', '${DOMAIN}', 'agents/${agentId}', 'agents', 'r2', strftime('%s','now'), strftime('%s','now'))"`,
-      { stdio: 'pipe' },
-    );
+    const sql = `INSERT OR IGNORE INTO routes (slug, zone, r2_prefix, store, hosted_on, created_at, updated_at) VALUES ('${agentId}', '${DOMAIN}', 'agents/${agentId}', 'agents', 'r2', strftime('%s','now'), strftime('%s','now'))`;
+    execFileSync('npx', ['wrangler', 'd1', 'execute', 'fags', '--remote', '--command', sql], {
+      stdio: 'pipe',
+    });
     process.stdout.write(`  Route registered: /a/${agentId}/\n`);
   } catch {
     process.stdout.write(

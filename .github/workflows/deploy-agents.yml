@@ -6,6 +6,9 @@ on:
       - 'agents/**'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: deploy-agents
   cancel-in-progress: true

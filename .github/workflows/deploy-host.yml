@@ -5,6 +5,9 @@ on:
     paths:
       - 'workers/host/**'
 
+permissions:
+  contents: read
+
 concurrency:
   group: deploy-host
   cancel-in-progress: true

@@ -6,6 +6,9 @@ on:
       - 'store/**'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: deploy-store
   cancel-in-progress: true
