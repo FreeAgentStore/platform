@@ -17,6 +17,7 @@
  */
 
 import { handleApiRoute } from './api';
+import { injectMirror } from './mirror-inject';
 
 export interface Env {
   DB: D1Database;
@@ -111,13 +112,19 @@ export default {
       if (!r2Key.split('/').pop()?.includes('.')) r2Key += '/index.html';
 
       const object = await env.AGENTS.get(r2Key);
-      if (object) return respond(request, object, contentType(r2Key));
+      if (object) {
+        const mime = contentType(r2Key);
+        if (mime === 'text/html; charset=utf-8') {
+          return respondWithMirror(request, object, slug);
+        }
+        return respond(request, object, mime);
+      }
 
       // SPA fallback
       const hasExt = subpath.split('/').pop()?.includes('.') ?? false;
       if (!hasExt) {
         const fallback = await env.AGENTS.get(`${route.r2_prefix}/index.html`);
-        if (fallback) return respond(request, fallback, 'text/html; charset=utf-8');
+        if (fallback) return respondWithMirror(request, fallback, slug);
       }
       return new Response('Not Found', { status: 404 });
     }
@@ -151,6 +158,28 @@ export default {
     return new Response('Store not deployed', { status: 503 });
   },
 };
+
+async function respondWithMirror(
+  request: Request,
+  object: R2ObjectBody,
+  slug: string,
+): Promise<Response> {
+  // 304 Not Modified — no body to inject into
+  const ifNoneMatch = request.headers.get('If-None-Match');
+  if (ifNoneMatch && object.httpEtag && etagsMatch(ifNoneMatch, object.httpEtag)) {
+    return new Response(null, { status: 304, headers: securityHeaders() });
+  }
+
+  const html = await object.text();
+  const injected = injectMirror(html, slug);
+
+  const headers = securityHeaders();
+  headers.set('Content-Type', 'text/html; charset=utf-8');
+  headers.set('ETag', object.httpEtag);
+  headers.set('Cache-Control', 'public, max-age=60, must-revalidate');
+
+  return new Response(injected, { headers });
+}
 
 function respond(request: Request, object: R2ObjectBody, mime: string): Response {
   // 304 Not Modified

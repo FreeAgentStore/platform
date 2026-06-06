@@ -53,20 +53,6 @@ const CHARACTERS: Character[] = [
 
 type Status = 'checking' | 'ready' | 'unavailable' | 'thinking';
 
-// ── Mirror helpers (inline, no SDK import needed) ──
-function generateRoomId() {
-  const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
-  return Array.from(crypto.getRandomValues(new Uint8Array(8))).map(b => chars[b % chars.length]).join('');
-}
-async function mirrorSend(roomId: string, type: string, data: unknown) {
-  try {
-    await fetch(`/v1/mirror/${roomId}`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type, data, from: 'desktop' }),
-    });
-  } catch {}
-}
-
 export default function App() {
   const [status, setStatus] = useState<Status>('checking');
   const [character, setCharacter] = useState(CHARACTERS[0]);
@@ -75,8 +61,6 @@ export default function App() {
   const [input, setInput] = useState('');
   const [showSetup, setShowSetup] = useState(true);
   const [responseTime, setResponseTime] = useState<number | null>(null);
-  const [mirrorRoom, setMirrorRoom] = useState<string | null>(null);
-  const [showMirror, setShowMirror] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const sessionRef = useRef<any>(null);
@@ -145,10 +129,6 @@ export default function App() {
       const assistantMsg = { role: 'assistant' as const, text: clean || result.trim(), ts: Date.now() };
       setMessages(prev => [...prev, assistantMsg]);
 
-      // Mirror: send both user message + response to mobile
-      if (mirrorRoom) {
-        mirrorSend(mirrorRoom, 'result', { user: text, assistant: assistantMsg.text, character: character.name, responseTime: elapsed });
-      }
     } catch (err: any) {
       setMessages(prev => [...prev, { role: 'assistant', text: `Error: ${err.message}`, ts: Date.now() }]);
     }
@@ -190,16 +170,6 @@ export default function App() {
             {responseTime !== null && (
               <span className="text-[10px] text-neutral-600 ml-auto">{(responseTime / 1000).toFixed(1)}s</span>
             )}
-            <button
-              onClick={() => {
-                if (!mirrorRoom) setMirrorRoom(generateRoomId());
-                setShowMirror(!showMirror);
-              }}
-              className="text-xs text-neutral-500 hover:text-neutral-300 px-2 py-1 rounded border border-neutral-800 hover:border-neutral-600"
-              title="Mirror to mobile"
-            >
-              📱
-            </button>
             <button onClick={resetChat} className="ml-auto text-xs text-neutral-500 hover:text-neutral-300 px-2 py-1 rounded border border-neutral-800 hover:border-neutral-600">
               New chat
             </button>
@@ -279,32 +249,6 @@ export default function App() {
       {/* Chat */}
       {!showSetup && (
         <>
-          {/* Mirror panel */}
-          {showMirror && mirrorRoom && (
-            <div className="px-4 py-3 bg-violet-950/30 border-b border-violet-800/30 space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-violet-300 font-medium">📱 Mobile Mirror</span>
-                <button onClick={() => setShowMirror(false)} className="ml-auto text-violet-500 hover:text-violet-300 text-xs">Close</button>
-              </div>
-              <p className="text-[11px] text-violet-400/70">Open this link on your phone to see chat messages in real-time:</p>
-              <div className="flex gap-2 items-center">
-                <input
-                  readOnly
-                  value={`${window.location.origin}/mirror/?room=${mirrorRoom}&agent=nano-chat`}
-                  className="flex-1 px-2 py-1.5 rounded bg-neutral-900 border border-violet-800/50 text-[11px] font-mono text-violet-300"
-                  onClick={e => (e.target as HTMLInputElement).select()}
-                />
-                <button
-                  onClick={() => navigator.clipboard.writeText(`${window.location.origin}/mirror/?room=${mirrorRoom}&agent=nano-chat`)}
-                  className="px-2 py-1.5 rounded bg-violet-700 text-white text-[11px] font-medium shrink-0"
-                >
-                  Copy
-                </button>
-              </div>
-              <p className="text-[10px] text-violet-500/50">Messages auto-expire after 5 minutes. Room: {mirrorRoom}</p>
-            </div>
-          )}
-
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {messages.length === 0 && (
               <div className="text-center text-neutral-600 text-sm py-6 space-y-3 max-w-sm mx-auto">
