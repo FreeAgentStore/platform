@@ -739,13 +739,13 @@ export async function handleApiRoute(request: Request, url: URL, env: Env): Prom
     // GET /v1/usage (auth — usage stats)
     if (path === '/v1/usage' && request.method === 'GET') {
       const uid = await requireAuth(request, env);
-      return handleUsage(env.DB, uid);
+      return await handleUsage(env.DB, uid);
     }
 
     // ALL /v1/proxy/:host/* (auth — proxy with key injection)
     const proxyMatch = path.match(/^\/v1\/proxy\/([^/]+)\/(.+)$/);
     if (proxyMatch) {
-      return handleProxy(request, url, env, proxyMatch[1], proxyMatch[2]);
+      return await handleProxy(request, url, env, proxyMatch[1], proxyMatch[2]);
     }
 
     // GET /v1/qr?data=URL — generate QR code as SVG
@@ -777,7 +777,7 @@ export async function handleApiRoute(request: Request, url: URL, env: Env): Prom
       const roomId = mirrorWsMatch[1];
       const id = env.MIRROR_ROOMS.idFromName(roomId);
       const room = env.MIRROR_ROOMS.get(id);
-      return room.fetch(request);
+      return await room.fetch(request);
     }
 
     // GET /v1/mirror/:roomId — room info (peer count, no WebSocket needed)
@@ -798,8 +798,7 @@ export async function handleApiRoute(request: Request, url: URL, env: Env): Prom
       const roomId = mirrorInfoMatch[1];
       const id = env.MIRROR_ROOMS.idFromName(roomId);
       const room = env.MIRROR_ROOMS.get(id);
-      // Forward the POST body — the DO will broadcast to all connected peers
-      return room.fetch(request);
+      return await room.fetch(request);
     }
 
     return jsonResponse({ error: 'Not found' }, 404);

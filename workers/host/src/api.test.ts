@@ -546,4 +546,32 @@ describe('handleApiRoute', () => {
     // Should NOT leak internal error details
     expect(body.error).toBe('Internal error');
   });
+
+  // ── Proxy auth ──
+  it('proxy without auth returns 401 (not 500)', async () => {
+    const res = await handleApiRoute(
+      makeRequest('POST', '/v1/proxy/api.openai.com/v1/chat/completions', {
+        body: JSON.stringify({ model: 'gpt-4o-mini', messages: [] }),
+        headers: { 'Content-Type': 'application/json' },
+      }),
+      new URL('https://freeagentstore.online/v1/proxy/api.openai.com/v1/chat/completions'),
+      mockEnv(),
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it('proxy with unknown host returns 400', async () => {
+    const signingKey = 'test-signing-key-for-hmac';
+    const token = await createTestToken('user-123', signingKey);
+    const res = await handleApiRoute(
+      makeRequest('GET', '/v1/proxy/unknown.api.com/v1/test', {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+      new URL('https://freeagentstore.online/v1/proxy/unknown.api.com/v1/test'),
+      mockEnv({ SESSION_SIGNING_KEY: signingKey }),
+    );
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toContain('Unknown proxy host');
+  });
 });
