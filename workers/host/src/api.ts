@@ -1003,12 +1003,24 @@ function renderKeysPage(returnUrl: string, highlightProvider: string): string {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>API Keys - FreeAgentStore</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    :root { --accent: #8b5cf6; --bg: #0f172a; --surface: #1e293b; --ink: #f1f5f9; --muted: #94a3b8; --border: #334155; --danger: #dc2626; --success: #16a34a; }
+    :root { --accent: #7c3aed; --bg: #0a0a0a; --surface: #171717; --ink: #fafafa; --muted: #a3a3a3; --border: #262626; --danger: #dc2626; --success: #16a34a; }
     *, *::before, *::after { box-sizing: border-box; }
-    body { margin: 0; background: var(--bg); color: var(--ink); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; font-size: 15px; line-height: 1.5; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'Manrope', system-ui, sans-serif; font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    .topbar { border-bottom: 1px solid var(--border); padding: 0.75rem 0; }
+    .topbar-inner { max-width: 32rem; margin: 0 auto; padding: 0 1rem; display: flex; align-items: center; gap: 1rem; }
+    .topbar a { color: var(--muted); text-decoration: none; font-size: 0.85rem; font-weight: 600; }
+    .topbar a:hover { color: var(--ink); }
+    .topbar .brand { display: flex; align-items: center; gap: 0.5rem; color: var(--ink); text-decoration: none; }
+    .topbar .brand-mark { width: 28px; height: 28px; border-radius: 7px; background: linear-gradient(135deg, #7c3aed, #a855f7); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; }
+    .topbar .brand-name { font-family: 'Fraunces', Georgia, serif; font-size: 1rem; font-weight: 700; }
+    .topbar nav { display: flex; gap: 1rem; margin-left: auto; }
     .wrap { max-width: 32rem; margin: 0 auto; padding: 2rem 1rem; }
-    h1 { font-size: 1.5rem; font-weight: 800; margin: 0 0 0.25rem; }
+    h1 { font-size: 1.5rem; font-weight: 800; margin: 0 0 0.25rem; font-family: 'Fraunces', Georgia, serif; }
     .sub { color: var(--muted); font-size: 0.85rem; margin-bottom: 1.5rem; }
     .card { background: var(--surface); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1rem; margin-bottom: 0.75rem; }
     .card h3 { margin: 0 0 0.25rem; font-size: 0.95rem; font-weight: 700; }
@@ -1026,7 +1038,7 @@ function renderKeysPage(returnUrl: string, highlightProvider: string): string {
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
     .alert { padding: 0.75rem 1rem; border-radius: 0.5rem; font-size: 0.85rem; margin-bottom: 1rem; }
-    .alert-info { background: #1e1b4b; color: #a5b4fc; border: 1px solid #4338ca; }
+    .alert-info { background: rgba(124,58,237,0.1); color: #a78bfa; border: 1px solid rgba(124,58,237,0.3); }
     .back { display: inline-block; margin-top: 1.5rem; color: var(--accent); text-decoration: none; font-size: 0.85rem; font-weight: 600; }
     .docs-link { font-size: 0.75rem; color: var(--accent); text-decoration: none; }
     #status { font-size: 0.8rem; color: var(--muted); margin-top: 0.5rem; }
@@ -1034,11 +1046,15 @@ function renderKeysPage(returnUrl: string, highlightProvider: string): string {
   </style>
 </head>
 <body>
+<div class="topbar"><div class="topbar-inner">
+  <a href="/" class="brand"><span class="brand-mark">&#x1f916;</span><span class="brand-name">AgentStore</span></a>
+  <nav><a href="/">Agents</a><a href="/console/">Console</a><a href="/create/">Create</a><a href="/docs/">Docs</a></nav>
+</div></div>
 <div class="wrap">
   <h1>API Keys</h1>
   <p class="sub">Your keys are encrypted and stored on the FreeAgentStore platform. Agents never see them — they're injected server-side when agents make API calls through the proxy.</p>
 
-  <div id="auth-gate" class="alert alert-info">Sign in to manage your API keys.</div>
+  <div id="auth-gate" class="alert alert-info"><a href="/v1/auth/github?return_to=/v1/keys" style="color:#a5b4fc;font-weight:600">Sign in with GitHub</a> to manage your API keys.</div>
   <div id="keys-list" class="hidden"></div>
   <div id="status"></div>
 
