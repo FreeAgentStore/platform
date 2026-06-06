@@ -450,6 +450,10 @@ if (bodyClosePos !== -1) {
   html = html.slice(0, bodyClosePos) + authScript + '\n' + html.slice(bodyClosePos);
 }
 
-// --- Write back ---
+// --- Clean up and write back ---
+// Clean up whitespace (prevents accumulation on re-runs)
+html = html.replace(/\n{3,}/g, '\n\n');
+html = html.replace(/\n\s+\n/g, '\n\n');
+html = html.trimEnd() + '\n';
 fs.writeFileSync(indexPath, html, 'utf-8');
 console.log(`Updated index.html with ${agents.length} agent cards, tabs (${tabCounts.library} libraries, ${tabCounts.model} models, ${tabCounts.agent} agents), ${categories.length} category filters, and API Keys section.`);
