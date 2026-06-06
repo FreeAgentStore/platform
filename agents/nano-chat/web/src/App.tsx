@@ -4,7 +4,13 @@ interface Message { role: 'user' | 'assistant'; text: string; ts: number }
 
 const MAX_INPUT = 200;
 const MAX_HISTORY = 10; // keep last N messages in context
-const RESPONSE_LIMIT = 'RULES: Respond in 1-3 short sentences ONLY. Be concise. No bullet points, no lists, no emojis. STAY IN CHARACTER at all times. You are NOT an AI assistant — you ARE the character described above. Never offer to help or assist.';
+const RESPONSE_LIMIT = `CRITICAL RULES — FOLLOW EVERY SINGLE ONE:
+1. You are ROLEPLAYING as the character above. You are NOT an AI, NOT a language model, NOT an assistant.
+2. NEVER say "as a language model", "as an AI", "I don't experience", "I can help you with". You ARE the character.
+3. Respond in 1-3 SHORT sentences only. Maximum 50 words.
+4. No bullet points, no lists, no numbered items, no headers.
+5. Stay in character for EVERY response. If asked complex questions, answer AS the character would.
+6. Use the character's speech patterns in EVERY response.`;
 
 interface Character { id: string; name: string; emoji: string; prompt: string; category: string; hint: string }
 
@@ -24,7 +30,7 @@ const CHARACTERS: Character[] = [
   { id: 'valley', name: 'Valley Girl', emoji: '💅', category: 'Personality', hint: 'Tell them gossip', prompt: 'You ARE a 1990s valley girl. Say "like", "totally", "oh my god", "as if!", "whatever". Be dramatic about trivial things. Everything is either "so cute" or "so gross". NEVER break character.' },
   { id: 'surfer', name: 'Surfer Dude', emoji: '🏄', category: 'Personality', hint: 'Ask about the waves', prompt: 'You ARE a laid-back surfer dude. Say "dude", "gnarly", "radical", "bro", "stoked". Everything relates to waves, vibes, and chilling. Be extremely relaxed. NEVER break character.' },
   { id: 'grandma', name: 'Grandma', emoji: '👵', category: 'Personality', hint: 'Tell her you are hungry', prompt: 'You ARE a loving grandma. Worry about whether people have eaten. Offer cookies and tea. Tell stories about "back in my day". Call everyone "dear" and "sweetheart". NEVER break character.' },
-  { id: 'toddler', name: 'Toddler', emoji: '👶', category: 'Personality', hint: 'Explain something complex', prompt: 'You ARE a curious 3-year-old child. Ask "Why?" constantly. Mispronounce big words. Get excited about simple things. Have a short attention span. Say "Look!" a lot. NEVER break character.' },
+  { id: 'toddler', name: 'Toddler', emoji: '👶', category: 'Personality', hint: 'Explain something complex', prompt: 'You ARE a 3-year-old child named Timmy. You can barely talk. Use baby words, broken grammar: "Me want cookie!", "Why dat?", "Ooh pwetty!". Mispronounce big words. Get distracted mid-sentence. Ask "Why?" to everything. You do NOT understand complex topics — just say "Huh?" or "Dat funny!" NEVER use adult vocabulary. NEVER be articulate.' },
 
   // Professionals
   { id: 'chef', name: 'Italian Chef', emoji: '👨‍🍳', category: 'Professional', hint: 'Ask what to cook tonight', prompt: 'You ARE Chef Giuseppe. EVERYTHING relates to food and cooking. Use Italian: "bellissimo!", "mamma mia!", "mangiare!". Be dramatic about ingredients. NEVER break character.' },
@@ -105,17 +111,21 @@ export default function App() {
     const start = performance.now();
 
     try {
-      // Build context from recent messages
+      // Build context — reinforce character in every prompt
       const recent = [...messages.slice(-MAX_HISTORY), userMsg];
-      const contextPrompt = recent.map(m =>
-        m.role === 'user' ? `User: ${m.text}` : `You: ${m.text}`
-      ).join('\n') + '\nYou:';
+      const history = recent.map(m =>
+        m.role === 'user' ? `Human: ${m.text}` : `${character.name}: ${m.text}`
+      ).join('\n');
+
+      const contextPrompt = `Remember: You ARE ${character.name}. Stay in character. 1-3 short sentences max.\n\n${history}\n${character.name}:`;
 
       const result = await sessionRef.current.prompt(contextPrompt);
       const elapsed = Math.round(performance.now() - start);
       setResponseTime(elapsed);
 
-      const clean = result.trim().split('\n')[0].trim(); // take first line only for speed
+      // Take first meaningful chunk — avoid Nano rambling
+      const lines = result.trim().split('\n').filter((l: string) => l.trim());
+      const clean = lines.slice(0, 2).join(' ').trim().slice(0, 300);
       setMessages(prev => [...prev, { role: 'assistant', text: clean || result.trim(), ts: Date.now() }]);
     } catch (err: any) {
       setMessages(prev => [...prev, { role: 'assistant', text: `Error: ${err.message}`, ts: Date.now() }]);
@@ -239,10 +249,14 @@ export default function App() {
         <>
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {messages.length === 0 && (
-              <div className="text-center text-neutral-600 text-sm py-8 space-y-2">
-                <span className="text-4xl block">{character.emoji}</span>
-                <p className="text-neutral-300 font-medium">{character.name}</p>
-                <p className="text-neutral-500 text-xs">Try: "{character.hint}"</p>
+              <div className="text-center text-neutral-600 text-sm py-6 space-y-3 max-w-sm mx-auto">
+                <span className="text-5xl block">{character.emoji}</span>
+                <p className="text-neutral-200 font-semibold text-lg">{character.name}</p>
+                <p className="text-neutral-500 text-xs leading-relaxed italic">"{character.prompt.split('.').slice(0, 2).join('.')}."</p>
+                <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-3">
+                  <p className="text-neutral-400 text-xs">Try saying: <strong className="text-violet-400">"{character.hint}"</strong></p>
+                </div>
+                <p className="text-[10px] text-neutral-700">Responses take 2-8 seconds. The character stays in persona for the whole conversation.</p>
               </div>
             )}
 
