@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { createFagsChat, getFagsLangChainConfig } from './langchain';
 
 describe('createFagsChat', () => {
@@ -26,7 +26,9 @@ describe('createFagsChat', () => {
   });
 
   it('throws for unknown provider', () => {
-    expect(() => createFagsChat({ provider: 'unknown' as any, model: 'x' })).toThrow('Unknown provider');
+    expect(() => createFagsChat({ provider: 'unknown' as any, model: 'x' })).toThrow(
+      'Unknown provider',
+    );
   });
 
   it('has invoke and stream methods', () => {

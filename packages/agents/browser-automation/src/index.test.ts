@@ -1,12 +1,21 @@
-import { describe, it, expect, vi } from 'vitest';
-import { buildCondensePrompt, replayScript } from './index';
+import { describe, expect, it } from 'vitest';
 import type { RecordedAction } from './index';
+import { buildCondensePrompt, replayScript } from './index';
 
 describe('buildCondensePrompt', () => {
   it('includes recorded actions', () => {
     const actions: RecordedAction[] = [
-      { type: 'click', timestamp: 0, target: { selector: '#submit', tag: 'button', text: 'Submit' } },
-      { type: 'fill', timestamp: 100, target: { selector: 'input[name="email"]', tag: 'input' }, value: 'test@example.com' },
+      {
+        type: 'click',
+        timestamp: 0,
+        target: { selector: '#submit', tag: 'button', text: 'Submit' },
+      },
+      {
+        type: 'fill',
+        timestamp: 100,
+        target: { selector: 'input[name="email"]', tag: 'input' },
+        value: 'test@example.com',
+      },
     ];
     const prompt = buildCondensePrompt(actions, 'fillForm');
     expect(prompt).toContain('CLICK #submit');
@@ -35,7 +44,9 @@ describe('replayScript', () => {
 
   it('passes data to the script', async () => {
     let captured = '';
-    (globalThis as any).__testCapture = (v: string) => { captured = v; };
+    (globalThis as any).__testCapture = (v: string) => {
+      captured = v;
+    };
     await replayScript('globalThis.__testCapture(data.name)', { name: 'hello' });
     expect(captured).toBe('hello');
     delete (globalThis as any).__testCapture;

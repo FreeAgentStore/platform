@@ -76,7 +76,7 @@ export function createMirror(config: MirrorConfig): MirrorInstance {
 
   function connectWS(): void {
     if (destroyed) return;
-    const wsUrl = apiBase.replace(/^http/, 'ws') + `/v1/mirror/${roomId}/ws?device=${role}`;
+    const wsUrl = `${apiBase.replace(/^http/, 'ws')}/v1/mirror/${roomId}/ws?device=${role}`;
     ws = new WebSocket(wsUrl);
 
     ws.onmessage = (ev) => {
@@ -96,7 +96,9 @@ export function createMirror(config: MirrorConfig): MirrorInstance {
         } else if (raw.from !== role) {
           config.onMessage?.(raw as unknown as MirrorMessage);
         }
-      } catch { /* ignore malformed */ }
+      } catch {
+        /* ignore malformed */
+      }
     };
 
     ws.onclose = () => {
@@ -147,7 +149,10 @@ export function createMirror(config: MirrorConfig): MirrorInstance {
       destroyed = true;
       if (reconnectTimer) clearTimeout(reconnectTimer);
       reconnectTimer = null;
-      if (ws) { ws.close(); ws = null; }
+      if (ws) {
+        ws.close();
+        ws = null;
+      }
     },
   };
 
@@ -181,7 +186,7 @@ export function joinMirror(config: MobileMirrorConfig): MobileMirrorInstance {
 
   function connectWS(): void {
     if (destroyed) return;
-    const wsUrl = apiBase.replace(/^http/, 'ws') + `/v1/mirror/${roomId}/ws?device=${role}`;
+    const wsUrl = `${apiBase.replace(/^http/, 'ws')}/v1/mirror/${roomId}/ws?device=${role}`;
     ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
@@ -192,7 +197,9 @@ export function joinMirror(config: MobileMirrorConfig): MobileMirrorInstance {
       try {
         const msg = JSON.parse(ev.data) as MirrorMessage;
         if (msg.from !== role) config.onMessage?.(msg);
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     };
 
     ws.onclose = () => {
@@ -221,7 +228,10 @@ export function joinMirror(config: MobileMirrorConfig): MobileMirrorInstance {
       destroyed = true;
       if (reconnectTimer) clearTimeout(reconnectTimer);
       reconnectTimer = null;
-      if (ws) { ws.close(); ws = null; }
+      if (ws) {
+        ws.close();
+        ws = null;
+      }
     },
   };
 

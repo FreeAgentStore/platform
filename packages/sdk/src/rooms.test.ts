@@ -11,7 +11,7 @@ class MockWebSocket {
     this.url = url;
   }
 
-  send(data: string) {
+  send(_data: string) {
     // no-op for tests
   }
 

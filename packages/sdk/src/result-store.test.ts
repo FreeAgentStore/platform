@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { ResultStore } from './result-store.js';
 
 // Mock IndexedDB
@@ -61,7 +61,7 @@ vi.stubGlobal('indexedDB', {
 
 describe('ResultStore', () => {
   it('constructor creates store with agentId namespace', () => {
-    const store = new ResultStore('test-agent');
+    const _store = new ResultStore('test-agent');
     expect(indexedDB.open).toHaveBeenCalledWith('fags-results-test-agent', 1);
   });
 });

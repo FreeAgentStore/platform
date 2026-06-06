@@ -32,6 +32,14 @@
     }
   },
   "files": {
-    "includes": ["packages/cli/src/**", "packages/compliance/src/**", "workers/host/src/**"]
+    "includes": [
+      "packages/cli/src/**",
+      "packages/compliance/src/**",
+      "packages/sdk/src/**",
+      "packages/extension/src/**",
+      "packages/agents/*/src/**",
+      "workers/host/src/**",
+      "workers/mcp/src/**"
+    ]
   }
 }

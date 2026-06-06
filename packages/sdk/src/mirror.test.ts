@@ -1,5 +1,5 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { generateRoomId, createMirror, joinMirror } from './mirror';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { createMirror, generateRoomId, joinMirror } from './mirror';
 
 // Mock WebSocket for Node environment
 class MockWebSocket {
@@ -18,8 +18,12 @@ class MockWebSocket {
     // Simulate async open
     setTimeout(() => this.onopen?.(), 0);
   }
-  send(data: string) { this.sent.push(data); }
-  close() { this.readyState = MockWebSocket.CLOSED; }
+  send(data: string) {
+    this.sent.push(data);
+  }
+  close() {
+    this.readyState = MockWebSocket.CLOSED;
+  }
 }
 
 beforeEach(() => {
@@ -120,7 +124,11 @@ describe('createMirror', () => {
 
 describe('joinMirror', () => {
   it('creates mobile instance', () => {
-    const inst = joinMirror({ roomId: 'abcd1234', agentId: 'test', apiBase: 'https://example.com' });
+    const inst = joinMirror({
+      roomId: 'abcd1234',
+      agentId: 'test',
+      apiBase: 'https://example.com',
+    });
     expect(inst).toBeDefined();
     expect(inst.send).toBeInstanceOf(Function);
     expect(inst.sendInput).toBeInstanceOf(Function);
@@ -128,14 +136,22 @@ describe('joinMirror', () => {
   });
 
   it('send does not throw after destroy', () => {
-    const inst = joinMirror({ roomId: 'abcd1234', agentId: 'test', apiBase: 'https://example.com' });
+    const inst = joinMirror({
+      roomId: 'abcd1234',
+      agentId: 'test',
+      apiBase: 'https://example.com',
+    });
     inst.destroy();
     inst.send({ type: 'input', data: 'test', from: 'mobile' });
     inst.sendInput('test');
   });
 
   it('destroy can be called multiple times', () => {
-    const inst = joinMirror({ roomId: 'abcd1234', agentId: 'test', apiBase: 'https://example.com' });
+    const inst = joinMirror({
+      roomId: 'abcd1234',
+      agentId: 'test',
+      apiBase: 'https://example.com',
+    });
     inst.destroy();
     inst.destroy();
   });

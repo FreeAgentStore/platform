@@ -557,8 +557,8 @@ export async function handleApiRoute(request: Request, url: URL, env: Env): Prom
         `fags_session=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`,
       );
       // Clear the state + return_to cookies
-      h.append('Set-Cookie', 'fags_oauth_state=; Path=/; Max-Age=0');
-      h.append('Set-Cookie', 'fags_return_to=; Path=/; Max-Age=0');
+      h.append('Set-Cookie', 'fags_oauth_state=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0');
+      h.append('Set-Cookie', 'fags_return_to=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0');
       return new Response(null, { status: 302, headers: h });
     }
 

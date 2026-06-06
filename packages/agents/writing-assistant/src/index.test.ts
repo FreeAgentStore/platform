@@ -1,29 +1,57 @@
-import { describe, it, expect } from 'vitest';
-import { analyzeStyle, buildPromptFromConfig, createDefaultConfig, buildTrainingPrompt } from './index';
-import type { WritingExample, WritingConfig } from './index';
+import { describe, expect, it } from 'vitest';
+import type { WritingExample } from './index';
+import {
+  analyzeStyle,
+  buildPromptFromConfig,
+  buildTrainingPrompt,
+  createDefaultConfig,
+} from './index';
 
 const FORMAL_EMAILS: WritingExample[] = [
-  { type: 'email', input: 'Follow up on proposal', output: 'Dear Mr. Johnson,\n\nI hope this email finds you well. I am writing to follow up on the proposal we submitted last week.\n\nPlease let me know if you have any questions.\n\nBest regards,\nSarah' },
-  { type: 'email', input: 'Request meeting', output: 'Dear Team,\n\nI would like to schedule a meeting to discuss the quarterly review.\n\nPlease share your availability for next week.\n\nBest regards,\nSarah' },
-  { type: 'email', input: 'Thank for interview', output: 'Dear Ms. Chen,\n\nThank you for taking the time to interview me yesterday. I sincerely enjoyed learning about the role.\n\nI look forward to hearing from you.\n\nBest regards,\nSarah' },
+  {
+    type: 'email',
+    input: 'Follow up on proposal',
+    output:
+      'Dear Mr. Johnson,\n\nI hope this email finds you well. I am writing to follow up on the proposal we submitted last week.\n\nPlease let me know if you have any questions.\n\nBest regards,\nSarah',
+  },
+  {
+    type: 'email',
+    input: 'Request meeting',
+    output:
+      'Dear Team,\n\nI would like to schedule a meeting to discuss the quarterly review.\n\nPlease share your availability for next week.\n\nBest regards,\nSarah',
+  },
+  {
+    type: 'email',
+    input: 'Thank for interview',
+    output:
+      'Dear Ms. Chen,\n\nThank you for taking the time to interview me yesterday. I sincerely enjoyed learning about the role.\n\nI look forward to hearing from you.\n\nBest regards,\nSarah',
+  },
 ];
 
 const CASUAL_EMAILS: WritingExample[] = [
-  { type: 'email', input: 'Lunch plans', output: 'Hey!\n\nWanna grab lunch today? I\'m thinking tacos.\n\nLet me know!\n\nCheers' },
-  { type: 'email', input: 'Weekend plans', output: 'Hey team!\n\nAnyone up for hiking this weekend? Weather looks awesome.\n\nCheers' },
+  {
+    type: 'email',
+    input: 'Lunch plans',
+    output: "Hey!\n\nWanna grab lunch today? I'm thinking tacos.\n\nLet me know!\n\nCheers",
+  },
+  {
+    type: 'email',
+    input: 'Weekend plans',
+    output: 'Hey team!\n\nAnyone up for hiking this weekend? Weather looks awesome.\n\nCheers',
+  },
 ];
 
 describe('analyzeStyle', () => {
   it('detects formal tone from formal emails', () => {
     const style = analyzeStyle(FORMAL_EMAILS);
-    const formality = style.toneRules?.find(r => r.aspect === 'formality');
+    const formality = style.toneRules?.find((r) => r.aspect === 'formality');
     expect(formality).toBeDefined();
     expect(formality!.value).toBeGreaterThan(5);
   });
 
   it('detects casual tone from casual emails', () => {
     const style = analyzeStyle(CASUAL_EMAILS);
-    const formality = style.toneRules?.find(r => r.aspect === 'formality');
+    const formality = style.toneRules?.find((r) => r.aspect === 'formality');
     expect(formality).toBeDefined();
     expect(formality!.value).toBeLessThan(5);
   });
