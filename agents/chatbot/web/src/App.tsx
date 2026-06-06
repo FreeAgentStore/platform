@@ -29,6 +29,7 @@ export default function App() {
   const [pasteText, setPasteText] = useState('');
   const [urlInput, setUrlInput] = useState('');
   const [addLoading, setAddLoading] = useState(false);
+  const [previewDoc, setPreviewDoc] = useState<Document | null>(null);
   const [addError, setAddError] = useState('');
 
   // Config draft
@@ -257,7 +258,7 @@ export default function App() {
               </p>
             )}
             {docs.map(doc => (
-              <div key={doc.id} className="flex items-start gap-2 p-2 rounded-lg hover:bg-neutral-900 group">
+              <div key={doc.id} className="flex items-start gap-2 p-2 rounded-lg hover:bg-neutral-900 group cursor-pointer" onClick={() => setPreviewDoc(previewDoc?.id === doc.id ? null : doc)}>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-neutral-200 truncate">{doc.title}</p>
                   <div className="flex items-center gap-2 mt-0.5">
@@ -266,9 +267,14 @@ export default function App() {
                     </span>
                     <span className="text-[10px] text-neutral-600">{formatBytes(doc.size)}</span>
                   </div>
+                  {previewDoc?.id === doc.id && (
+                    <div className="mt-2 p-2 rounded bg-neutral-950 border border-neutral-800 max-h-40 overflow-y-auto">
+                      <pre className="text-[11px] text-neutral-400 whitespace-pre-wrap font-mono">{doc.content.slice(0, 2000)}{doc.content.length > 2000 ? '\n\n... (truncated)' : ''}</pre>
+                    </div>
+                  )}
                 </div>
                 <button
-                  onClick={() => handleDeleteDoc(doc.id)}
+                  onClick={(e) => { e.stopPropagation(); handleDeleteDoc(doc.id); }}
                   className="text-neutral-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity mt-0.5"
                   aria-label="Delete document"
                 >

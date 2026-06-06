@@ -157,11 +157,26 @@ async function chatViaBuiltInAI(options: InferenceOptions): Promise<string> {
   const userMsgs = options.messages.filter(m => m.role !== 'system');
   const lastUser = userMsgs[userMsgs.length - 1]?.content ?? '';
 
+  // For Nano: include document context directly in the prompt
+  // because Nano doesn't handle long system prompts well
+  const systemContent = systemMsg?.content ?? '';
+  const hasDocuments = systemContent.includes('Documents:');
+
+  let fullPrompt: string;
+  if (hasDocuments) {
+    // Extract document content from system message and put it in the user prompt
+    const docStart = systemContent.indexOf('Documents:');
+    const docs = systemContent.slice(docStart);
+    fullPrompt = `Based on these documents, answer the question.\n\n${docs}\n\nQuestion: ${lastUser}\n\nAnswer based ONLY on the documents above. If the answer is not in the documents, say so.`;
+  } else {
+    fullPrompt = lastUser;
+  }
+
   const session = await LM.create({
-    systemPrompt: systemMsg?.content ?? '',
+    systemPrompt: 'You are a helpful document Q&A assistant. Answer questions based on the provided documents. Be concise and direct.',
   });
 
-  const result = await session.prompt(lastUser);
+  const result = await session.prompt(fullPrompt);
   session.destroy?.();
   options.onChunk?.(result);
   return result;
