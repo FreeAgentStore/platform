@@ -12,7 +12,7 @@ pattern = "*.freeagentstore.online/*"
 zone_name = "freeagentstore.online"
 
 [vars]
-GITHUB_CLIENT_ID = ""
+GITHUB_CLIENT_ID = "Ov23linoTyxg6znK9LmO"
 
 [[r2_buckets]]
 binding = "AGENTS"
