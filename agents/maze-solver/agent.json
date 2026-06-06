@@ -1,0 +1,17 @@
+{
+  "name": "Maze Solver",
+  "description": "Solve grid mazes using swappable heuristic strategies — BFS, A*, wall-follower, dead-end fill, Tremaux. Trainable: feed it mazes, it evolves better heuristics. Importable by FGS games.",
+  "version": "1.0.0",
+  "task": "pathfinding",
+  "category": "game-ai",
+  "models": [],
+  "estimatedDownload": "0MB",
+  "input": ["application/json"],
+  "output": ["application/json"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "trainable": true
+}

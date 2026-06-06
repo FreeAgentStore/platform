@@ -1,0 +1,17 @@
+{
+  "name": "Login Page Detector",
+  "description": "Detect if HTML belongs to a login/sign-in page. LLM-distilled heuristic — zero model, instant classification with confidence score.",
+  "version": "1.0.0",
+  "task": "html-classification",
+  "category": "web-analysis",
+  "models": [],
+  "estimatedDownload": "0MB",
+  "input": ["text/html"],
+  "output": ["application/json"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "trainable": true
+}

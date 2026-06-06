@@ -1,0 +1,17 @@
+{
+  "name": "File Classifier",
+  "description": "Classify any file by its first N bytes — magic bytes, structural patterns, statistical heuristics. 80+ formats, zero model, instant.",
+  "version": "1.0.0",
+  "task": "file-classification",
+  "category": "developer-tools",
+  "models": [],
+  "estimatedDownload": "0MB",
+  "input": ["application/octet-stream"],
+  "output": ["application/json"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "trainable": true
+}

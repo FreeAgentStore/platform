@@ -1,0 +1,17 @@
+{
+  "name": "Form Field Finder",
+  "description": "Find email, password, username, and other fields in HTML forms. LLM-distilled heuristic — zero model, instant extraction with confidence.",
+  "version": "1.0.0",
+  "task": "html-extraction",
+  "category": "web-analysis",
+  "models": [],
+  "estimatedDownload": "0MB",
+  "input": ["text/html"],
+  "output": ["application/json"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "trainable": true
+}
