@@ -1907,6 +1907,30 @@
           }
         ]
       }
+    },
+    {
+      "id": "nano-chat",
+      "name": "Nano Chat",
+      "description": "Fast chat with Chrome Gemini Nano. Pick a character, set the vibe, chat away. Short responses, zero download, 100% private.",
+      "task": "chat",
+      "category": "text",
+      "icon": "💬",
+      "iconBg": "#7c3aed",
+      "model": "Chrome Gemini Nano",
+      "modelSize": "0MB",
+      "agentUrl": "https://freeagentstore.online/a/nano-chat/",
+      "developer": "serge-ivo",
+      "creatorGithub": "serge-ivo",
+      "desktopOnly": false,
+      "offlineCapable": true,
+      "backends": [],
+      "type": "built-in-ai",
+      "storeType": "agent",
+      "noEsm": true,
+      "api": {
+        "imports": "import { ... } from '@freeagentstore/nano-chat'",
+        "note": "This agent requires the full UI. Use it at freeagentstore.online/a/nano-chat/"
+      }
     }
   ]
 }

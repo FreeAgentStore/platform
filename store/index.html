@@ -177,10 +177,10 @@
 
     <section>
       <div class="tabs">
-          <button class="tab active" onclick="switchTab('all')">All <span class="tab-count">50</span></button>
+          <button class="tab active" onclick="switchTab('all')">All <span class="tab-count">51</span></button>
           <button class="tab" onclick="switchTab('library')">Libraries <span class="tab-count">30</span></button>
           <button class="tab" onclick="switchTab('model')">Models <span class="tab-count">13</span></button>
-          <button class="tab" onclick="switchTab('agent')">Agents <span class="tab-count">7</span></button>
+          <button class="tab" onclick="switchTab('agent')">Agents <span class="tab-count">8</span></button>
         </div>
 
         <div class="toolbar">
@@ -194,7 +194,7 @@
         <button class="filter-btn" onclick="filterCategory('vision')">Vision</button>
         <button class="filter-btn" onclick="filterCategory('automation')">Automation</button>
         <button class="filter-btn" onclick="filterCategory('education')">Education</button>
-        <span class="agent-count" id="agentCount">50 agents</span>
+        <span class="agent-count" id="agentCount">51 agents</span>
       </div>
             <div class="agents-grid" id="agentsGrid">
         <div class="agent-card" data-category="audio" data-store-type="model">
@@ -1099,6 +1099,24 @@
             </div>
           </a>
           <a href="/a/browser-rag/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
+        </div>
+
+        <div class="agent-card" data-category="text" data-store-type="agent">
+          <a href="/agents/nano-chat/" class="agent-card-body">
+            <div class="agent-icon" style="background:#7c3aed">💬</div>
+            <div class="agent-body">
+              <span class="agent-name">Nano Chat</span>
+              <span class="agent-desc">Fast chat with Chrome Gemini Nano. Pick a character, set the...</span>
+              <div class="agent-meta">
+                <span class="tag" style="background:rgba(5,150,105,0.2);color:#34d399">Built-in AI</span>
+                <span class="tag">0MB</span>
+              </div>
+            </div>
+          </a>
+          <a href="/a/nano-chat/" class="agent-cta">
             <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
             Open
           </a>
