@@ -13,6 +13,8 @@
  *   GET    /v1/keys              → server-rendered HTML key management page (auth)
  *   GET    /v1/usage             → usage stats (auth)
  *   ALL    /v1/proxy/:host/*     → proxy request with injected user key (auth)
+ *   POST   /v1/mirror/:roomId   → store a mirror message (public, room ID = auth)
+ *   GET    /v1/mirror/:roomId   → poll for mirror messages (public)
  */
 
 import type { Env } from './index';
@@ -685,6 +687,20 @@ export async function handleApiRoute(request: Request, url: URL, env: Env): Prom
       return handleProxy(request, url, env, proxyMatch[1], proxyMatch[2]);
     }
 
+    // ── Mirror relay routes (unauthenticated — room ID = access token) ──
+
+    const mirrorMatch = path.match(/^\/v1\/mirror\/([a-z0-9]{6,16})$/);
+
+    // POST /v1/mirror/:roomId — store a message
+    if (mirrorMatch && request.method === 'POST') {
+      return handleMirrorPost(request, env, mirrorMatch[1]);
+    }
+
+    // GET /v1/mirror/:roomId — poll for messages
+    if (mirrorMatch && request.method === 'GET') {
+      return handleMirrorPoll(url, env, mirrorMatch[1]);
+    }
+
     return jsonResponse({ error: 'Not found' }, 404);
   } catch (err) {
     if (err instanceof AuthError) {
@@ -991,6 +1007,93 @@ async function handleUsage(db: D1Database, userId: string): Promise<Response> {
       createdAt: r.created_at,
     })),
   });
+}
+
+// ── Mirror relay handlers ─────────────────────────────────────────────────────
+
+const MIRROR_TTL_SEC = 300; // 5 minutes
+const MIRROR_MAX_MESSAGES = 50;
+
+async function handleMirrorPost(request: Request, env: Env, roomId: string): Promise<Response> {
+  let body: { type?: string; data?: unknown; from?: string; timestamp?: number };
+  try {
+    body = await request.json();
+  } catch {
+    return jsonResponse({ error: 'Invalid JSON' }, 400);
+  }
+
+  const msgType = body.type ?? 'unknown';
+  const from = body.from ?? 'unknown';
+  const data = JSON.stringify(body.data ?? null);
+
+  if (data.length > 64_000) {
+    return jsonResponse({ error: 'Message too large (max 64KB)' }, 413);
+  }
+
+  // Clean up old messages for this room (older than 5 minutes)
+  const cutoff = Math.floor(Date.now() / 1000) - MIRROR_TTL_SEC;
+  await env.DB.prepare('DELETE FROM mirror_messages WHERE room_id = ? AND created_at < ?')
+    .bind(roomId, cutoff)
+    .run();
+
+  // Enforce max messages per room
+  const countRow = await env.DB.prepare('SELECT COUNT(*) as cnt FROM mirror_messages WHERE room_id = ?')
+    .bind(roomId)
+    .first<{ cnt: number }>();
+
+  if (countRow && countRow.cnt >= MIRROR_MAX_MESSAGES) {
+    // Delete oldest to make room
+    await env.DB.prepare(
+      `DELETE FROM mirror_messages WHERE id IN (
+        SELECT id FROM mirror_messages WHERE room_id = ? ORDER BY created_at ASC LIMIT ?
+      )`,
+    )
+      .bind(roomId, countRow.cnt - MIRROR_MAX_MESSAGES + 1)
+      .run();
+  }
+
+  // Insert new message
+  await env.DB.prepare(
+    'INSERT INTO mirror_messages (room_id, type, data, from_device, created_at) VALUES (?, ?, ?, ?, ?)',
+  )
+    .bind(roomId, msgType, data, from, Math.floor(Date.now() / 1000))
+    .run();
+
+  return jsonResponse({ ok: true });
+}
+
+async function handleMirrorPoll(url: URL, env: Env, roomId: string): Promise<Response> {
+  const sinceParam = url.searchParams.get('since');
+  // Convert millisecond timestamp from client to seconds for D1
+  const sinceMs = sinceParam ? parseInt(sinceParam, 10) : 0;
+  const sinceSec = Math.floor(sinceMs / 1000);
+
+  const rows = await env.DB.prepare(
+    'SELECT type, data, from_device, created_at FROM mirror_messages WHERE room_id = ? AND created_at > ? ORDER BY created_at ASC LIMIT 50',
+  )
+    .bind(roomId, sinceSec)
+    .all<{ type: string; data: string; from_device: string; created_at: number }>();
+
+  // Count distinct from_device values in recent messages as a rough peer count
+  const peerRow = await env.DB.prepare(
+    `SELECT COUNT(DISTINCT from_device) as peers FROM mirror_messages
+     WHERE room_id = ? AND created_at > ?`,
+  )
+    .bind(roomId, Math.floor(Date.now() / 1000) - 30)
+    .first<{ peers: number }>();
+
+  const messages = (rows.results ?? []).map((r) => {
+    let parsed: unknown;
+    try { parsed = JSON.parse(r.data); } catch { parsed = r.data; }
+    return {
+      type: r.type,
+      data: parsed,
+      from: r.from_device,
+      timestamp: r.created_at * 1000, // return as milliseconds for client
+    };
+  });
+
+  return jsonResponse({ messages, peers: peerRow?.peers ?? 0 });
 }
 
 // ── Key management page (server-rendered HTML) ───────────────────────────────

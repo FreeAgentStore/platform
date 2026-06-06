@@ -53,6 +53,9 @@ export type {
   OllamaStatus,
 } from './types.js';
 export { WorkerBridge } from './worker-bridge.js';
+// Mobile Mirror — pair mobile with desktop agent tab via QR/link
+export type { MirrorConfig, MirrorInstance, MirrorMessage, MobileMirrorConfig, MobileMirrorInstance } from './mirror.js';
+export { createMirror, joinMirror } from './mirror.js';
 // LangChain.js integration — proxy-backed chat + LangChain config
 export type { FagsChatOptions } from './langchain.js';
 export { createFagsChat, getFagsLangChainConfig } from './langchain.js';

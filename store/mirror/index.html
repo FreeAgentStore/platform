@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Mirror - FreeAgentStore</title>
+  <meta name="description" content="Mobile mirror for FreeAgentStore agents. See agent results on your phone in real-time.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0a0a0a">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --accent: #7c3aed;
+      --bg: #0a0a0a;
+      --surface: #171717;
+      --ink: #fafafa;
+      --muted: #a3a3a3;
+      --border: #262626;
+      --success: #16a34a;
+      --warn: #d97706;
+      --danger: #dc2626;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; }
+    body {
+      background: var(--bg); color: var(--ink);
+      font-family: 'Manrope', system-ui, sans-serif;
+      font-size: 15px; line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100dvh;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+
+    .header {
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 1rem;
+      display: flex; align-items: center; gap: 0.75rem;
+    }
+    .brand { display: flex; align-items: center; gap: 0.5rem; text-decoration: none; color: var(--ink); }
+    .brand-mark {
+      width: 28px; height: 28px; border-radius: 7px;
+      background: linear-gradient(135deg, #7c3aed, #a855f7);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem;
+    }
+    .brand-name { font-family: 'Fraunces', Georgia, serif; font-size: 1rem; font-weight: 700; }
+    .header-label { font-size: 0.8rem; color: var(--muted); margin-left: auto; }
+
+    .container { max-width: 28rem; margin: 0 auto; padding: 1.5rem 1rem; }
+
+    .status-bar {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.75rem 1rem; border-radius: 0.75rem;
+      background: var(--surface); border: 1px solid var(--border);
+      margin-bottom: 1rem; font-size: 0.85rem;
+    }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot-waiting { background: var(--warn); animation: pulse 1.5s infinite; }
+    .dot-connected { background: var(--success); }
+    .dot-offline { background: var(--danger); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .agent-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 0.75rem; padding: 1rem; margin-bottom: 1rem;
+      text-align: center;
+    }
+    .agent-name {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 1.25rem; font-weight: 700; margin-bottom: 0.25rem;
+    }
+    .agent-sub { font-size: 0.8rem; color: var(--muted); }
+
+    .results-area {
+      display: flex; flex-direction: column; gap: 0.75rem;
+      min-height: 200px;
+    }
+    .result-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 0.75rem; padding: 1rem;
+      animation: slideIn 0.3s ease-out;
+    }
+    .result-card .meta {
+      font-size: 0.7rem; color: var(--muted); margin-bottom: 0.5rem;
+    }
+    .result-card .body {
+      font-size: 0.9rem; word-break: break-word; white-space: pre-wrap;
+    }
+    .result-card .body img {
+      max-width: 100%; border-radius: 0.5rem; margin-top: 0.5rem;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .empty-state {
+      text-align: center; color: var(--muted);
+      padding: 3rem 1rem; font-size: 0.9rem;
+    }
+    .empty-state .icon { font-size: 2rem; margin-bottom: 0.75rem; display: block; }
+
+    .notify-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.75rem 1rem; border-radius: 0.75rem;
+      background: rgba(124, 58, 237, 0.1); border: 1px solid rgba(124, 58, 237, 0.3);
+      margin-bottom: 1rem; font-size: 0.85rem; color: #a78bfa;
+    }
+    .notify-bar button {
+      background: var(--accent); color: #fff; border: none;
+      padding: 0.35rem 0.75rem; border-radius: 0.5rem;
+      font-size: 0.8rem; font-weight: 600; cursor: pointer; font-family: inherit;
+    }
+
+    .install-bar {
+      padding: 0.75rem 1rem; border-radius: 0.75rem;
+      background: var(--surface); border: 1px solid var(--border);
+      margin-bottom: 1rem; font-size: 0.85rem; color: var(--muted);
+      text-align: center;
+    }
+
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <a href="/" class="brand">
+      <span class="brand-mark">&#x1f916;</span>
+      <span class="brand-name">AgentStore</span>
+    </a>
+    <span class="header-label">Mirror</span>
+  </div>
+
+  <div class="container">
+    <!-- No room ID — show instructions -->
+    <div id="no-room" class="hidden">
+      <div class="empty-state">
+        <span class="icon">&#x1f4f1;</span>
+        <p>Open an agent on your desktop and tap the Mirror button to pair with this device.</p>
+        <p style="margin-top:0.75rem;font-size:0.8rem">
+          The desktop will show a link or code. Visit that URL to start mirroring.
+        </p>
+      </div>
+    </div>
+
+    <!-- Active mirror session -->
+    <div id="mirror-session" class="hidden">
+      <div id="status-bar" class="status-bar">
+        <span id="status-dot" class="dot dot-waiting"></span>
+        <span id="status-text">Connecting to desktop...</span>
+      </div>
+
+      <div id="agent-card" class="agent-card">
+        <div id="agent-name" class="agent-name"></div>
+        <div class="agent-sub">Mirroring results from desktop</div>
+      </div>
+
+      <div id="notify-bar" class="notify-bar hidden">
+        <span>Get notified when agents finish</span>
+        <button id="notify-btn">Enable</button>
+      </div>
+
+      <div id="install-bar" class="install-bar hidden">
+        Add to Home Screen for the best experience
+      </div>
+
+      <div id="results" class="results-area">
+        <div id="empty-state" class="empty-state">
+          <span class="icon">&#x23f3;</span>
+          <p>Waiting for results from desktop...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function() {
+  var API_BASE = location.origin;
+  var POLL_INTERVAL = 2000;
+
+  // Parse URL params
+  var params = new URLSearchParams(location.search);
+  var roomId = params.get('room');
+  var agentId = params.get('agent') || 'agent';
+
+  if (!roomId) {
+    document.getElementById('no-room').classList.remove('hidden');
+    return;
+  }
+
+  // Show session UI
+  document.getElementById('mirror-session').classList.remove('hidden');
+  document.getElementById('agent-name').textContent = formatAgentName(agentId);
+
+  var lastPollTs = Date.now();
+  var desktopSeen = false;
+  var desktopLastSeen = 0;
+  var results = [];
+  var pollTimer = null;
+  var bc = null;
+
+  // BroadcastChannel for same-device
+  try {
+    bc = new BroadcastChannel('mirror:' + roomId);
+    bc.onmessage = function(ev) {
+      var msg = ev.data;
+      if (msg.from !== 'mobile') handleMessage(msg);
+    };
+  } catch(e) {}
+
+  // Announce mobile joined
+  sendToRelay({ type: 'status', data: 'mobile_joined', from: 'mobile', timestamp: Date.now() });
+
+  // Start polling
+  poll();
+  pollTimer = setInterval(poll, POLL_INTERVAL);
+
+  // Notification prompt
+  if ('Notification' in window && Notification.permission === 'default') {
+    document.getElementById('notify-bar').classList.remove('hidden');
+    document.getElementById('notify-btn').onclick = function() {
+      Notification.requestPermission().then(function(result) {
+        if (result === 'granted') {
+          document.getElementById('notify-bar').classList.add('hidden');
+        }
+      });
+    };
+  }
+
+  // PWA install prompt
+  if (!window.matchMedia('(display-mode: standalone)').matches) {
+    var isIos = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
+    if (isIos) {
+      document.getElementById('install-bar').classList.remove('hidden');
+    }
+  }
+
+  // ── Functions ──
+
+  function poll() {
+    fetch(API_BASE + '/v1/mirror/' + roomId + '?since=' + lastPollTs)
+      .then(function(r) { return r.json(); })
+      .then(function(body) {
+        var prevSeen = desktopSeen;
+        // Check peers
+        if (body.peers > 0 && !desktopSeen) {
+          desktopSeen = true;
+          updateStatus('connected');
+        }
+
+        var msgs = body.messages || [];
+        for (var i = 0; i < msgs.length; i++) {
+          var msg = msgs[i];
+          if (msg.from !== 'mobile') {
+            lastPollTs = Math.max(lastPollTs, msg.timestamp);
+            desktopLastSeen = Date.now();
+            if (!desktopSeen) {
+              desktopSeen = true;
+              updateStatus('connected');
+            }
+            handleMessage(msg);
+          }
+        }
+
+        // Desktop offline detection (no messages in 30s after we saw it once)
+        if (desktopSeen && desktopLastSeen > 0 && Date.now() - desktopLastSeen > 30000) {
+          // Keep connected status — desktop might just not be sending
+        }
+      })
+      .catch(function() {
+        // Network error — keep trying
+      });
+  }
+
+  function handleMessage(msg) {
+    if (msg.type === 'result') {
+      addResult(msg);
+      // Send notification if page not visible
+      if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+        var preview = typeof msg.data === 'string' ? msg.data.slice(0, 100) : 'New result available';
+        new Notification(formatAgentName(agentId), {
+          body: preview,
+          icon: '/icon-192.png',
+          tag: 'mirror-' + roomId
+        });
+      }
+    } else if (msg.type === 'status') {
+      if (msg.data === 'desktop_joined' || msg.data === 'mobile_joined') {
+        desktopSeen = true;
+        desktopLastSeen = Date.now();
+        updateStatus('connected');
+      }
+      // Show status messages as subtle result cards
+      if (typeof msg.data === 'string' && msg.data !== 'mobile_joined' && msg.data !== 'desktop_joined') {
+        addStatusCard(msg.data, msg.timestamp);
+      }
+    }
+  }
+
+  function addResult(msg) {
+    document.getElementById('empty-state').classList.add('hidden');
+    var container = document.getElementById('results');
+    var card = document.createElement('div');
+    card.className = 'result-card';
+
+    var time = new Date(msg.timestamp).toLocaleTimeString();
+    var meta = document.createElement('div');
+    meta.className = 'meta';
+    meta.textContent = time + ' from desktop';
+    card.appendChild(meta);
+
+    var body = document.createElement('div');
+    body.className = 'body';
+
+    var data = msg.data;
+    if (typeof data === 'string') {
+      body.textContent = data;
+    } else if (data && typeof data === 'object') {
+      // Try to render intelligently
+      if (data.text) {
+        body.textContent = data.text;
+      } else if (data.html) {
+        body.innerHTML = data.html;
+      } else if (data.image || data.imageUrl || data.src) {
+        var img = document.createElement('img');
+        img.src = data.image || data.imageUrl || data.src;
+        img.alt = 'Result';
+        body.appendChild(img);
+      } else if (data.audio || data.audioUrl) {
+        var audio = document.createElement('audio');
+        audio.controls = true;
+        audio.src = data.audio || data.audioUrl;
+        audio.style.width = '100%';
+        body.appendChild(audio);
+      } else {
+        body.textContent = JSON.stringify(data, null, 2);
+      }
+    } else {
+      body.textContent = String(data);
+    }
+
+    card.appendChild(body);
+    // Prepend (newest first)
+    container.insertBefore(card, container.firstChild.nextSibling || null);
+
+    results.push(msg);
+    // Cap at 50 visible results
+    while (container.children.length > 51) {
+      container.removeChild(container.lastChild);
+    }
+  }
+
+  function addStatusCard(status, timestamp) {
+    document.getElementById('empty-state').classList.add('hidden');
+    var container = document.getElementById('results');
+    var card = document.createElement('div');
+    card.className = 'result-card';
+    card.style.borderColor = 'rgba(124,58,237,0.3)';
+
+    var time = new Date(timestamp).toLocaleTimeString();
+    var meta = document.createElement('div');
+    meta.className = 'meta';
+    meta.textContent = time;
+    card.appendChild(meta);
+
+    var body = document.createElement('div');
+    body.className = 'body';
+    body.style.color = '#a78bfa';
+    body.textContent = status;
+    card.appendChild(body);
+
+    container.insertBefore(card, container.firstChild.nextSibling || null);
+  }
+
+  function updateStatus(state) {
+    var dot = document.getElementById('status-dot');
+    var text = document.getElementById('status-text');
+    dot.className = 'dot';
+    if (state === 'connected') {
+      dot.classList.add('dot-connected');
+      text.textContent = 'Connected to desktop';
+    } else if (state === 'offline') {
+      dot.classList.add('dot-offline');
+      text.textContent = 'Desktop offline';
+    } else {
+      dot.classList.add('dot-waiting');
+      text.textContent = 'Connecting to desktop...';
+    }
+  }
+
+  function sendToRelay(msg) {
+    fetch(API_BASE + '/v1/mirror/' + roomId, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(msg)
+    }).catch(function() {});
+  }
+
+  function formatAgentName(id) {
+    return id.split('-').map(function(w) {
+      return w.charAt(0).toUpperCase() + w.slice(1);
+    }).join(' ');
+  }
+
+  // Cleanup on page unload
+  window.addEventListener('beforeunload', function() {
+    if (pollTimer) clearInterval(pollTimer);
+    try { if (bc) bc.close(); } catch(e) {}
+  });
+})();
+</script>
+</body>
+</html>
