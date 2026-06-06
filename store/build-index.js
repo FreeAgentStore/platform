@@ -13,6 +13,17 @@ const registry = JSON.parse(fs.readFileSync(path.join(__dirname, 'registry.json'
 const indexPath = path.join(__dirname, 'index.html');
 let html = fs.readFileSync(indexPath, 'utf-8');
 
+// --- Idempotency: remove previous injections before re-injecting ---
+// Remove duplicate Tab bar CSS blocks (keep the first /* Filter bar */ occurrence)
+html = html.replace(/\s*\/\* Tab bar \*\/[\s\S]*?\.tab-count \{[^}]+\}\s*\n/g, '\n');
+// Remove duplicate auth-ui divs (keep zero — we'll inject fresh)
+html = html.replace(/<div id="auth-ui"[\s\S]*?<\/div>\s*<\/div>\s*/g, '');
+// Remove duplicate auth scripts
+html = html.replace(/<script>\s*\(function\(\)\s*\{\s*\/\/ Handle login callback[\s\S]*?<\/script>\s*/g, '');
+// Remove API key sections
+html = html.replace(/\s*<!-- API_KEYS_SECTION -->[\s\S]*?<\/section>/g, '');
+html = html.replace(/\s*<section class="container"[^>]*>[\s\S]*?Bring Your Own API Key[\s\S]*?<\/section>/g, '');
+
 const agents = registry.agents;
 
 // --- Compute tab counts ---
@@ -260,11 +271,18 @@ const apiKeysSection = `
     </div>
   </section>`;
 
-// Insert API Keys section after </section> that closes the agents grid section, before the "Where everything lives" section
-const gridSectionClose = '</section>\n  </main>';
-const gridSectionClosePos = html.indexOf(gridSectionClose);
-if (gridSectionClosePos !== -1) {
-  html = html.slice(0, gridSectionClosePos) + '</section>\n' + apiKeysSection + '\n  </main>' + html.slice(gridSectionClosePos + gridSectionClose.length);
+// Insert API Keys section once — replace the marker if it exists, or insert before "Where everything lives"
+const API_KEY_MARKER = '<!-- API_KEYS_SECTION -->';
+
+// Remove any existing API keys sections (prevents duplication on re-runs)
+html = html.replace(/\s*<section class="container"[^>]*>[\s\S]*?Bring Your Own API Key[\s\S]*?<\/section>/g, '');
+html = html.replace(new RegExp(API_KEY_MARKER, 'g'), '');
+
+// Insert once before "Where everything lives"
+const whereEverything = '<!-- Where everything lives -->';
+const wherePos = html.indexOf(whereEverything);
+if (wherePos !== -1) {
+  html = html.slice(0, wherePos) + API_KEY_MARKER + '\n' + apiKeysSection + '\n\n  ' + html.slice(wherePos);
 }
 
 // --- Update JavaScript ---
