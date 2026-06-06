@@ -2,7 +2,7 @@
 /**
  * Generates agent cards in store/index.html from registry.json.
  * Replaces the contents of <div class="agents-grid" id="agentsGrid">...</div>
- * and updates the agent count + category filter buttons.
+ * and updates the agent count, tab bar, and category filter buttons.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -14,6 +14,12 @@ const indexPath = path.join(__dirname, 'index.html');
 let html = fs.readFileSync(indexPath, 'utf-8');
 
 const agents = registry.agents;
+
+// --- Compute tab counts ---
+const tabCounts = { all: agents.length, library: 0, model: 0, agent: 0 };
+agents.forEach(a => {
+  if (a.storeType && tabCounts[a.storeType] !== undefined) tabCounts[a.storeType]++;
+});
 
 // --- Type label + style mapping ---
 function getTypeTag(agent) {
@@ -93,7 +99,12 @@ function generateCard(agent) {
     ? 'background:rgba(217,119,6,0.15);color:#fbbf24'
     : style;
 
-  return `        <div class="agent-card" data-category="${agent.category}">
+  // needsKey badge for agent cards
+  const needsKeyBadge = agent.needsKey
+    ? `\n                <span class="tag" style="background:rgba(234,88,12,0.15);color:#fb923c">API Key</span>`
+    : '';
+
+  return `        <div class="agent-card" data-category="${agent.category}" data-store-type="${agent.storeType || 'library'}">
           <a href="/agents/${agent.id}/" class="agent-card-body">
             <div class="agent-icon" style="background:${agent.iconBg}${fontStyle}">${iconContent}</div>
             <div class="agent-body">
@@ -101,7 +112,7 @@ function generateCard(agent) {
               <span class="agent-desc">${desc}</span>
               <div class="agent-meta">
                 <span class="tag" style="${displayStyle}">${displayLabel}</span>
-                <span class="tag">${escapeHtml(secondTag)}</span>
+                <span class="tag">${escapeHtml(secondTag)}</span>${needsKeyBadge}
               </div>
             </div>
           </a>
@@ -151,6 +162,32 @@ html = html.replace(
   `<span class="agent-count" id="agentCount">${agents.length} agents</span>`
 );
 
+// --- Update tab bar ---
+const tabBarHtml = `<div class="tabs">
+          <button class="tab active" onclick="switchTab('all')">All <span class="tab-count">${tabCounts.all}</span></button>
+          <button class="tab" onclick="switchTab('library')">Libraries <span class="tab-count">${tabCounts.library}</span></button>
+          <button class="tab" onclick="switchTab('model')">Models <span class="tab-count">${tabCounts.model}</span></button>
+          <button class="tab" onclick="switchTab('agent')">Agents <span class="tab-count">${tabCounts.agent}</span></button>
+        </div>`;
+
+// Replace existing tabs div or insert before toolbar
+const existingTabsMatch = html.match(/<div class="tabs">[\s\S]*?<\/div>/);
+if (existingTabsMatch) {
+  html = html.replace(existingTabsMatch[0], tabBarHtml);
+} else {
+  // Insert tabs before the first toolbar
+  const toolbarPos = html.indexOf('<div class="toolbar">');
+  if (toolbarPos !== -1) {
+    // Find the start of the line
+    html = html.slice(0, toolbarPos) + tabBarHtml + '\n\n        ' + html.slice(toolbarPos);
+  }
+}
+
+// --- Remove old type filter toolbar (second toolbar row) ---
+// The old second toolbar with TYPE filter buttons
+const secondToolbarRegex = /<div class="toolbar" style="margin-top:0\.35rem;gap:0\.35rem">[\s\S]*?<\/div>\s*\n/;
+html = html.replace(secondToolbarRegex, '');
+
 // --- Update category filter buttons ---
 // Collect all unique categories from registry
 const categories = [...new Set(agents.map(a => a.category))];
@@ -169,11 +206,11 @@ function categoryLabel(cat) {
 }
 
 const filterButtons = [
-  `<button class="filter-btn active" onclick="filterAgents('all')">All</button>`,
-  ...categories.map(c => `<button class="filter-btn" onclick="filterAgents('${c}')">${categoryLabel(c)}</button>`),
+  `<button class="filter-btn active" onclick="filterCategory('all')">All</button>`,
+  ...categories.map(c => `<button class="filter-btn" onclick="filterCategory('${c}')">${categoryLabel(c)}</button>`),
 ];
 
-// Replace the first toolbar's filter buttons (between <div class="toolbar"> and <span class="agent-count")
+// Replace the toolbar's filter buttons (between <div class="toolbar"> and <span class="agent-count")
 const toolbarMatch = html.match(/<div class="toolbar">\s*\n([\s\S]*?)<span class="agent-count"/);
 if (toolbarMatch) {
   const oldButtons = toolbarMatch[1];
@@ -181,6 +218,139 @@ if (toolbarMatch) {
   html = html.replace(oldButtons, newButtons);
 }
 
+// --- Add tab bar CSS ---
+const tabsCss = `
+    /* Tab bar */
+    .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--line); margin-bottom: 1rem; }
+    .tab {
+      padding: 0.6rem 1.25rem; font-size: 0.9rem; font-weight: 600;
+      color: var(--muted); background: none; border: none; cursor: pointer;
+      border-bottom: 2px solid transparent; transition: all 0.15s;
+      font-family: var(--font-body);
+    }
+    .tab:hover { color: var(--ink); }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-count { font-size: 0.72rem; color: var(--muted-soft); margin-left: 0.25rem; }
+`;
+
+// Insert tabs CSS before /* Filter bar */
+const filterBarCssPos = html.indexOf('/* Filter bar */');
+if (filterBarCssPos !== -1) {
+  html = html.slice(0, filterBarCssPos) + tabsCss.trim() + '\n\n    ' + html.slice(filterBarCssPos);
+}
+
+// --- Add API Keys section ---
+const apiKeysSection = `
+  <section class="container" style="margin-top:2rem">
+    <div style="background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:1.5rem;text-align:center">
+      <h2 style="font-family:var(--font-display);font-size:1.25rem;margin-bottom:0.5rem">Bring Your Own API Key</h2>
+      <p style="color:var(--muted);font-size:0.9rem;margin-bottom:1rem;max-width:500px;margin-left:auto;margin-right:auto">
+        Some agents use AI providers (OpenAI, Claude, Gemini). Add your API key once —
+        the platform securely stores it and injects it for you. You pay your provider directly.
+      </p>
+      <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin-bottom:1rem">
+        <span style="display:flex;align-items:center;gap:0.3rem;padding:0.3rem 0.75rem;border-radius:8px;border:1px solid var(--line);font-size:0.82rem;color:var(--muted)">OpenAI</span>
+        <span style="display:flex;align-items:center;gap:0.3rem;padding:0.3rem 0.75rem;border-radius:8px;border:1px solid var(--line);font-size:0.82rem;color:var(--muted)">Anthropic</span>
+        <span style="display:flex;align-items:center;gap:0.3rem;padding:0.3rem 0.75rem;border-radius:8px;border:1px solid var(--line);font-size:0.82rem;color:var(--muted)">Google AI</span>
+        <span style="display:flex;align-items:center;gap:0.3rem;padding:0.3rem 0.75rem;border-radius:8px;border:1px solid var(--line);font-size:0.82rem;color:var(--muted)">Groq</span>
+        <span style="display:flex;align-items:center;gap:0.3rem;padding:0.3rem 0.75rem;border-radius:8px;border:1px solid var(--line);font-size:0.82rem;color:var(--muted)">OpenRouter</span>
+      </div>
+      <a href="/v1/keys" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1.25rem;border-radius:10px;background:var(--accent);color:white;font-weight:600;font-size:0.88rem;text-decoration:none">Manage API Keys</a>
+      <p style="color:var(--muted-soft);font-size:0.72rem;margin-top:0.5rem">Encrypted with AES-256-GCM. Keys never leave the platform server.</p>
+    </div>
+  </section>`;
+
+// Insert API Keys section after </section> that closes the agents grid section, before the "Where everything lives" section
+const gridSectionClose = '</section>\n  </main>';
+const gridSectionClosePos = html.indexOf(gridSectionClose);
+if (gridSectionClosePos !== -1) {
+  html = html.slice(0, gridSectionClosePos) + '</section>\n' + apiKeysSection + '\n  </main>' + html.slice(gridSectionClosePos + gridSectionClose.length);
+}
+
+// --- Update JavaScript ---
+const oldScript = `<script>
+    var _catFilter = 'all';
+    var _typeFilter = '';
+
+    function filterAgents(cat) {
+      _catFilter = cat;
+      // Update category button active states (first toolbar only)
+      var toolbars = document.querySelectorAll('.toolbar');
+      toolbars[0].querySelectorAll('.filter-btn').forEach(function(b) {
+        b.classList.toggle('active', b.textContent.toLowerCase() === cat || (cat === 'all' && b.textContent === 'All'));
+      });
+      applyFilters();
+    }
+
+    function filterType(type) {
+      _typeFilter = type;
+      // Update type button active states (second toolbar)
+      var toolbars = document.querySelectorAll('.toolbar');
+      if (toolbars[1]) {
+        toolbars[1].querySelectorAll('.filter-btn').forEach(function(b) {
+          b.classList.toggle('active', b.textContent.toLowerCase().replace(/\\s+/g, '-') === type || b.textContent.toLowerCase() === type);
+        });
+      }
+      applyFilters();
+    }
+
+    function applyFilters() {
+      var cards = document.querySelectorAll('.agent-card');
+      var visible = 0;
+      cards.forEach(function(c) {
+        var catMatch = _catFilter === 'all' || c.dataset.category === _catFilter;
+        var typeMatch = true;
+        if (_typeFilter) {
+          // Read type from the first .tag in .agent-meta
+          var tag = c.querySelector('.agent-meta .tag');
+          var tagText = tag ? tag.textContent.toLowerCase().replace(/\\s+/g, '-') : '';
+          typeMatch = tagText.indexOf(_typeFilter) >= 0;
+        }
+        var show = catMatch && typeMatch;
+        c.style.display = show ? '' : 'none';
+        if (show) visible++;
+      });
+      document.getElementById('agentCount').textContent = visible + ' agent' + (visible !== 1 ? 's' : '');
+    }
+  </script>`;
+
+const newScript = `<script>
+    var _tab = 'all';
+    var _category = 'all';
+
+    function switchTab(tab) {
+      _tab = tab;
+      document.querySelectorAll('.tab').forEach(function(t) {
+        var label = t.textContent.trim().split(' ')[0].toLowerCase();
+        t.classList.toggle('active', label === tab || (tab === 'all' && label === 'all'));
+      });
+      applyFilters();
+    }
+
+    function filterCategory(cat) {
+      _category = cat;
+      document.querySelectorAll('.toolbar .filter-btn').forEach(function(b) {
+        b.classList.toggle('active', b.textContent.toLowerCase() === cat || (cat === 'all' && b.textContent === 'All'));
+      });
+      applyFilters();
+    }
+
+    function applyFilters() {
+      var cards = document.querySelectorAll('.agent-card');
+      var visible = 0;
+      cards.forEach(function(c) {
+        var tabMatch = _tab === 'all' || c.dataset.storeType === _tab;
+        var catMatch = _category === 'all' || c.dataset.category === _category;
+        var show = tabMatch && catMatch;
+        c.style.display = show ? '' : 'none';
+        if (show) visible++;
+      });
+      document.getElementById('agentCount').textContent = visible + ' agent' + (visible !== 1 ? 's' : '');
+    }
+  </script>`;
+
+html = html.replace(oldScript, newScript);
+
 // --- Write back ---
 fs.writeFileSync(indexPath, html, 'utf-8');
-console.log(`Updated index.html with ${agents.length} agent cards and ${categories.length} category filters.`);
+console.log(`Updated index.html with ${agents.length} agent cards, tabs (${tabCounts.library} libraries, ${tabCounts.model} models, ${tabCounts.agent} agents), ${categories.length} category filters, and API Keys section.`);

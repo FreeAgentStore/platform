@@ -21,6 +21,7 @@
         "wasm"
       ],
       "type": "model",
+      "storeType": "model",
       "api": {
         "imports": "import { ... } from '@freeagentstore/tts'",
         "note": "This agent requires the full UI. Use it at freeagentstore.online/a/tts/ or embed via iframe."
@@ -77,6 +78,7 @@
         "wasm"
       ],
       "type": "model",
+      "storeType": "model",
       "api": {
         "imports": "import { ... } from '@freeagentstore/transcriber'",
         "note": "This agent requires the full UI. Use it at freeagentstore.online/a/transcriber/ or embed via iframe."
@@ -121,6 +123,7 @@
         "wasm"
       ],
       "type": "model",
+      "storeType": "model",
       "api": {
         "imports": "import { ... } from '@freeagentstore/bg-remover'",
         "note": "This agent requires the full UI. Use it at freeagentstore.online/a/bg-remover/ or embed via iframe."
@@ -162,6 +165,7 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
+      "storeType": "library",
       "api": {
         "imports": "import { analyzeSentiment } from '@freeagentstore/sentiment'",
         "functions": [
@@ -208,6 +212,7 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
+      "storeType": "library",
       "evolution": {
         "versions": 7,
         "examples": 500,
@@ -257,6 +262,8 @@
       "offlineCapable": true,
       "backends": [],
       "type": "built-in-ai",
+      "storeType": "agent",
+      "needsKey": true,
       "api": {
         "imports": "import { ... } from '@freeagentstore/summarizer'",
         "note": "This agent requires the full UI. Use it at freeagentstore.online/a/summarizer/ or embed via iframe."
@@ -319,6 +326,8 @@
       "offlineCapable": true,
       "backends": [],
       "type": "built-in-ai",
+      "storeType": "agent",
+      "needsKey": true,
       "api": {
         "imports": "import { ... } from '@freeagentstore/writing-assistant'",
         "note": "This agent requires the full UI. Use it at freeagentstore.online/a/writing-assistant/ or embed via iframe."
@@ -368,6 +377,8 @@
       "offlineCapable": true,
       "backends": [],
       "type": "built-in-ai",
+      "storeType": "agent",
+      "needsKey": true,
       "api": {
         "imports": "import { ... } from '@freeagentstore/code-explainer'",
         "note": "This agent requires the full UI. Use it at freeagentstore.online/a/code-explainer/ or embed via iframe."
@@ -409,6 +420,8 @@
       "offlineCapable": false,
       "backends": [],
       "type": "built-in-ai",
+      "storeType": "agent",
+      "needsKey": true,
       "api": {
         "imports": "import { ... } from '@freeagentstore/voice-notes'",
         "note": "This agent requires the full UI. Use it at freeagentstore.online/a/voice-notes/ or embed via iframe."
@@ -432,6 +445,7 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
+      "storeType": "library",
       "api": {
         "imports": "import { ... } from '@freeagentstore/icon-generator'",
         "note": "This agent requires the full UI. Use it at freeagentstore.online/a/icon-generator/ or embed via iframe."
@@ -446,6 +460,8 @@
       "icon": "🤖",
       "iconBg": "#f59e0b",
       "type": "built-in-ai",
+      "storeType": "agent",
+      "needsKey": true,
       "modelSize": "0MB",
       "api": {
         "imports": "import { ... } from '@freeagentstore/browser-automation'",
@@ -471,6 +487,7 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
+      "storeType": "library",
       "api": {
         "imports": "import { convert, getCategories } from '@freeagentstore/unit-converter'",
         "functions": [
@@ -532,6 +549,7 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
+      "storeType": "library",
       "api": {
         "imports": "import { ... } from '@freeagentstore/avatar-maker'",
         "note": "This agent requires the full UI. Use it at freeagentstore.online/a/avatar-maker/ or embed via iframe."
@@ -580,6 +598,8 @@
       "offlineCapable": true,
       "backends": [],
       "type": "built-in-ai",
+      "storeType": "agent",
+      "needsKey": true,
       "api": {
         "imports": "import { ... } from '@freeagentstore/mood-palette'",
         "note": "This agent requires the full UI. Use it at freeagentstore.online/a/mood-palette/ or embed via iframe."
@@ -630,6 +650,7 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
+      "storeType": "library",
       "api": {
         "imports": "import { matchPattern, buildFromDescription, PATTERNS } from '@freeagentstore/regex-builder'",
         "functions": [
@@ -668,6 +689,7 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
+      "storeType": "library",
       "api": {
         "imports": "import { formatJson, minifyJson, validateJson, queryJson, diffJson, jsonToTypes } from '@freeagentstore/json-formatter'",
         "functions": [
@@ -721,6 +743,7 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
+      "storeType": "library",
       "api": {
         "imports": "import { sha256, md5, hmacSha256, base64Encode, base64Decode, generateUuid, generatePassword, decodeJwt } from '@freeagentstore/hash-generator'",
         "functions": [
@@ -774,6 +797,7 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
+      "storeType": "library",
       "api": {
         "imports": "import { createAgent, seek, flee, flock, applyForce } from '@freeagentstore/steering'",
         "functions": [
@@ -817,6 +841,7 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
+      "storeType": "library",
       "api": {
         "imports": "import { BT, Sequence, Selector, Wait, MoveTo } from '@freeagentstore/behavior-tree'",
         "functions": [
@@ -845,6 +870,7 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
+      "storeType": "library",
       "api": {
         "imports": "import { createWorld, createCloth, step } from '@freeagentstore/physics-sim'",
         "functions": [
@@ -883,6 +909,7 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
+      "storeType": "library",
       "evolution": {
         "versions": 1,
         "examples": 500,
@@ -921,6 +948,7 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
+      "storeType": "library",
       "evolution": {
         "versions": 1,
         "examples": 1000,
@@ -954,6 +982,7 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
+      "storeType": "library",
       "evolution": {
         "versions": 1,
         "examples": 5000,
@@ -987,6 +1016,7 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
+      "storeType": "library",
       "evolution": {
         "versions": 1,
         "examples": 2000,
@@ -1020,6 +1050,7 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
+      "storeType": "library",
       "evolution": {
         "versions": 1,
         "examples": 3000,
@@ -1053,6 +1084,7 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
+      "storeType": "library",
       "evolution": {
         "versions": 1,
         "examples": 1500,
@@ -1086,6 +1118,7 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
+      "storeType": "library",
       "evolution": {
         "versions": 1,
         "examples": 5000,
@@ -1124,6 +1157,7 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
+      "storeType": "library",
       "evolution": {
         "versions": 1,
         "examples": 10000
@@ -1161,6 +1195,7 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
+      "storeType": "library",
       "evolution": {
         "versions": 1,
         "examples": 8000,
@@ -1195,6 +1230,7 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
+      "storeType": "library",
       "evolution": {
         "versions": 1,
         "examples": 800,
@@ -1228,6 +1264,7 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
+      "storeType": "library",
       "evolution": {
         "versions": 1,
         "examples": 600,
@@ -1261,6 +1298,7 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
+      "storeType": "library",
       "evolution": {
         "versions": 1,
         "examples": 700,
@@ -1294,6 +1332,7 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
+      "storeType": "library",
       "evolution": {
         "versions": 1,
         "examples": 1200,
@@ -1327,6 +1366,7 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
+      "storeType": "library",
       "evolution": {
         "versions": 1,
         "examples": 2000,
@@ -1360,6 +1400,7 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
+      "storeType": "library",
       "evolution": {
         "versions": 1,
         "examples": 1500,
@@ -1393,6 +1434,7 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
+      "storeType": "library",
       "evolution": {
         "versions": 1,
         "examples": 900,
@@ -1426,6 +1468,7 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
+      "storeType": "library",
       "evolution": {
         "versions": 1,
         "examples": 1000,
@@ -1462,6 +1505,7 @@
         "wasm"
       ],
       "type": "model",
+      "storeType": "model",
       "api": {
         "imports": "import { initModel, analyzeFood } from '@freeagentstore/food-analyzer'",
         "functions": [
@@ -1494,6 +1538,7 @@
         "wasm"
       ],
       "type": "model",
+      "storeType": "model",
       "api": {
         "imports": "import { initModel, identifyPlant } from '@freeagentstore/plant-identifier'",
         "functions": [
@@ -1525,6 +1570,7 @@
         "wasm"
       ],
       "type": "model",
+      "storeType": "model",
       "api": {
         "imports": "import { initModel, indexTexts, search } from '@freeagentstore/smart-search'",
         "functions": [
@@ -1556,6 +1602,7 @@
         "wasm"
       ],
       "type": "model",
+      "storeType": "model",
       "api": {
         "imports": "import { initModel, scanDocument } from '@freeagentstore/document-scanner'",
         "functions": [
@@ -1587,6 +1634,7 @@
         "wasm"
       ],
       "type": "model",
+      "storeType": "model",
       "api": {
         "imports": "import { initModel, processRecording } from '@freeagentstore/voice-journal'",
         "functions": [
@@ -1618,6 +1666,7 @@
         "wasm"
       ],
       "type": "model",
+      "storeType": "model",
       "api": {
         "imports": "import { initModel, describeScene } from '@freeagentstore/scene-describer'",
         "functions": [
@@ -1649,6 +1698,7 @@
         "wasm"
       ],
       "type": "model",
+      "storeType": "model",
       "api": {
         "imports": "import { initModel, scanReceipt } from '@freeagentstore/receipt-scanner'",
         "functions": [
@@ -1680,6 +1730,7 @@
         "wasm"
       ],
       "type": "model",
+      "storeType": "model",
       "api": {
         "imports": "import { initModel, indexFAQ, findAnswer } from '@freeagentstore/faq-matcher'",
         "functions": [
@@ -1711,6 +1762,7 @@
         "wasm"
       ],
       "type": "model",
+      "storeType": "model",
       "api": {
         "imports": "import { initModel, checkPlagiarism } from '@freeagentstore/plagiarism-checker'",
         "functions": [
@@ -1742,6 +1794,7 @@
         "wasm"
       ],
       "type": "model",
+      "storeType": "model",
       "api": {
         "imports": "import { initModel, summarizeMeeting } from '@freeagentstore/meeting-summarizer'",
         "functions": [
@@ -1771,6 +1824,7 @@
       "offlineCapable": true,
       "backends": [],
       "type": "heuristic",
+      "storeType": "library",
       "api": {
         "imports": "import { generateCards } from '@freeagentstore/study-cards'",
         "functions": [
