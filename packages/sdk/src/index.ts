@@ -53,3 +53,6 @@ export type {
   OllamaStatus,
 } from './types.js';
 export { WorkerBridge } from './worker-bridge.js';
+// LangChain.js integration — proxy-backed chat + LangChain config
+export type { FagsChatOptions } from './langchain.js';
+export { createFagsChat, getFagsLangChainConfig } from './langchain.js';

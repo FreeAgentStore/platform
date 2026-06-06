@@ -18,6 +18,10 @@
     "./ui": {
       "types": "./dist/ui.d.ts",
       "import": "./dist/ui.js"
+    },
+    "./langchain": {
+      "types": "./dist/langchain.d.ts",
+      "import": "./dist/langchain.js"
     }
   },
   "homepage": "https://github.com/FreeAgentStore/platform#readme",

@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Builder - FreeAgentStore</title>
+  <meta name="description" content="Visual pipeline builder for AI agents. Drag-and-drop steps, test live, publish to FreeAgentStore.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --font-body:'Manrope',system-ui,sans-serif;
+      --font-display:'Fraunces',Georgia,serif;
+      --font-mono:'SF Mono','Fira Code',monospace;
+      --paper:#0a0a0a;--panel:#171717;--panel-alt:#1f1f1f;
+      --ink:#fafafa;--ink-strong:#ffffff;
+      --muted:#a3a3a3;--muted-soft:#737373;
+      --accent:#7c3aed;--accent-hover:#6d28d9;--accent-soft:rgba(124,58,237,0.15);
+      --green:#22c55e;--green-soft:rgba(34,197,94,0.15);
+      --red:#ef4444;--red-soft:rgba(239,68,68,0.15);
+      --blue:#3b82f6;--blue-soft:rgba(59,130,246,0.15);
+      --amber:#f59e0b;--amber-soft:rgba(245,158,11,0.15);
+      --line:#262626;--line-strong:#404040;
+      --shadow:0 1px 3px rgba(0,0,0,0.3);
+      --shadow-lg:0 10px 25px -8px rgba(0,0,0,0.5);
+      --radius:0.75rem;
+    }
+    body{font-family:var(--font-body);background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;min-height:100vh}
+    a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+    button{font-family:var(--font-body);cursor:pointer}
+    input,textarea,select{font-family:var(--font-body);background:var(--panel-alt);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.88rem;outline:none;transition:border-color 0.15s}
+    input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+    select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23a3a3a3' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 0.75rem center;padding-right:2rem}
+    textarea{resize:vertical;min-height:60px}
+    label{font-size:0.82rem;font-weight:600;color:var(--muted);display:block;margin-bottom:0.25rem}
+
+    /* Header */
+    header{border-bottom:1px solid var(--line);padding:0.75rem 1.5rem;display:flex;align-items:center;gap:1rem}
+    .brand{display:flex;align-items:center;gap:0.6rem;text-decoration:none;color:var(--ink)}
+    .brand-mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#a855f7);display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+    .brand-name{font-family:var(--font-display);font-size:1.15rem;font-weight:700}
+    .header-sep{color:var(--muted-soft);font-size:1.2rem;font-weight:300}
+    .header-title{font-size:0.95rem;font-weight:600;color:var(--muted)}
+    .header-right{margin-left:auto;display:flex;align-items:center;gap:0.75rem}
+    #auth-login{padding:0.35rem 0.85rem;border-radius:8px;border:1px solid var(--line);color:var(--muted);font-size:0.82rem;font-weight:600;text-decoration:none;transition:border-color 0.15s,color 0.15s;display:none}
+    #auth-login:hover{border-color:var(--accent);color:var(--ink)}
+    #auth-user{display:none;align-items:center;gap:0.5rem}
+    #auth-avatar{width:28px;height:28px;border-radius:50%;border:1px solid var(--line)}
+    #auth-signout{padding:0.25rem 0.6rem;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer}
+
+    /* Layout */
+    .container{max-width:900px;margin:0 auto;padding:1.5rem}
+
+    /* Agent meta */
+    .meta-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem}
+    @media(max-width:600px){.meta-row{grid-template-columns:1fr}}
+    .meta-row input{width:100%}
+
+    /* Pipeline */
+    .pipeline-header{display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem}
+    .pipeline-header h2{font-family:var(--font-display);font-size:1.1rem;font-weight:700}
+    .pipeline-header .count{font-size:0.78rem;color:var(--muted-soft);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:0.15rem 0.5rem}
+
+    /* Step card */
+    .step-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1rem 1.25rem;margin-bottom:0.5rem;position:relative;transition:border-color 0.15s}
+    .step-card:hover{border-color:var(--line-strong)}
+    .step-card.dragging{opacity:0.5;border-color:var(--accent)}
+    .step-card.drag-over{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+    .step-header{display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem}
+    .step-drag{cursor:grab;color:var(--muted-soft);font-size:1rem;padding:0 0.25rem;user-select:none}
+    .step-drag:active{cursor:grabbing}
+    .step-number{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:700;flex-shrink:0}
+    .step-number.input{background:var(--blue-soft);color:var(--blue)}
+    .step-number.library{background:var(--green-soft);color:var(--green)}
+    .step-number.ai{background:var(--accent-soft);color:#a78bfa}
+    .step-number.transform{background:var(--amber-soft);color:var(--amber)}
+    .step-number.output{background:var(--red-soft);color:var(--red)}
+    .step-type-label{font-size:0.82rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em}
+    .step-type-label.input{color:var(--blue)}
+    .step-type-label.library{color:var(--green)}
+    .step-type-label.ai{color:#a78bfa}
+    .step-type-label.transform{color:var(--amber)}
+    .step-type-label.output{color:var(--red)}
+    .step-delete{margin-left:auto;background:none;border:none;color:var(--muted-soft);font-size:1.1rem;padding:0.25rem;border-radius:6px;transition:color 0.15s,background 0.15s}
+    .step-delete:hover{color:var(--red);background:var(--red-soft)}
+    .step-fields{display:grid;gap:0.75rem}
+    .step-fields .field-row{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem}
+    @media(max-width:600px){.step-fields .field-row{grid-template-columns:1fr}}
+    .step-fields .field-full{grid-column:1/-1}
+
+    /* Arrow between steps */
+    .step-arrow{text-align:center;color:var(--muted-soft);font-size:1.2rem;padding:0.15rem 0;user-select:none}
+
+    /* Add step button */
+    .add-step-bar{display:flex;gap:0.5rem;flex-wrap:wrap;margin:1rem 0}
+    .add-step-btn{padding:0.4rem 0.85rem;border-radius:100px;border:1px dashed var(--line);background:transparent;color:var(--muted);font-size:0.82rem;font-weight:600;transition:all 0.15s}
+    .add-step-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+
+    /* Action buttons */
+    .actions{display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1.5rem}
+    .btn{padding:0.55rem 1.25rem;border-radius:10px;font-size:0.88rem;font-weight:600;border:none;display:inline-flex;align-items:center;gap:0.4rem;transition:all 0.15s}
+    .btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:var(--accent-hover)}
+    .btn-secondary{background:var(--panel);color:var(--ink);border:1px solid var(--line)}.btn-secondary:hover{border-color:var(--line-strong)}
+    .btn-green{background:var(--green);color:#fff}.btn-green:hover{background:#16a34a}
+    .btn:disabled{opacity:0.5;cursor:not-allowed}
+
+    /* Preview */
+    .preview-section{margin-top:2rem;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.25rem}
+    .preview-section h3{font-family:var(--font-display);font-size:1rem;font-weight:700;margin-bottom:0.75rem}
+    .preview-input{width:100%;margin-bottom:0.75rem}
+    .preview-output{background:var(--panel-alt);border:1px solid var(--line);border-radius:8px;padding:0.75rem;min-height:80px;font-size:0.88rem;color:var(--muted);white-space:pre-wrap;word-break:break-word;max-height:400px;overflow-y:auto}
+    .preview-output.has-content{color:var(--ink)}
+    .preview-output.error{color:var(--red)}
+    .preview-status{font-size:0.78rem;color:var(--muted-soft);margin-top:0.5rem}
+
+    /* Code modal */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:100;padding:1.5rem}
+    .modal-overlay.open{display:flex}
+    .modal{background:var(--panel);border:1px solid var(--line);border-radius:16px;max-width:800px;width:100%;max-height:85vh;display:flex;flex-direction:column}
+    .modal-header{display:flex;align-items:center;padding:1rem 1.25rem;border-bottom:1px solid var(--line)}
+    .modal-header h3{font-family:var(--font-display);font-size:1rem;font-weight:700;flex:1}
+    .modal-close{background:none;border:none;color:var(--muted);font-size:1.2rem;padding:0.25rem;cursor:pointer}
+    .modal-close:hover{color:var(--ink)}
+    .modal-body{padding:1.25rem;overflow-y:auto;flex:1}
+    .modal-body pre{background:var(--panel-alt);border:1px solid var(--line);border-radius:8px;padding:1rem;font-family:var(--font-mono);font-size:0.82rem;line-height:1.6;overflow-x:auto;white-space:pre;color:var(--ink)}
+    .modal-footer{display:flex;gap:0.75rem;padding:1rem 1.25rem;border-top:1px solid var(--line)}
+
+    /* Temperature slider */
+    input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:3px;background:var(--line);border:none;padding:0;outline:none}
+    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);cursor:pointer}
+    .range-row{display:flex;align-items:center;gap:0.75rem}
+    .range-val{font-size:0.82rem;color:var(--muted);min-width:2rem;text-align:right}
+  </style>
+</head>
+<body>
+  <header>
+    <a href="/" class="brand">
+      <span class="brand-mark">&#x1f916;</span>
+      <span class="brand-name">AgentStore</span>
+    </a>
+    <span class="header-sep">/</span>
+    <span class="header-title">Agent Builder</span>
+    <div class="header-right">
+      <a href="/v1/auth/github" id="auth-login">Sign in</a>
+      <div id="auth-user">
+        <img id="auth-avatar" src="" alt="">
+        <button id="auth-signout">Sign out</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Agent metadata -->
+    <div class="meta-row">
+      <div>
+        <label for="agent-name">Agent Name</label>
+        <input type="text" id="agent-name" placeholder="My AI Agent" value="">
+      </div>
+      <div>
+        <label for="agent-desc">Description</label>
+        <input type="text" id="agent-desc" placeholder="What does this agent do?">
+      </div>
+    </div>
+
+    <!-- Pipeline -->
+    <div class="pipeline-header">
+      <h2>Pipeline</h2>
+      <span class="count" id="step-count">0 steps</span>
+    </div>
+
+    <div id="pipeline"></div>
+
+    <div class="add-step-bar">
+      <button class="add-step-btn" onclick="addStep('input')">+ Input</button>
+      <button class="add-step-btn" onclick="addStep('library')">+ Library</button>
+      <button class="add-step-btn" onclick="addStep('ai')">+ AI</button>
+      <button class="add-step-btn" onclick="addStep('transform')">+ Transform</button>
+      <button class="add-step-btn" onclick="addStep('output')">+ Output</button>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions">
+      <button class="btn btn-primary" onclick="testPipeline()">&#x25b6; Test Pipeline</button>
+      <button class="btn btn-secondary" onclick="viewCode()">View Code</button>
+      <button class="btn btn-green" onclick="publishAgent()">Publish to FreeAgentStore</button>
+    </div>
+
+    <!-- Preview -->
+    <div class="preview-section">
+      <h3>Preview</h3>
+      <textarea id="preview-input" class="preview-input" rows="3" placeholder="Enter test input here..."></textarea>
+      <div id="preview-output" class="preview-output">Output will appear here after running the pipeline.</div>
+      <div id="preview-status" class="preview-status"></div>
+    </div>
+  </div>
+
+  <!-- Code modal -->
+  <div class="modal-overlay" id="code-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Generated Agent Code</h3>
+        <button class="modal-close" onclick="closeCodeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <pre id="code-output"></pre>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="copyCode()">Copy to Clipboard</button>
+        <button class="btn btn-secondary" onclick="closeCodeModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────
+var pipeline = [];
+var stepIdCounter = 0;
+
+var MODELS = {
+  openai: ['gpt-4o-mini', 'gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'],
+  anthropic: ['claude-sonnet-4-20250514', 'claude-haiku-4-20250414', 'claude-3-5-sonnet-20241022'],
+  google: ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.0-flash'],
+  groq: ['llama-3.1-8b-instant', 'llama-3.1-70b-versatile', 'mixtral-8x7b-32768']
+};
+
+var INPUT_TYPES = ['Text', 'File', 'Image', 'Audio', 'URL'];
+var OUTPUT_FORMATS = ['Raw text', 'Formatted JSON', 'Markdown', 'Table', 'Chart'];
+var PREBUILT_TRANSFORMS = {
+  'Extract JSON': "try { return JSON.parse(prev); } catch { var m = prev.match(/\\{[\\s\\S]*\\}/); return m ? JSON.parse(m[0]) : prev; }",
+  'Split lines': "return prev.split('\\n').filter(function(l) { return l.trim(); });",
+  'Uppercase': "return String(prev).toUpperCase();",
+  'Count words': "return { wordCount: String(prev).split(/\\s+/).filter(Boolean).length, text: prev };"
+};
+
+var PROVIDER_HOSTS = {
+  openai: 'api.openai.com',
+  anthropic: 'api.anthropic.com',
+  google: 'generativelanguage.googleapis.com',
+  groq: 'api.groq.com'
+};
+
+// ── Persistence ────────────────────────────────────────────────────────
+function savePipeline() {
+  try {
+    var state = {
+      name: document.getElementById('agent-name').value,
+      desc: document.getElementById('agent-desc').value,
+      pipeline: pipeline,
+      stepIdCounter: stepIdCounter
+    };
+    localStorage.setItem('fags_builder_state', JSON.stringify(state));
+  } catch (e) {}
+}
+
+function loadPipeline() {
+  try {
+    var raw = localStorage.getItem('fags_builder_state');
+    if (!raw) return;
+    var state = JSON.parse(raw);
+    document.getElementById('agent-name').value = state.name || '';
+    document.getElementById('agent-desc').value = state.desc || '';
+    stepIdCounter = state.stepIdCounter || 0;
+    pipeline = state.pipeline || [];
+    renderPipeline();
+  } catch (e) {}
+}
+
+// ── Auth ───────────────────────────────────────────────────────────────
+var session = null;
+function initAuth() {
+  if (location.search.includes('login=success') && location.hash.startsWith('#session=')) {
+    var token = location.hash.slice('#session='.length);
+    if (token) {
+      localStorage.setItem('fags_session', JSON.stringify({ token: token }));
+      history.replaceState(null, '', '/create/');
+      location.reload();
+      return;
+    }
+  }
+  try {
+    var stored = localStorage.getItem('fags_session');
+    if (stored) session = JSON.parse(stored);
+  } catch (e) {}
+
+  var loginEl = document.getElementById('auth-login');
+  var userEl = document.getElementById('auth-user');
+  var avatarEl = document.getElementById('auth-avatar');
+
+  if (session && session.token) {
+    try {
+      var parts = session.token.split('.');
+      var payload = JSON.parse(atob(parts[0]));
+      if (payload.exp && payload.exp < Date.now() / 1000) {
+        localStorage.removeItem('fags_session');
+        session = null;
+      } else {
+        avatarEl.src = payload.avatar || '';
+        avatarEl.alt = payload.login || '';
+        userEl.style.display = 'flex';
+      }
+    } catch (e) {
+      localStorage.removeItem('fags_session');
+      session = null;
+    }
+  }
+  if (!session) loginEl.style.display = 'inline-block';
+
+  document.getElementById('auth-signout').addEventListener('click', function() {
+    fetch('/v1/auth/logout', { method: 'POST' }).finally(function() {
+      localStorage.removeItem('fags_session');
+      location.reload();
+    });
+  });
+}
+
+function getToken() {
+  try {
+    var s = localStorage.getItem('fags_session');
+    if (s) return JSON.parse(s).token || null;
+  } catch (e) {}
+  return null;
+}
+
+// ── Pipeline manipulation ──────────────────────────────────────────────
+function addStep(type) {
+  var step = { id: ++stepIdCounter, type: type };
+  switch (type) {
+    case 'input':
+      step.inputType = 'Text';
+      step.label = 'Enter your text';
+      break;
+    case 'library':
+      step.agentId = '';
+      step.functionName = '';
+      break;
+    case 'ai':
+      step.provider = 'openai';
+      step.model = 'gpt-4o-mini';
+      step.systemPrompt = '';
+      step.userPrompt = '{{prev}}';
+      step.temperature = 0.7;
+      step.streaming = false;
+      break;
+    case 'transform':
+      step.code = 'return prev;';
+      step.prebuilt = '';
+      break;
+    case 'output':
+      step.format = 'Raw text';
+      break;
+  }
+  pipeline.push(step);
+  renderPipeline();
+  savePipeline();
+}
+
+function deleteStep(id) {
+  pipeline = pipeline.filter(function(s) { return s.id !== id; });
+  renderPipeline();
+  savePipeline();
+}
+
+function updateStep(id, field, value) {
+  var step = pipeline.find(function(s) { return s.id === id; });
+  if (!step) return;
+  step[field] = value;
+  // If provider changed, reset model to first available
+  if (field === 'provider' && step.type === 'ai') {
+    step.model = MODELS[value] ? MODELS[value][0] : '';
+    renderPipeline();
+  }
+  // If prebuilt transform selected, update code
+  if (field === 'prebuilt' && value && PREBUILT_TRANSFORMS[value]) {
+    step.code = PREBUILT_TRANSFORMS[value];
+    renderPipeline();
+  }
+  savePipeline();
+}
+
+// ── Drag and drop ──────────────────────────────────────────────────────
+var dragSrcId = null;
+
+function onDragStart(e, id) {
+  dragSrcId = id;
+  e.dataTransfer.effectAllowed = 'move';
+  e.target.closest('.step-card').classList.add('dragging');
+}
+
+function onDragOver(e, id) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  e.target.closest('.step-card').classList.add('drag-over');
+}
+
+function onDragLeave(e) {
+  e.target.closest('.step-card').classList.remove('drag-over');
+}
+
+function onDrop(e, targetId) {
+  e.preventDefault();
+  e.target.closest('.step-card').classList.remove('drag-over');
+  if (dragSrcId === targetId) return;
+  var srcIdx = pipeline.findIndex(function(s) { return s.id === dragSrcId; });
+  var tgtIdx = pipeline.findIndex(function(s) { return s.id === targetId; });
+  if (srcIdx < 0 || tgtIdx < 0) return;
+  var item = pipeline.splice(srcIdx, 1)[0];
+  pipeline.splice(tgtIdx, 0, item);
+  renderPipeline();
+  savePipeline();
+}
+
+function onDragEnd(e) {
+  dragSrcId = null;
+  document.querySelectorAll('.step-card').forEach(function(c) {
+    c.classList.remove('dragging', 'drag-over');
+  });
+}
+
+// ── Render ─────────────────────────────────────────────────────────────
+function renderPipeline() {
+  var container = document.getElementById('pipeline');
+  container.innerHTML = '';
+  document.getElementById('step-count').textContent = pipeline.length + ' step' + (pipeline.length !== 1 ? 's' : '');
+
+  pipeline.forEach(function(step, idx) {
+    if (idx > 0) {
+      var arrow = document.createElement('div');
+      arrow.className = 'step-arrow';
+      arrow.textContent = '\u2193';
+      container.appendChild(arrow);
+    }
+
+    var card = document.createElement('div');
+    card.className = 'step-card';
+    card.draggable = true;
+    card.addEventListener('dragstart', function(e) { onDragStart(e, step.id); });
+    card.addEventListener('dragover', function(e) { onDragOver(e, step.id); });
+    card.addEventListener('dragleave', onDragLeave);
+    card.addEventListener('drop', function(e) { onDrop(e, step.id); });
+    card.addEventListener('dragend', onDragEnd);
+
+    var header = '<div class="step-header">' +
+      '<span class="step-drag" title="Drag to reorder">\u2261</span>' +
+      '<span class="step-number ' + step.type + '">' + (idx + 1) + '</span>' +
+      '<span class="step-type-label ' + step.type + '">' + step.type + '</span>' +
+      '<button class="step-delete" onclick="deleteStep(' + step.id + ')" title="Remove step">&times;</button>' +
+      '</div>';
+
+    var fields = '<div class="step-fields">' + renderStepFields(step) + '</div>';
+    card.innerHTML = header + fields;
+    container.appendChild(card);
+  });
+
+  // Persist input listeners
+  container.querySelectorAll('[data-step-field]').forEach(function(el) {
+    var sid = parseInt(el.dataset.stepId);
+    var field = el.dataset.stepField;
+    el.addEventListener('input', function() {
+      var val = el.type === 'range' ? parseFloat(el.value) : el.value;
+      updateStep(sid, field, val);
+      // Update range display
+      if (el.type === 'range') {
+        var display = el.parentElement.querySelector('.range-val');
+        if (display) display.textContent = val;
+      }
+    });
+    el.addEventListener('change', function() {
+      var val = el.type === 'checkbox' ? el.checked : el.value;
+      updateStep(sid, field, val);
+    });
+  });
+}
+
+function renderStepFields(step) {
+  var sid = step.id;
+  switch (step.type) {
+    case 'input':
+      return '<div class="field-row">' +
+        '<div><label>Type</label><select data-step-id="' + sid + '" data-step-field="inputType">' +
+        INPUT_TYPES.map(function(t) { return '<option' + (step.inputType === t ? ' selected' : '') + '>' + t + '</option>'; }).join('') +
+        '</select></div>' +
+        '<div><label>Label</label><input type="text" data-step-id="' + sid + '" data-step-field="label" value="' + esc(step.label || '') + '" placeholder="Describe the input"></div>' +
+        '</div>';
+
+    case 'library':
+      return '<div class="field-row">' +
+        '<div><label>Agent ID</label><input type="text" data-step-id="' + sid + '" data-step-field="agentId" value="' + esc(step.agentId || '') + '" placeholder="e.g. sentiment"></div>' +
+        '<div><label>Function</label><input type="text" data-step-id="' + sid + '" data-step-field="functionName" value="' + esc(step.functionName || '') + '" placeholder="e.g. analyze"></div>' +
+        '</div>' +
+        '<div style="font-size:0.78rem;color:var(--muted-soft)">Loads from <code>https://freeagentstore.online/pkg/{id}/index.js</code></div>';
+
+    case 'ai':
+      var models = MODELS[step.provider] || [];
+      return '<div class="field-row">' +
+        '<div><label>Provider</label><select data-step-id="' + sid + '" data-step-field="provider">' +
+        ['openai', 'anthropic', 'google', 'groq'].map(function(p) {
+          return '<option value="' + p + '"' + (step.provider === p ? ' selected' : '') + '>' + p.charAt(0).toUpperCase() + p.slice(1) + '</option>';
+        }).join('') +
+        '</select></div>' +
+        '<div><label>Model</label><select data-step-id="' + sid + '" data-step-field="model">' +
+        models.map(function(m) { return '<option value="' + m + '"' + (step.model === m ? ' selected' : '') + '>' + m + '</option>'; }).join('') +
+        '</select></div>' +
+        '</div>' +
+        '<div><label>System Prompt</label><textarea data-step-id="' + sid + '" data-step-field="systemPrompt" placeholder="You are a helpful assistant...">' + esc(step.systemPrompt || '') + '</textarea></div>' +
+        '<div><label>User Prompt Template <span style="color:var(--muted-soft);font-weight:400">(use {{input}} and {{prev}})</span></label>' +
+        '<textarea data-step-id="' + sid + '" data-step-field="userPrompt" placeholder="{{prev}}">' + esc(step.userPrompt || '') + '</textarea></div>' +
+        '<div class="field-row"><div>' +
+        '<label>Temperature</label>' +
+        '<div class="range-row"><input type="range" min="0" max="2" step="0.1" value="' + (step.temperature ?? 0.7) + '" data-step-id="' + sid + '" data-step-field="temperature"><span class="range-val">' + (step.temperature ?? 0.7) + '</span></div>' +
+        '</div><div style="display:flex;align-items:end;gap:0.5rem;padding-bottom:0.15rem">' +
+        '<label style="display:flex;align-items:center;gap:0.4rem;margin:0;cursor:pointer"><input type="checkbox" data-step-id="' + sid + '" data-step-field="streaming"' + (step.streaming ? ' checked' : '') + '> Stream response</label>' +
+        '</div></div>' +
+        (getToken() ? '' : '<div style="font-size:0.78rem;color:var(--amber);margin-top:0.25rem">Sign in to use AI steps</div>');
+
+    case 'transform':
+      return '<div><label>Preset</label><select data-step-id="' + sid + '" data-step-field="prebuilt">' +
+        '<option value="">Custom</option>' +
+        Object.keys(PREBUILT_TRANSFORMS).map(function(k) { return '<option value="' + k + '"' + (step.prebuilt === k ? ' selected' : '') + '>' + k + '</option>'; }).join('') +
+        '</select></div>' +
+        '<div><label>Code <span style="color:var(--muted-soft);font-weight:400">(receives <code>input</code> and <code>prev</code>, must return a value)</span></label>' +
+        '<textarea data-step-id="' + sid + '" data-step-field="code" style="font-family:var(--font-mono);font-size:0.82rem;min-height:80px">' + esc(step.code || '') + '</textarea></div>';
+
+    case 'output':
+      return '<div><label>Format</label><select data-step-id="' + sid + '" data-step-field="format">' +
+        OUTPUT_FORMATS.map(function(f) { return '<option' + (step.format === f ? ' selected' : '') + '>' + f + '</option>'; }).join('') +
+        '</select></div>';
+
+    default:
+      return '';
+  }
+}
+
+function esc(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// ── Pipeline execution ─────────────────────────────────────────────────
+async function runPipeline(userInput) {
+  var prev = userInput;
+  for (var i = 0; i < pipeline.length; i++) {
+    var step = pipeline[i];
+    switch (step.type) {
+      case 'input':
+        // Input step just passes through
+        break;
+
+      case 'library':
+        if (!step.agentId || !step.functionName) throw new Error('Step ' + (i + 1) + ': Library agent ID and function name required');
+        var mod = await import('https://freeagentstore.online/pkg/' + step.agentId + '/index.js');
+        var fn = mod[step.functionName];
+        if (typeof fn !== 'function') throw new Error('Step ' + (i + 1) + ': Function "' + step.functionName + '" not found in ' + step.agentId);
+        prev = await fn(prev);
+        break;
+
+      case 'ai':
+        var token = getToken();
+        if (!token) throw new Error('Step ' + (i + 1) + ': Sign in to use AI steps');
+        var host = PROVIDER_HOSTS[step.provider];
+        if (!host) throw new Error('Step ' + (i + 1) + ': Unknown provider: ' + step.provider);
+        var proxyUrl = window.location.origin + '/v1/proxy/' + host + '/v1/chat/completions';
+        var prompt = (step.userPrompt || '{{prev}}')
+          .replace(/\{\{input\}\}/g, userInput)
+          .replace(/\{\{prev\}\}/g, typeof prev === 'string' ? prev : JSON.stringify(prev));
+        var messages = [];
+        if (step.systemPrompt) messages.push({ role: 'system', content: step.systemPrompt });
+        messages.push({ role: 'user', content: prompt });
+
+        var res = await fetch(proxyUrl, {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: step.model,
+            messages: messages,
+            temperature: step.temperature ?? 0.7
+          })
+        });
+        if (!res.ok) {
+          var errBody = await res.json().catch(function() { return { error: res.statusText }; });
+          throw new Error('Step ' + (i + 1) + ' AI error: ' + (errBody.error?.message || errBody.error || res.status));
+        }
+        var data = await res.json();
+        prev = data.choices?.[0]?.message?.content ?? '';
+        break;
+
+      case 'transform':
+        if (!step.code) throw new Error('Step ' + (i + 1) + ': Transform code is empty');
+        var tfn = new Function('input', 'prev', step.code);
+        prev = tfn(userInput, prev);
+        break;
+
+      case 'output':
+        // Output step is handled in formatting
+        break;
+    }
+  }
+  return prev;
+}
+
+function formatOutput(value) {
+  var outputStep = pipeline.find(function(s) { return s.type === 'output'; });
+  var format = outputStep ? outputStep.format : 'Raw text';
+
+  switch (format) {
+    case 'Formatted JSON':
+      try {
+        var obj = typeof value === 'string' ? JSON.parse(value) : value;
+        return JSON.stringify(obj, null, 2);
+      } catch (e) {
+        return typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value);
+      }
+
+    case 'Markdown':
+      // Basic markdown rendering: headers, bold, italic, code, lists
+      var s = String(value);
+      s = s.replace(/^### (.+)$/gm, '\u2500\u2500\u2500 $1 \u2500\u2500\u2500');
+      s = s.replace(/^## (.+)$/gm, '\u2550\u2550 $1 \u2550\u2550');
+      s = s.replace(/^# (.+)$/gm, '\u2588 $1');
+      return s;
+
+    case 'Table':
+      try {
+        var arr = typeof value === 'string' ? JSON.parse(value) : value;
+        if (!Array.isArray(arr)) arr = [arr];
+        if (arr.length === 0) return '(empty)';
+        var keys = Object.keys(arr[0]);
+        var header = keys.join('\t|\t');
+        var sep = keys.map(function() { return '---'; }).join('\t|\t');
+        var rows = arr.map(function(row) {
+          return keys.map(function(k) { return String(row[k] ?? ''); }).join('\t|\t');
+        });
+        return header + '\n' + sep + '\n' + rows.join('\n');
+      } catch (e) {
+        return String(value);
+      }
+
+    case 'Chart':
+      try {
+        var obj2 = typeof value === 'string' ? JSON.parse(value) : value;
+        var entries = Array.isArray(obj2) ? obj2 : Object.entries(obj2).map(function(e) { return { label: e[0], value: e[1] }; });
+        var maxVal = Math.max.apply(null, entries.map(function(e) { return Number(e.value) || 0; }));
+        return entries.map(function(e) {
+          var barLen = maxVal > 0 ? Math.round((Number(e.value) / maxVal) * 30) : 0;
+          var bar = '\u2588'.repeat(barLen);
+          return (e.label || e.name || '?').padEnd(15) + ' ' + bar + ' ' + e.value;
+        }).join('\n');
+      } catch (e) {
+        return String(value);
+      }
+
+    default: // Raw text
+      return typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value);
+  }
+}
+
+// ── Test pipeline ──────────────────────────────────────────────────────
+async function testPipeline() {
+  if (pipeline.length === 0) {
+    showOutput('Add at least one step to the pipeline.', true);
+    return;
+  }
+
+  var input = document.getElementById('preview-input').value;
+  if (!input.trim()) {
+    showOutput('Enter some test input above.', true);
+    return;
+  }
+
+  showOutput('Running pipeline...', false);
+  document.getElementById('preview-status').textContent = 'Running ' + pipeline.length + ' steps...';
+
+  try {
+    var t0 = performance.now();
+    var result = await runPipeline(input);
+    var elapsed = Math.round(performance.now() - t0);
+    var formatted = formatOutput(result);
+    showOutput(formatted, false);
+    document.getElementById('preview-status').textContent = 'Completed in ' + elapsed + 'ms';
+  } catch (err) {
+    showOutput('Error: ' + err.message, true);
+    document.getElementById('preview-status').textContent = 'Failed';
+  }
+}
+
+function showOutput(text, isError) {
+  var el = document.getElementById('preview-output');
+  el.textContent = text;
+  el.className = 'preview-output' + (isError ? ' error' : (text && text !== 'Output will appear here after running the pipeline.' ? ' has-content' : ''));
+}
+
+// ── Code generation ────────────────────────────────────────────────────
+function generateCode() {
+  var name = document.getElementById('agent-name').value || 'My Agent';
+  var desc = document.getElementById('agent-desc').value || '';
+  var lines = [];
+
+  lines.push('// Generated by FreeAgentStore Agent Builder');
+  lines.push('// Agent: ' + name);
+  if (desc) lines.push('// ' + desc);
+  lines.push('');
+
+  // Imports for library steps
+  var libSteps = pipeline.filter(function(s) { return s.type === 'library' && s.agentId; });
+  libSteps.forEach(function(s) {
+    lines.push("import { " + (s.functionName || 'default') + " } from 'https://freeagentstore.online/pkg/" + s.agentId + "/index.js';");
+  });
+  if (libSteps.length) lines.push('');
+
+  lines.push('function getToken() {');
+  lines.push("  try { var s = localStorage.getItem('fags_session'); return s ? JSON.parse(s).token : null; } catch { return null; }");
+  lines.push('}');
+  lines.push('');
+  lines.push('export async function run(input) {');
+  lines.push('  var prev = input;');
+  lines.push('');
+
+  pipeline.forEach(function(step, idx) {
+    var stepLabel = '  // Step ' + (idx + 1) + ': ' + step.type;
+    switch (step.type) {
+      case 'input':
+        lines.push(stepLabel + ' (' + (step.inputType || 'Text') + ')');
+        lines.push('  // Input: "' + esc(step.label || '') + '"');
+        break;
+
+      case 'library':
+        lines.push(stepLabel);
+        if (step.agentId && step.functionName) {
+          lines.push('  prev = await ' + step.functionName + '(prev);');
+        } else {
+          lines.push('  // TODO: configure library agent');
+        }
+        break;
+
+      case 'ai':
+        lines.push(stepLabel + ' (' + step.provider + '/' + step.model + ')');
+        lines.push('  {');
+        lines.push("    var token = getToken();");
+        lines.push("    if (!token) throw new Error('Not signed in');");
+        var host = PROVIDER_HOSTS[step.provider] || 'api.openai.com';
+        lines.push("    var res = await fetch(window.location.origin + '/v1/proxy/" + host + "/v1/chat/completions', {");
+        lines.push("      method: 'POST',");
+        lines.push("      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },");
+        lines.push('      body: JSON.stringify({');
+        lines.push("        model: '" + step.model + "',");
+        lines.push('        messages: [');
+        if (step.systemPrompt) {
+          lines.push("          { role: 'system', content: " + JSON.stringify(step.systemPrompt) + " },");
+        }
+        var promptTemplate = step.userPrompt || '{{prev}}';
+        lines.push("          { role: 'user', content: " + JSON.stringify(promptTemplate) + "");
+        lines.push("            .replace(/\\{\\{input\\}\\}/g, input)");
+        lines.push("            .replace(/\\{\\{prev\\}\\}/g, typeof prev === 'string' ? prev : JSON.stringify(prev)) },");
+        lines.push('        ],');
+        lines.push('        temperature: ' + (step.temperature ?? 0.7) + ',');
+        lines.push('      }),');
+        lines.push('    });');
+        lines.push("    if (!res.ok) throw new Error('AI error: ' + res.status);");
+        lines.push('    var data = await res.json();');
+        lines.push("    prev = data.choices?.[0]?.message?.content ?? '';");
+        lines.push('  }');
+        break;
+
+      case 'transform':
+        lines.push(stepLabel);
+        lines.push('  prev = (function(input, prev) {');
+        (step.code || 'return prev;').split('\n').forEach(function(l) {
+          lines.push('    ' + l);
+        });
+        lines.push('  })(input, prev);');
+        break;
+
+      case 'output':
+        lines.push(stepLabel + ' (' + (step.format || 'Raw text') + ')');
+        break;
+    }
+    lines.push('');
+  });
+
+  lines.push('  return prev;');
+  lines.push('}');
+
+  return lines.join('\n');
+}
+
+function viewCode() {
+  if (pipeline.length === 0) {
+    alert('Add at least one step to generate code.');
+    return;
+  }
+  document.getElementById('code-output').textContent = generateCode();
+  document.getElementById('code-modal').classList.add('open');
+}
+
+function closeCodeModal() {
+  document.getElementById('code-modal').classList.remove('open');
+}
+
+function copyCode() {
+  var code = document.getElementById('code-output').textContent;
+  navigator.clipboard.writeText(code).then(function() {
+    var btn = document.querySelector('.modal-footer .btn-secondary');
+    var orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(function() { btn.textContent = orig; }, 1500);
+  });
+}
+
+// Close modal on overlay click
+document.getElementById('code-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeCodeModal();
+});
+
+// Close modal on Escape
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeCodeModal();
+});
+
+// ── Publish ────────────────────────────────────────────────────────────
+function publishAgent() {
+  var name = document.getElementById('agent-name').value.trim();
+  if (!name) {
+    alert('Give your agent a name first.');
+    return;
+  }
+  if (pipeline.length === 0) {
+    alert('Add at least one step to publish.');
+    return;
+  }
+
+  var agentId = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  var desc = document.getElementById('agent-desc').value.trim();
+  var code = generateCode();
+
+  var agentJson = {
+    id: agentId,
+    name: name,
+    description: desc,
+    version: '1.0.0',
+    task: 'custom-pipeline',
+    category: 'productivity',
+    models: [],
+    estimatedDownload: '0MB',
+    input: ['text/plain'],
+    output: ['text/plain'],
+    requiresWebGPU: false,
+    requiresOllama: false,
+    requiresWebContainers: false,
+    offlineCapable: !pipeline.some(function(s) { return s.type === 'ai'; }),
+    desktopOnly: false,
+    pipeline: pipeline
+  };
+
+  // Try POST /v1/publish if signed in, otherwise show the code
+  var token = getToken();
+  if (!token) {
+    alert('Sign in to publish. For now, you can copy the generated code from "View Code".');
+    viewCode();
+    return;
+  }
+
+  // For now, show the agent.json and code for manual submission
+  var output = '// agent.json\n' + JSON.stringify(agentJson, null, 2) + '\n\n// agent.js\n' + code;
+  document.getElementById('code-output').textContent = output;
+  document.getElementById('code-modal').classList.add('open');
+}
+
+// ── Auto-save on meta field changes ────────────────────────────────────
+document.getElementById('agent-name').addEventListener('input', savePipeline);
+document.getElementById('agent-desc').addEventListener('input', savePipeline);
+
+// ── Init ───────────────────────────────────────────────────────────────
+initAuth();
+loadPipeline();
+</script>
+</body>
+</html>
