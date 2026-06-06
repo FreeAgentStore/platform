@@ -1,0 +1,17 @@
+{
+  "name": "Nano Translator",
+  "description": "Translate text between languages using Chrome Gemini Nano. 20+ languages, runs on your device, 100% private.",
+  "version": "1.0.0",
+  "task": "translation",
+  "category": "text",
+  "models": [],
+  "estimatedDownload": "0MB",
+  "input": ["text/plain"],
+  "output": ["text/plain"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "runtimeType": "built-in-ai"
+}

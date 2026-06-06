@@ -1,0 +1,17 @@
+{
+  "name": "Text Rewriter",
+  "description": "Rewrite text in any style — formal, casual, poetry, pirate, ELI5, Gen Z, Shakespearean. Chrome Nano, zero download.",
+  "version": "1.0.0",
+  "task": "rewriting",
+  "category": "text",
+  "models": [],
+  "estimatedDownload": "0MB",
+  "input": ["text/plain"],
+  "output": ["text/plain"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "runtimeType": "built-in-ai"
+}
