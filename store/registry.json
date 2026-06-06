@@ -1931,6 +1931,54 @@
         "imports": "import { ... } from '@freeagentstore/nano-chat'",
         "note": "This agent requires the full UI. Use it at freeagentstore.online/a/nano-chat/"
       }
+    },
+    {
+      "id": "text-rewriter",
+      "name": "Text Rewriter",
+      "description": "Rewrite text in any style — formal, casual, poetry, pirate, ELI5, Gen Z, Shakespearean, haiku, tweet. Chrome Nano.",
+      "task": "rewriting",
+      "category": "text",
+      "icon": "✍️",
+      "iconBg": "#7c3aed",
+      "model": "Chrome Gemini Nano",
+      "modelSize": "0MB",
+      "agentUrl": "https://freeagentstore.online/a/text-rewriter/",
+      "developer": "serge-ivo",
+      "creatorGithub": "serge-ivo",
+      "desktopOnly": false,
+      "offlineCapable": true,
+      "backends": [],
+      "type": "built-in-ai",
+      "storeType": "agent",
+      "noEsm": true,
+      "api": {
+        "imports": "",
+        "note": "Use at freeagentstore.online/a/text-rewriter/"
+      }
+    },
+    {
+      "id": "nano-translator",
+      "name": "Nano Translator",
+      "description": "Translate text between 28 languages using Chrome Gemini Nano. Runs on your device, 100% private.",
+      "task": "translation",
+      "category": "text",
+      "icon": "🌐",
+      "iconBg": "#0891b2",
+      "model": "Chrome Gemini Nano",
+      "modelSize": "0MB",
+      "agentUrl": "https://freeagentstore.online/a/nano-translator/",
+      "developer": "serge-ivo",
+      "creatorGithub": "serge-ivo",
+      "desktopOnly": false,
+      "offlineCapable": true,
+      "backends": [],
+      "type": "built-in-ai",
+      "storeType": "agent",
+      "noEsm": true,
+      "api": {
+        "imports": "",
+        "note": "Use at freeagentstore.online/a/nano-translator/"
+      }
     }
   ]
 }
