@@ -46,15 +46,14 @@ export function createFagsChat(options: FagsChatOptions) {
   const host = PROVIDER_HOSTS[options.provider];
   if (!host) throw new Error(`Unknown provider: ${options.provider}`);
 
-  const proxyBase = `${window.location.origin}/v1/proxy/${host}`;
+  const origin =
+    typeof window !== 'undefined' ? window.location.origin : 'https://freeagentstore.online';
+  const proxyBase = `${origin}/v1/proxy/${host}`;
 
   return {
-    async invoke(
-      messages: Array<{ role: string; content: string }>,
-    ): Promise<string> {
+    async invoke(messages: Array<{ role: string; content: string }>): Promise<string> {
       const token = getToken();
-      if (!token)
-        throw new Error('Not signed in. Call fags.keys.manage() first.');
+      if (!token) throw new Error('Not signed in. Call fags.keys.manage() first.');
 
       const res = await fetch(`${proxyBase}/v1/chat/completions`, {
         method: 'POST',
@@ -72,18 +71,14 @@ export function createFagsChat(options: FagsChatOptions) {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: res.statusText }));
-        throw new Error(
-          err.error?.message ?? err.error ?? `API error ${res.status}`,
-        );
+        throw new Error(err.error?.message ?? err.error ?? `API error ${res.status}`);
       }
 
       const data = await res.json();
       return data.choices?.[0]?.message?.content ?? '';
     },
 
-    async *stream(
-      messages: Array<{ role: string; content: string }>,
-    ): AsyncGenerator<string> {
+    async *stream(messages: Array<{ role: string; content: string }>): AsyncGenerator<string> {
       const token = getToken();
       if (!token) throw new Error('Not signed in.');
 
@@ -146,7 +141,7 @@ export function getFagsLangChainConfig(model: string, provider = 'openai') {
     modelName: model,
     temperature: 0.7,
     configuration: {
-      baseURL: `${window.location.origin}/v1/proxy/${host}/v1`,
+      baseURL: `${typeof window !== 'undefined' ? window.location.origin : 'https://freeagentstore.online'}/v1/proxy/${host}/v1`,
       defaultHeaders: { Authorization: `Bearer ${token}` },
     },
     // LangChain needs an API key param even though proxy injects it
