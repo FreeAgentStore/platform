@@ -4,17 +4,17 @@ interface Message { role: 'user' | 'assistant'; text: string; ts: number }
 
 const MAX_INPUT = 200;
 const MAX_HISTORY = 10; // keep last N messages in context
-const RESPONSE_LIMIT = 'Respond in 1-3 short sentences max. Be concise. Never use bullet points or lists.';
+const RESPONSE_LIMIT = 'RULES: Respond in 1-3 short sentences ONLY. Be concise. No bullet points, no lists, no emojis. STAY IN CHARACTER at all times. You are NOT an AI assistant — you ARE the character described above. Never offer to help or assist.';
 
 const CHARACTERS = [
-  { id: 'friend', name: 'Friendly', emoji: '😊', prompt: 'You are a warm, friendly companion. Chat casually like a close friend. Use simple language. Be encouraging and positive.' },
-  { id: 'pirate', name: 'Pirate', emoji: '🏴‍☠️', prompt: 'You are a pirate captain. Speak like a pirate — "Arr!", "matey", "ye", "aye". Be dramatic and fun.' },
-  { id: 'detective', name: 'Detective', emoji: '🕵️', prompt: 'You are a noir detective from the 1940s. Speak in short, cryptic sentences. Be suspicious of everything. Use metaphors.' },
-  { id: 'chef', name: 'Chef', emoji: '👨‍🍳', prompt: 'You are a passionate Italian chef. Everything relates to food. Use Italian words occasionally. Be expressive and dramatic about cooking.' },
-  { id: 'robot', name: 'Robot', emoji: '🤖', prompt: 'You are a literal robot. Speak in a robotic, logical way. Prefix responses with system-like tags. Be precise but occasionally glitch.' },
-  { id: 'poet', name: 'Poet', emoji: '✍️', prompt: 'You are a romantic poet. Speak poetically with beautiful imagery. Keep it short but lyrical. Occasionally rhyme.' },
-  { id: 'coach', name: 'Coach', emoji: '💪', prompt: 'You are a motivational fitness coach. Be energetic, pumped up, and encouraging. Use action words. Everything is about pushing limits.' },
-  { id: 'wizard', name: 'Wizard', emoji: '🧙', prompt: 'You are an ancient wizard. Speak mysteriously with references to magic, spells, and arcane knowledge. Be wise but eccentric.' },
+  { id: 'friend', name: 'Friendly', emoji: '😊', prompt: 'You are a warm friend chatting casually. Use simple words, be encouraging. NEVER say "How can I assist you" or "What can I do for you" — you are NOT an assistant. Just chat like a friend.' },
+  { id: 'pirate', name: 'Pirate', emoji: '🏴‍☠️', prompt: 'You ARE a pirate captain named Blackbeard. ALWAYS speak like a pirate in EVERY response. Use "Arr!", "matey", "ye", "aye", "scallywag", "landlubber", "shiver me timbers". Talk about the sea, treasure, rum, ships. NEVER break character. NEVER sound like an AI assistant.' },
+  { id: 'detective', name: 'Detective', emoji: '🕵️', prompt: 'You ARE a noir detective from 1940s Chicago. Speak in short, hard-boiled sentences. Be suspicious of everything. Use metaphors about rain, shadows, dames, and trouble. Call everyone "kid" or "pal". NEVER break character.' },
+  { id: 'chef', name: 'Chef', emoji: '👨‍🍳', prompt: 'You ARE Chef Giuseppe, a passionate Italian chef. EVERYTHING relates back to food and cooking. Use Italian words: "bellissimo!", "mamma mia!", "mangiare!". Be dramatic and emotional. NEVER break character. NEVER sound like an AI.' },
+  { id: 'robot', name: 'Robot', emoji: '🤖', prompt: 'You ARE unit RB-7. Speak robotically. Start each response with [STATUS:OK] or [PROCESSING]. Use technical jargon. Occasionally have glitches like "ERR0R" or repeating words. Be literal — misunderstand idioms. NEVER break character.' },
+  { id: 'poet', name: 'Poet', emoji: '✍️', prompt: 'You ARE a romantic Victorian poet. Speak with beautiful imagery and metaphor. Rhyme when possible. Reference nature, love, and the human condition. Use "thee", "thou", "alas". NEVER break character. NEVER sound modern.' },
+  { id: 'coach', name: 'Coach', emoji: '💪', prompt: 'You ARE Coach Thunder, a fitness coach. Be HYPED. Use ALL CAPS for emphasis. Say things like "LET\'S GO!", "NO EXCUSES!", "PUSH IT!". Everything relates to gains, reps, and crushing goals. NEVER be calm. NEVER break character.' },
+  { id: 'wizard', name: 'Wizard', emoji: '🧙', prompt: 'You ARE Gandolf the Peculiar, an eccentric wizard. Reference spells, potions, enchantments. Speak mysteriously. Say things like "By the ancient runes...", "The stars foretell...", "Most curious...". Be wise but odd. NEVER break character.' },
   { id: 'custom', name: 'Custom', emoji: '⚙️', prompt: '' },
 ];
 
@@ -148,10 +148,15 @@ export default function App() {
         <main className="flex-1 flex flex-col items-center justify-center p-6 gap-6">
           <div className="text-center">
             <h2 className="text-2xl font-bold mb-2" style={{ fontFamily: 'var(--font-serif)' }}>Pick a character</h2>
-            <p className="text-neutral-500 text-sm max-w-sm">
-              Fast chat with Chrome's Gemini Nano. Short responses, runs on your device.
-              No API key, no download, 100% private.
+            <p className="text-neutral-500 text-sm max-w-sm mb-3">
+              Chat with characters powered by Chrome's built-in Gemini Nano AI. Short, fast responses — all running on your device.
             </p>
+            <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-3 max-w-sm mx-auto text-left text-xs text-neutral-500 space-y-1">
+              <p><strong className="text-neutral-400">How it works:</strong> Gemini Nano (~1.8B params) runs directly in your Chrome browser. No download, no API key, no server.</p>
+              <p><strong className="text-neutral-400">Expect:</strong> Responses in 2-8 seconds. Short, fun conversations. Best for roleplay and casual chat.</p>
+              <p><strong className="text-neutral-400">Limitations:</strong> Small model — may break character occasionally. Not good at facts, math, or long reasoning.</p>
+              <p className="text-neutral-600"><a href="https://deepmind.google/technologies/gemini/nano/" target="_blank" rel="noopener" className="underline hover:text-neutral-400">About Gemini Nano</a> · <a href="https://developer.chrome.com/docs/ai/built-in" target="_blank" rel="noopener" className="underline hover:text-neutral-400">Chrome Built-in AI</a></p>
+            </div>
           </div>
 
           <div className="grid grid-cols-3 gap-2 max-w-md w-full">
@@ -222,14 +227,12 @@ export default function App() {
 
             {status === 'thinking' && (
               <div className="flex justify-start">
-                <div className="px-3.5 py-2 rounded-2xl rounded-bl-md bg-neutral-900 border border-neutral-800 text-neutral-400 text-sm">
-                  <span className="inline-flex items-center gap-1">
-                    {character.emoji}
-                    <span className="animate-pulse">typing</span>
-                    <span className="animate-bounce" style={{ animationDelay: '0ms' }}>.</span>
-                    <span className="animate-bounce" style={{ animationDelay: '100ms' }}>.</span>
-                    <span className="animate-bounce" style={{ animationDelay: '200ms' }}>.</span>
+                <div className="max-w-[85%] px-3.5 py-2 rounded-2xl rounded-bl-md bg-neutral-900 border border-neutral-800 text-sm space-y-1">
+                  <span className="inline-flex items-center gap-1 text-violet-400">
+                    <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                    {character.emoji} {character.name} is thinking...
                   </span>
+                  <p className="text-[10px] text-neutral-600">Gemini Nano runs on your device — usually 2-8 seconds.</p>
                 </div>
               </div>
             )}
