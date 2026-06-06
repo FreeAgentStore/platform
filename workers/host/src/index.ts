@@ -148,10 +148,15 @@ export default {
     const object = await env.AGENTS.get(storeKey);
     if (object) return respond(request, object, contentType(storeKey));
 
-    // Fallback to store index
-    const fallback = await env.AGENTS.get('store/index.html');
-    if (fallback) return respond(request, fallback, 'text/html; charset=utf-8');
-    return new Response('Store not deployed', { status: 503 });
+    // 404 page — serve custom 404.html with 404 status
+    const notFound = await env.AGENTS.get('store/404.html');
+    if (notFound) {
+      const headers = securityHeaders();
+      headers.set('Content-Type', 'text/html; charset=utf-8');
+      headers.set('Cache-Control', 'no-cache');
+      return new Response(notFound.body, { status: 404, headers });
+    }
+    return new Response('Not Found', { status: 404 });
   },
 };
 
