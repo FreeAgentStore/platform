@@ -1,0 +1,24 @@
+{
+  "name": "Browser RAG",
+  "description": "Retrieval-Augmented Generation in the browser. Index documents, search semantically, ask questions — all client-side. MiniLM embeddings + Chrome Nano generation.",
+  "version": "1.0.0",
+  "task": "rag",
+  "category": "text",
+  "models": [
+    {
+      "repo": "Xenova/all-MiniLM-L6-v2",
+      "size": "23MB",
+      "backend": ["wasm"],
+      "task": "embeddings"
+    }
+  ],
+  "estimatedDownload": "23MB",
+  "input": ["text/plain"],
+  "output": ["application/json"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "runtimeType": "model"
+}
