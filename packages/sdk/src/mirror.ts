@@ -81,17 +81,20 @@ export function createMirror(config: MirrorConfig): MirrorInstance {
 
     ws.onmessage = (ev) => {
       try {
-        const msg = JSON.parse(ev.data) as MirrorMessage & { type: string; data: { peers?: number; device?: string } };
-        if (msg.type === 'connected') {
-          _peerCount = msg.data?.peers ?? 0;
-        } else if (msg.type === 'peer_joined') {
-          _peerCount = msg.data?.peers ?? _peerCount + 1;
+        const raw = JSON.parse(ev.data) as Record<string, unknown>;
+        const type = raw.type as string;
+        const data = raw.data as Record<string, unknown> | undefined;
+
+        if (type === 'connected') {
+          _peerCount = (data?.peers as number) ?? 0;
+        } else if (type === 'peer_joined') {
+          _peerCount = (data?.peers as number) ?? _peerCount + 1;
           config.onPeerConnected?.();
-        } else if (msg.type === 'peer_left') {
-          _peerCount = msg.data?.peers ?? Math.max(0, _peerCount - 1);
+        } else if (type === 'peer_left') {
+          _peerCount = (data?.peers as number) ?? Math.max(0, _peerCount - 1);
           if (_peerCount <= 1) config.onPeerDisconnected?.();
-        } else if (msg.from !== role) {
-          config.onMessage?.(msg);
+        } else if (raw.from !== role) {
+          config.onMessage?.(raw as unknown as MirrorMessage);
         }
       } catch { /* ignore malformed */ }
     };
