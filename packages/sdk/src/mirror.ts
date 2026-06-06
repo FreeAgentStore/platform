@@ -1,14 +1,14 @@
 /**
  * Mobile Mirror — pair mobile with desktop agent tab.
  * Desktop shows QR code / link -> mobile scans -> both see results in real-time.
- * Uses BroadcastChannel for same-device + HTTP polling via FAGS host worker for cross-device.
+ * Uses WebSocket via the MirrorRoom Durable Object for cross-device relay.
  */
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export interface MirrorConfig {
   agentId: string;
-  /** Base URL for the mirror relay API. Defaults to https://freeagentstore.online */
+  /** Base URL for the mirror relay API. Defaults to current origin or https://freeagentstore.online */
   apiBase?: string;
   onMessage?: (msg: MirrorMessage) => void;
   onPeerConnected?: () => void;
@@ -19,7 +19,7 @@ export interface MirrorMessage {
   type: 'result' | 'status' | 'input' | 'config';
   data: unknown;
   timestamp: number;
-  from: 'desktop' | 'mobile';
+  from: 'desktop' | 'mobile' | 'system';
 }
 
 export interface MirrorInstance {
@@ -39,12 +39,7 @@ export interface MirrorInstance {
   /** Shorthand: send a status string. */
   sendStatus(status: string): void;
 
-  /** Request browser notification permission. Returns true if granted. */
-  requestPushPermission(): Promise<boolean>;
-  /** Show a browser notification. Requires permission granted first. */
-  sendPushNotification(title: string, body: string): Promise<void>;
-
-  /** Stop polling, close BroadcastChannel, clean up. */
+  /** Stop WebSocket, clean up. */
   destroy(): void;
 }
 
@@ -52,74 +47,63 @@ export interface MirrorInstance {
 
 const CHARS = 'abcdefghjkmnpqrstuvwxyz23456789'; // no ambiguous chars
 
-function generateRoomId(): string {
+export function generateRoomId(): string {
   const arr = new Uint8Array(8);
   crypto.getRandomValues(arr);
   return Array.from(arr, (b) => CHARS[b % CHARS.length]).join('');
 }
 
-const DEFAULT_BASE = 'https://freeagentstore.online';
-const POLL_INTERVAL = 2000;
-
-// ── BroadcastChannel relay (same-device, instant) ────────────────────────────
-
-function channelName(roomId: string): string {
-  return `mirror:${roomId}`;
+function getDefaultBase(): string {
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return window.location.origin;
+  }
+  return 'https://freeagentstore.online';
 }
 
-// ── Factory ──────────────────────────────────────────────────────────────────
+const RECONNECT_DELAY = 3000;
+
+// ── Factory (desktop side) ───────────────────────────────────────────────────
 
 export function createMirror(config: MirrorConfig): MirrorInstance {
-  const apiBase = (config.apiBase ?? DEFAULT_BASE).replace(/\/$/, '');
+  const apiBase = (config.apiBase ?? getDefaultBase()).replace(/\/$/, '');
   const roomId = generateRoomId();
-  const role: 'desktop' | 'mobile' = 'desktop'; // createMirror is always called from desktop
+  const role = 'desktop' as const;
 
   let destroyed = false;
   let _peerCount = 0;
-  let lastPollTs = Date.now();
-  let pollTimer: ReturnType<typeof setInterval> | null = null;
+  let ws: WebSocket | null = null;
+  let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
-  // BroadcastChannel for same-device pairing
-  let bc: BroadcastChannel | null = null;
-  try {
-    bc = new BroadcastChannel(channelName(roomId));
-    bc.onmessage = (ev) => {
-      const msg = ev.data as MirrorMessage;
-      if (msg.from !== role) {
-        config.onMessage?.(msg);
-      }
-    };
-  } catch {
-    // BroadcastChannel not available (e.g. old browser) — cross-device only
-  }
-
-  // HTTP polling for cross-device
-  async function poll(): Promise<void> {
+  function connectWS(): void {
     if (destroyed) return;
-    try {
-      const res = await fetch(`${apiBase}/v1/mirror/${roomId}?since=${lastPollTs}`);
-      if (!res.ok) return;
-      const body = await res.json() as { messages: MirrorMessage[]; peers: number };
-      const prevPeers = _peerCount;
-      _peerCount = body.peers ?? 0;
+    const wsUrl = apiBase.replace(/^http/, 'ws') + `/v1/mirror/${roomId}/ws?device=${role}`;
+    ws = new WebSocket(wsUrl);
 
-      if (prevPeers === 0 && _peerCount > 0) config.onPeerConnected?.();
-      if (prevPeers > 0 && _peerCount === 0) config.onPeerDisconnected?.();
-
-      for (const msg of body.messages ?? []) {
-        if (msg.from !== role) {
-          lastPollTs = Math.max(lastPollTs, msg.timestamp);
+    ws.onmessage = (ev) => {
+      try {
+        const msg = JSON.parse(ev.data) as MirrorMessage & { type: string; data: { peers?: number; device?: string } };
+        if (msg.type === 'connected') {
+          _peerCount = msg.data?.peers ?? 0;
+        } else if (msg.type === 'peer_joined') {
+          _peerCount = msg.data?.peers ?? _peerCount + 1;
+          config.onPeerConnected?.();
+        } else if (msg.type === 'peer_left') {
+          _peerCount = msg.data?.peers ?? Math.max(0, _peerCount - 1);
+          if (_peerCount <= 1) config.onPeerDisconnected?.();
+        } else if (msg.from !== role) {
           config.onMessage?.(msg);
         }
+      } catch { /* ignore malformed */ }
+    };
+
+    ws.onclose = () => {
+      if (!destroyed) {
+        reconnectTimer = setTimeout(connectWS, RECONNECT_DELAY);
       }
-    } catch {
-      // network error — silently retry next interval
-    }
+    };
   }
 
-  pollTimer = setInterval(poll, POLL_INTERVAL);
-  // First poll immediately
-  poll();
+  connectWS();
 
   const instance: MirrorInstance = {
     roomId,
@@ -133,7 +117,7 @@ export function createMirror(config: MirrorConfig): MirrorInstance {
     },
 
     isConnected(): boolean {
-      return _peerCount > 0;
+      return _peerCount > 1;
     },
 
     get peerCount() {
@@ -142,19 +126,10 @@ export function createMirror(config: MirrorConfig): MirrorInstance {
 
     send(msg: Omit<MirrorMessage, 'timestamp'>): void {
       if (destroyed) return;
-      const full: MirrorMessage = { ...msg, timestamp: Date.now() } as MirrorMessage;
-
-      // Broadcast locally
-      try {
-        bc?.postMessage(full);
-      } catch { /* closed */ }
-
-      // Send to relay API
-      fetch(`${apiBase}/v1/mirror/${roomId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(full),
-      }).catch(() => {});
+      const full = { ...msg, timestamp: Date.now() };
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(full));
+      }
     },
 
     sendResult(data: unknown): void {
@@ -165,28 +140,11 @@ export function createMirror(config: MirrorConfig): MirrorInstance {
       instance.send({ type: 'status', data: status, from: role });
     },
 
-    async requestPushPermission(): Promise<boolean> {
-      if (typeof Notification === 'undefined') return false;
-      const result = await Notification.requestPermission();
-      return result === 'granted';
-    },
-
-    async sendPushNotification(title: string, body: string): Promise<void> {
-      if (typeof Notification === 'undefined') return;
-      if (Notification.permission !== 'granted') return;
-      new Notification(title, {
-        body,
-        icon: `${apiBase}/icon-192.png`,
-        tag: `mirror-${roomId}`,
-      });
-    },
-
     destroy(): void {
       destroyed = true;
-      if (pollTimer) clearInterval(pollTimer);
-      pollTimer = null;
-      try { bc?.close(); } catch { /* already closed */ }
-      bc = null;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+      if (ws) { ws.close(); ws = null; }
     },
   };
 
@@ -210,59 +168,46 @@ export interface MobileMirrorInstance {
 }
 
 export function joinMirror(config: MobileMirrorConfig): MobileMirrorInstance {
-  const apiBase = (config.apiBase ?? DEFAULT_BASE).replace(/\/$/, '');
+  const apiBase = (config.apiBase ?? getDefaultBase()).replace(/\/$/, '');
   const { roomId } = config;
-  const role: 'desktop' | 'mobile' = 'mobile';
+  const role = 'mobile' as const;
 
   let destroyed = false;
-  let lastPollTs = Date.now();
-  let pollTimer: ReturnType<typeof setInterval> | null = null;
+  let ws: WebSocket | null = null;
+  let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
-  // BroadcastChannel for same-device
-  let bc: BroadcastChannel | null = null;
-  try {
-    bc = new BroadcastChannel(channelName(roomId));
-    bc.onmessage = (ev) => {
-      const msg = ev.data as MirrorMessage;
-      if (msg.from !== role) config.onMessage?.(msg);
-    };
-  } catch { /* not available */ }
-
-  // Announce presence via a 'ping' message
-  fetch(`${apiBase}/v1/mirror/${roomId}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ type: 'status', data: 'mobile_joined', from: role, timestamp: Date.now() }),
-  }).catch(() => {});
-
-  async function poll(): Promise<void> {
+  function connectWS(): void {
     if (destroyed) return;
-    try {
-      const res = await fetch(`${apiBase}/v1/mirror/${roomId}?since=${lastPollTs}`);
-      if (!res.ok) return;
-      const body = await res.json() as { messages: MirrorMessage[] };
-      for (const msg of body.messages ?? []) {
-        if (msg.from !== role) {
-          lastPollTs = Math.max(lastPollTs, msg.timestamp);
-          config.onMessage?.(msg);
-        }
+    const wsUrl = apiBase.replace(/^http/, 'ws') + `/v1/mirror/${roomId}/ws?device=${role}`;
+    ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+      config.onConnected?.();
+    };
+
+    ws.onmessage = (ev) => {
+      try {
+        const msg = JSON.parse(ev.data) as MirrorMessage;
+        if (msg.from !== role) config.onMessage?.(msg);
+      } catch { /* ignore */ }
+    };
+
+    ws.onclose = () => {
+      if (!destroyed) {
+        reconnectTimer = setTimeout(connectWS, RECONNECT_DELAY);
       }
-    } catch { /* retry */ }
+    };
   }
 
-  pollTimer = setInterval(poll, POLL_INTERVAL);
-  poll().then(() => config.onConnected?.());
+  connectWS();
 
   const inst: MobileMirrorInstance = {
     send(msg: Omit<MirrorMessage, 'timestamp'>): void {
       if (destroyed) return;
-      const full: MirrorMessage = { ...msg, timestamp: Date.now() } as MirrorMessage;
-      try { bc?.postMessage(full); } catch { /* closed */ }
-      fetch(`${apiBase}/v1/mirror/${roomId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(full),
-      }).catch(() => {});
+      const full = { ...msg, timestamp: Date.now() };
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(full));
+      }
     },
 
     sendInput(data: unknown): void {
@@ -271,10 +216,9 @@ export function joinMirror(config: MobileMirrorConfig): MobileMirrorInstance {
 
     destroy(): void {
       destroyed = true;
-      if (pollTimer) clearInterval(pollTimer);
-      pollTimer = null;
-      try { bc?.close(); } catch { /* already closed */ }
-      bc = null;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+      if (ws) { ws.close(); ws = null; }
     },
   };
 
