@@ -180,8 +180,8 @@
 
     <section>
       <div class="tabs">
-          <button class="tab active" onclick="switchTab('all')">All <span class="tab-count">53</span></button>
-          <button class="tab" onclick="switchTab('library')">Libraries <span class="tab-count">30</span></button>
+          <button class="tab active" onclick="switchTab('all')">All <span class="tab-count">54</span></button>
+          <button class="tab" onclick="switchTab('library')">Libraries <span class="tab-count">31</span></button>
           <button class="tab" onclick="switchTab('model')">Models <span class="tab-count">13</span></button>
           <button class="tab" onclick="switchTab('agent')">Agents <span class="tab-count">10</span></button>
         </div>
@@ -198,7 +198,7 @@
         <button class="filter-btn" onclick="filterCategory('vision')">Vision</button>
         <button class="filter-btn" onclick="filterCategory('automation')">Automation</button>
         <button class="filter-btn" onclick="filterCategory('education')">Education</button>
-        <span class="agent-count" id="agentCount">53 agents</span>
+        <span class="agent-count" id="agentCount">54 agents</span>
       </div>
             <div class="agents-grid" id="agentsGrid">
         <div class="agent-card" data-category="audio" data-store-type="model" data-name="text to speech" data-desc="convert text to natural-sounding speech using kokoro tts. 30+ voices, 8 languages.">
@@ -1157,6 +1157,24 @@
             </div>
           </a>
           <a href="/a/nano-translator/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
+        </div>
+
+        <div class="agent-card" data-category="creative" data-store-type="library" data-name="halo maker" data-desc="add a golden halo to any portrait photo. uses facedetector api for head positioning, canvas 2d for rendering. four styles: byzantine, renaissance, subtle, neon.">
+          <a href="/agents/halo-maker/" class="agent-card-body">
+            <div class="agent-icon" style="background:linear-gradient(135deg, #f59e0b, #d97706)">🌟</div>
+            <div class="agent-body">
+              <span class="agent-name">Halo Maker</span>
+              <span class="agent-desc">Add a golden halo to any portrait photo. Uses FaceDetector A...</span>
+              <div class="agent-meta">
+                <span class="tag" style="background:rgba(217,119,6,0.15);color:#fbbf24">Heuristic</span>
+                <span class="tag">0MB</span>
+              </div>
+            </div>
+          </a>
+          <a href="/a/halo-maker/" class="agent-cta">
             <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
             Open
           </a>

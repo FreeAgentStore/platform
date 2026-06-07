@@ -1,0 +1,17 @@
+{
+  "name": "Halo Maker",
+  "description": "Add a golden halo to any portrait photo. Uses FaceDetector API for head positioning, Canvas 2D for rendering. Four styles: byzantine, renaissance, subtle, neon.",
+  "version": "1.0.0",
+  "task": "image-compositing",
+  "category": "creative",
+  "models": [],
+  "estimatedDownload": "0MB",
+  "input": ["image/jpeg", "image/png"],
+  "output": ["image/png"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": true,
+  "desktopOnly": false,
+  "runtimeType": "heuristic"
+}
