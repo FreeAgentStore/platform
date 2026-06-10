@@ -1,0 +1,18 @@
+{
+  "name": "Doc Writer",
+  "description": "Autonomous documentation generator. Point it at a local folder, it reads the code, understands the architecture, and generates comprehensive documentation.",
+  "version": "1.0.0",
+  "task": "documentation",
+  "category": "automation",
+  "models": [],
+  "estimatedDownload": "0MB",
+  "input": ["text/plain"],
+  "output": ["text/plain", "application/json"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": false,
+  "desktopOnly": false,
+  "runtimeType": "autonomous",
+  "trainable": false
+}

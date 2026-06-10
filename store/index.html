@@ -180,10 +180,10 @@
 
     <section>
       <div class="tabs">
-          <button class="tab active" onclick="switchTab('all')">All <span class="tab-count">54</span></button>
+          <button class="tab active" onclick="switchTab('all')">All <span class="tab-count">62</span></button>
           <button class="tab" onclick="switchTab('library')">Libraries <span class="tab-count">31</span></button>
           <button class="tab" onclick="switchTab('model')">Models <span class="tab-count">13</span></button>
-          <button class="tab" onclick="switchTab('agent')">Agents <span class="tab-count">10</span></button>
+          <button class="tab" onclick="switchTab('agent')">Agents <span class="tab-count">18</span></button>
         </div>
 
         <div class="toolbar">
@@ -198,7 +198,7 @@
         <button class="filter-btn" onclick="filterCategory('vision')">Vision</button>
         <button class="filter-btn" onclick="filterCategory('automation')">Automation</button>
         <button class="filter-btn" onclick="filterCategory('education')">Education</button>
-        <span class="agent-count" id="agentCount">54 agents</span>
+        <span class="agent-count" id="agentCount">62 agents</span>
       </div>
             <div class="agents-grid" id="agentsGrid">
         <div class="agent-card" data-category="audio" data-store-type="model" data-name="text to speech" data-desc="convert text to natural-sounding speech using kokoro tts. 30+ voices, 8 languages.">
@@ -1175,6 +1175,150 @@
             </div>
           </a>
           <a href="/a/halo-maker/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
+        </div>
+
+        <div class="agent-card" data-category="automation" data-store-type="agent" data-name="research agent" data-desc="autonomous web research agent. give it a topic, it searches the web, reads pages, takes notes, and produces a structured report with sources.">
+          <a href="/agents/research-agent/" class="agent-card-body">
+            <div class="agent-icon" style="background:#7c3aed">🔍</div>
+            <div class="agent-body">
+              <span class="agent-name">Research Agent</span>
+              <span class="agent-desc">Autonomous web research agent. Give it a topic, it searches ...</span>
+              <div class="agent-meta">
+                <span class="tag" style="background:rgba(124,58,237,0.15);color:#a78bfa">Agent</span>
+                <span class="tag">0MB</span>
+              </div>
+            </div>
+          </a>
+          <a href="/a/research-agent/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
+        </div>
+
+        <div class="agent-card" data-category="automation" data-store-type="agent" data-name="competitive intel" data-desc="autonomous competitive analysis agent. give it a product, it finds competitors, analyzes features and pricing, and builds a comparison matrix.">
+          <a href="/agents/competitive-intel/" class="agent-card-body">
+            <div class="agent-icon" style="background:#2563eb">🎯</div>
+            <div class="agent-body">
+              <span class="agent-name">Competitive Intel</span>
+              <span class="agent-desc">Autonomous competitive analysis agent. Give it a product, it...</span>
+              <div class="agent-meta">
+                <span class="tag" style="background:rgba(124,58,237,0.15);color:#a78bfa">Agent</span>
+                <span class="tag">0MB</span>
+              </div>
+            </div>
+          </a>
+          <a href="/a/competitive-intel/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
+        </div>
+
+        <div class="agent-card" data-category="automation" data-store-type="agent" data-name="data pipeline" data-desc="autonomous data processing agent. drop a csv or json file, describe what you want, and it deduplicates, cleans, transforms, and exports — step by step.">
+          <a href="/agents/data-pipeline/" class="agent-card-body">
+            <div class="agent-icon" style="background:#059669">📊</div>
+            <div class="agent-body">
+              <span class="agent-name">Data Pipeline</span>
+              <span class="agent-desc">Autonomous data processing agent. Drop a CSV or JSON file, d...</span>
+              <div class="agent-meta">
+                <span class="tag" style="background:rgba(124,58,237,0.15);color:#a78bfa">Agent</span>
+                <span class="tag">0MB</span>
+              </div>
+            </div>
+          </a>
+          <a href="/a/data-pipeline/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
+        </div>
+
+        <div class="agent-card" data-category="automation" data-store-type="agent" data-name="doc writer" data-desc="autonomous documentation generator. point it at a local code folder, it reads every file, understands the architecture, and generates comprehensive docs.">
+          <a href="/agents/doc-writer/" class="agent-card-body">
+            <div class="agent-icon" style="background:#d97706">📝</div>
+            <div class="agent-body">
+              <span class="agent-name">Doc Writer</span>
+              <span class="agent-desc">Autonomous documentation generator. Point it at a local code...</span>
+              <div class="agent-meta">
+                <span class="tag" style="background:rgba(124,58,237,0.15);color:#a78bfa">Agent</span>
+                <span class="tag">0MB</span>
+              </div>
+            </div>
+          </a>
+          <a href="/a/doc-writer/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
+        </div>
+
+        <div class="agent-card" data-category="automation" data-store-type="agent" data-name="code refactor" data-desc="autonomous codebase refactoring agent. point it at a folder, describe the refactoring, and it applies changes file by file with verification.">
+          <a href="/agents/code-refactor/" class="agent-card-body">
+            <div class="agent-icon" style="background:#dc2626">🔧</div>
+            <div class="agent-body">
+              <span class="agent-name">Code Refactor</span>
+              <span class="agent-desc">Autonomous codebase refactoring agent. Point it at a folder,...</span>
+              <div class="agent-meta">
+                <span class="tag" style="background:rgba(124,58,237,0.15);color:#a78bfa">Agent</span>
+                <span class="tag">0MB</span>
+              </div>
+            </div>
+          </a>
+          <a href="/a/code-refactor/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
+        </div>
+
+        <div class="agent-card" data-category="automation" data-store-type="agent" data-name="test generator" data-desc="autonomous test generation agent. point it at a codebase, it reads the code, infers contracts, writes test cases, and validates them in-browser.">
+          <a href="/agents/test-generator/" class="agent-card-body">
+            <div class="agent-icon" style="background:#0891b2">🧪</div>
+            <div class="agent-body">
+              <span class="agent-name">Test Generator</span>
+              <span class="agent-desc">Autonomous test generation agent. Point it at a codebase, it...</span>
+              <div class="agent-meta">
+                <span class="tag" style="background:rgba(124,58,237,0.15);color:#a78bfa">Agent</span>
+                <span class="tag">0MB</span>
+              </div>
+            </div>
+          </a>
+          <a href="/a/test-generator/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
+        </div>
+
+        <div class="agent-card" data-category="automation" data-store-type="agent" data-name="site migrator" data-desc="autonomous website migration agent. give it a url, it crawls every page, extracts content, and rebuilds as clean markdown files.">
+          <a href="/agents/site-migrator/" class="agent-card-body">
+            <div class="agent-icon" style="background:#7c3aed">🏗️</div>
+            <div class="agent-body">
+              <span class="agent-name">Site Migrator</span>
+              <span class="agent-desc">Autonomous website migration agent. Give it a URL, it crawls...</span>
+              <div class="agent-meta">
+                <span class="tag" style="background:rgba(124,58,237,0.15);color:#a78bfa">Agent</span>
+                <span class="tag">0MB</span>
+              </div>
+            </div>
+          </a>
+          <a href="/a/site-migrator/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
+        </div>
+
+        <div class="agent-card" data-category="automation" data-store-type="agent" data-name="email processor" data-desc="autonomous email triage agent. paste or upload emails, it categorizes by priority, extracts action items, drafts replies, and produces an organized summary.">
+          <a href="/agents/email-processor/" class="agent-card-body">
+            <div class="agent-icon" style="background:#4f46e5">📧</div>
+            <div class="agent-body">
+              <span class="agent-name">Email Processor</span>
+              <span class="agent-desc">Autonomous email triage agent. Paste or upload emails, it ca...</span>
+              <div class="agent-meta">
+                <span class="tag" style="background:rgba(124,58,237,0.15);color:#a78bfa">Agent</span>
+                <span class="tag">0MB</span>
+              </div>
+            </div>
+          </a>
+          <a href="/a/email-processor/" class="agent-cta">
             <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
             Open
           </a>

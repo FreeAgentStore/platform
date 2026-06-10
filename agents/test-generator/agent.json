@@ -1,0 +1,18 @@
+{
+  "name": "Test Generator",
+  "description": "Autonomous test generation agent. Point it at a codebase, it reads the code, infers contracts, writes tests, and validates them.",
+  "version": "1.0.0",
+  "task": "testing",
+  "category": "automation",
+  "models": [],
+  "estimatedDownload": "0MB",
+  "input": ["text/plain"],
+  "output": ["text/plain", "application/json"],
+  "requiresWebGPU": false,
+  "requiresOllama": false,
+  "requiresWebContainers": false,
+  "offlineCapable": false,
+  "desktopOnly": false,
+  "runtimeType": "autonomous",
+  "trainable": false
+}

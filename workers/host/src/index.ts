@@ -18,6 +18,8 @@
 
 import { handleApiRoute } from './api';
 import { injectMirror } from './mirror-inject';
+import { classifyRequest } from './bot-detect';
+import { handleDashboard } from './dashboard';
 
 export { MirrorRoom } from './mirror-do';
 
@@ -31,10 +33,55 @@ export interface Env {
   GITHUB_CLIENT_SECRET?: string;
 }
 
+/** Fire-and-forget: log a page view to D1 */
+function logPageView(request: Request, env: Env, pathname: string): void {
+  if (request.method !== 'GET') return;
+
+  const classification = classifyRequest(request, pathname);
+
+  // Hash IP for unique visitor counting (no PII stored)
+  const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
+  const country = request.headers.get('CF-IPCountry') ?? null;
+  const referer = request.headers.get('Referer') ?? null;
+
+  // Use waitUntil-safe pattern: caller wraps in ctx.waitUntil if available
+  crypto.subtle
+    .digest('SHA-256', new TextEncoder().encode(ip + ':fags-salt'))
+    .then((hash) => {
+      const ipHash = Array.from(new Uint8Array(hash).slice(0, 8))
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('');
+
+      return env.DB.prepare(
+        `INSERT INTO page_views (path, is_human, country, browser, device, referer, ip_hash, bot_reason, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, unixepoch())`,
+      )
+        .bind(
+          pathname,
+          classification.isHuman ? 1 : 0,
+          country,
+          classification.browser,
+          classification.device,
+          referer ? referer.slice(0, 500) : null,
+          ipHash,
+          classification.botReason,
+        )
+        .run();
+    })
+    .catch(() => {
+      /* swallow analytics errors — never break serving */
+    });
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     const host = request.headers.get('Host')?.toLowerCase().replace(/:\d+$/, '') ?? '';
+
+    // Dashboard — server-rendered analytics page
+    if (url.pathname === '/v1/dashboard') {
+      return handleDashboard(url, env);
+    }
 
     // API routes (key vault + proxy) — handle before R2 serving
     if (url.pathname.startsWith('/v1/')) {
@@ -70,6 +117,13 @@ export default {
 
     // Everything below is on the apex: freeagentstore.online
     const pathname = url.pathname;
+
+    // ── Analytics: log page views (skip static assets) ───────
+    const ext = pathname.split('.').pop()?.toLowerCase();
+    const isAsset = ext && ['js','mjs','css','png','jpg','jpeg','webp','gif','svg','ico','woff','woff2','wasm','map','onnx'].includes(ext);
+    if (!isAsset && !pathname.startsWith('/pkg/')) {
+      logPageView(request, env, pathname);
+    }
 
     // ── /pkg/{agent}/ → serve ESM packages with CORS ─────────
     if (pathname.startsWith('/pkg/')) {
