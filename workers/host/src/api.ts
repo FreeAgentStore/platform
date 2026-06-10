@@ -823,6 +823,11 @@ export async function handleApiRoute(request: Request, url: URL, env: Env): Prom
       return await room.fetch(request);
     }
 
+    // ── MCP proxy — bypass CORS for browser agents calling MCP servers ──
+    if (path === '/v1/mcp-proxy' && request.method === 'POST') {
+      return handleMcpProxy(request, url);
+    }
+
     return jsonResponse({ error: 'Not found' }, 404);
   } catch (err) {
     if (err instanceof AuthError) {
@@ -1137,5 +1142,65 @@ async function handleUsage(db: D1Database, userId: string): Promise<Response> {
       agentId: r.agent_id,
       createdAt: r.created_at,
     })),
+  });
+}
+
+// ── MCP Proxy ─────────────────────────────────────────────────────────────────
+
+const MCP_PROXY_ALLOWED_METHODS = new Set(['initialize', 'notifications/initialized', 'tools/list', 'tools/call', 'ping']);
+const MCP_PROXY_MAX_BODY = 256 * 1024; // 256 KB
+
+async function handleMcpProxy(request: Request, url: URL): Promise<Response> {
+  const serverUrl = url.searchParams.get('server');
+  if (!serverUrl) {
+    return jsonResponse({ error: 'Missing ?server= parameter' }, 400);
+  }
+
+  // Validate server URL
+  let parsed: URL;
+  try {
+    parsed = new URL(serverUrl);
+  } catch {
+    return jsonResponse({ error: 'Invalid server URL' }, 400);
+  }
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    return jsonResponse({ error: 'Server URL must be http or https' }, 400);
+  }
+
+  // Read and validate JSON-RPC body
+  const bodyBuf = await request.arrayBuffer();
+  if (bodyBuf.byteLength > MCP_PROXY_MAX_BODY) {
+    return jsonResponse({ error: 'Request too large' }, 413);
+  }
+
+  let rpc: { method?: string };
+  try {
+    rpc = JSON.parse(new TextDecoder().decode(bodyBuf));
+  } catch {
+    return jsonResponse({ error: 'Invalid JSON' }, 400);
+  }
+
+  // Only allow safe MCP methods
+  if (!rpc.method || !MCP_PROXY_ALLOWED_METHODS.has(rpc.method)) {
+    return jsonResponse({ error: `Method not allowed: ${rpc.method}` }, 403);
+  }
+
+  // Forward to the MCP server
+  const upstream = await fetch(serverUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: bodyBuf,
+  });
+
+  // Return response with CORS headers
+  const respHeaders = corsHeaders();
+  respHeaders.set('Content-Type', upstream.headers.get('Content-Type') ?? 'application/json');
+
+  return new Response(upstream.body, {
+    status: upstream.status,
+    headers: respHeaders,
   });
 }
