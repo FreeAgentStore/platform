@@ -33,18 +33,19 @@ export interface Env {
   GITHUB_CLIENT_SECRET?: string;
 }
 
-/** Fire-and-forget: log a page view to D1 */
+/** Fire-and-forget: log a page view to D1. Only logs humans; samples bots at 10%. */
 function logPageView(request: Request, env: Env, pathname: string): void {
   if (request.method !== 'GET') return;
 
   const classification = classifyRequest(request, pathname);
 
-  // Hash IP for unique visitor counting (no PII stored)
+  // Skip most bot traffic — sample 1 in 10 for dashboard stats
+  if (!classification.isHuman && Math.random() > 0.1) return;
+
   const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
   const country = request.headers.get('CF-IPCountry') ?? null;
   const referer = request.headers.get('Referer') ?? null;
 
-  // Use waitUntil-safe pattern: caller wraps in ctx.waitUntil if available
   crypto.subtle
     .digest('SHA-256', new TextEncoder().encode(ip + ':fags-salt'))
     .then((hash) => {
@@ -68,9 +69,7 @@ function logPageView(request: Request, env: Env, pathname: string): void {
         )
         .run();
     })
-    .catch(() => {
-      /* swallow analytics errors — never break serving */
-    });
+    .catch(() => {});
 }
 
 export default {
