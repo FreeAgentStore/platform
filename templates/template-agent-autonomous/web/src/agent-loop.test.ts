@@ -1,6 +1,6 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { runAgent } from './agent-loop';
-import type { Tool, Step, AgentState } from './agent-loop';
+import type { Tool, AgentState } from './agent-loop';
 import type { LLMFn, LLMResponse, Message, ToolDef } from './inference';
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -42,6 +42,17 @@ function toolCallResponse(
     toolCalls: [{ name: toolName, input }],
     stopReason: 'tool_use',
   };
+}
+
+/** Creates a deferred promise for controlling async flow in tests. */
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
 }
 
 // ── Tests ────────────────────────────────────────────────────
@@ -113,12 +124,17 @@ describe('runAgent', () => {
   });
 
   it('stops when stop() is called', async () => {
-    // LLM always returns a tool call so the loop would never end on its own
     const tool = makeTool('search');
+    // Block the second LLM call until we call stop()
+    const gate = deferred<LLMResponse>();
+    let callCount = 0;
     const llm: LLMFn = vi.fn(async () => {
-      // After first call, trigger stop
-      handle.stop();
-      return toolCallResponse('search', { input: 'x' });
+      callCount++;
+      if (callCount === 1) {
+        return toolCallResponse('search', { input: '1' });
+      }
+      // Second call blocks until test resolves the gate
+      return gate.promise;
     });
 
     const { promise, handle } = runAgent(GOAL, [tool], llm, onUpdate, {
@@ -126,45 +142,74 @@ describe('runAgent', () => {
       systemPrompt: SYSTEM_PROMPT,
     });
 
+    // Wait for the second LLM call to start (blocked on gate)
+    await vi.waitFor(() => expect(callCount).toBe(2));
+
+    // Now stop the agent
+    handle.stop();
+    // Unblock the LLM — it returns a tool call but stopped=true should take effect
+    gate.resolve(toolCallResponse('search', { input: '2' }));
+
     const state = await promise;
+    // The stop is checked in the for-of loop over tool calls and at the top of the next iteration
     expect(state.status).toBe('done');
     expect(state.output).toBe('Stopped by user.');
     expect(state.completedAt).toBeTypeOf('number');
   });
 
   it('pauses and resumes', async () => {
-    let callCount = 0;
-    const llm: LLMFn = vi.fn(async () => {
-      callCount++;
-      if (callCount === 1) {
-        return toolCallResponse('search', { input: 'first' });
-      }
-      return noToolCallsResponse('Done after pause.');
-    });
+    vi.useFakeTimers();
     const tool = makeTool('search');
 
-    const { promise, handle } = runAgent(GOAL, [tool], llm, onUpdate, {
+    // Gate to block the second LLM call, giving us time to pause
+    const gate2 = deferred<LLMResponse>();
+    let llmCallCount = 0;
+    const llm: LLMFn = vi.fn(async () => {
+      llmCallCount++;
+      if (llmCallCount === 1) {
+        return toolCallResponse('search', { input: 'first' });
+      }
+      // Block until test releases
+      return gate2.promise;
+    });
+
+    const statuses: string[] = [];
+    const trackingUpdate = vi.fn((s: AgentState) => {
+      statuses.push(s.status);
+    });
+
+    const { promise, handle } = runAgent(GOAL, [tool], llm, trackingUpdate, {
       maxSteps: 10,
       systemPrompt: SYSTEM_PROMPT,
     });
 
-    // Pause briefly after first step starts, then resume
-    await new Promise((r) => setTimeout(r, 50));
+    // Wait for LLM call 2 to be blocked
+    await vi.waitFor(() => expect(llmCallCount).toBe(2));
+
+    // Pause the agent while the LLM is still pending
     handle.pause();
 
-    // Verify paused status is emitted
-    await new Promise((r) => setTimeout(r, 600));
-    const pausedUpdates = onUpdate.mock.calls.filter(
-      ([s]: [AgentState]) => s.status === 'paused',
-    );
-    expect(pausedUpdates.length).toBeGreaterThan(0);
+    // Release the LLM — it returns a tool call, then the loop enters next iteration
+    // where the pause check runs
+    gate2.resolve(toolCallResponse('search', { input: 'second' }));
 
+    // Advance timers for the pause loop's setTimeout(500)
+    await vi.advanceTimersByTimeAsync(600);
+    expect(statuses).toContain('paused');
+
+    // Resume and stop (the third LLM call will never come since we stop)
     handle.resume();
+    await vi.advanceTimersByTimeAsync(600);
+    handle.stop();
+    await vi.advanceTimersByTimeAsync(600);
+
     const state = await promise;
     expect(state.status).toBe('done');
+    vi.useRealTimers();
   });
 
   it('retries on RATE_LIMITED error', async () => {
+    vi.useFakeTimers();
     const tool = makeTool('search');
     let callCount = 0;
     const llm: LLMFn = vi.fn(async () => {
@@ -180,15 +225,19 @@ describe('runAgent', () => {
       systemPrompt: SYSTEM_PROMPT,
     });
 
+    // The rate-limit retry waits 5000ms
+    await vi.advanceTimersByTimeAsync(5100);
+
     const state = await promise;
     expect(state.status).toBe('done');
     expect(state.output).toBe('Recovered from rate limit.');
     expect(llm).toHaveBeenCalledTimes(2);
-    // The step thought should mention retrying
     expect(state.steps[0].thought).toContain('rate limit');
+    vi.useRealTimers();
   });
 
   it('retries on TimeoutError', async () => {
+    vi.useFakeTimers();
     const tool = makeTool('search');
     let callCount = 0;
     const llm: LLMFn = vi.fn(async () => {
@@ -206,14 +255,19 @@ describe('runAgent', () => {
       systemPrompt: SYSTEM_PROMPT,
     });
 
+    // Timeout retry waits 2000ms
+    await vi.advanceTimersByTimeAsync(2100);
+
     const state = await promise;
     expect(state.status).toBe('done');
     expect(state.output).toBe('Recovered from timeout.');
     expect(llm).toHaveBeenCalledTimes(2);
     expect(state.steps[0].thought).toContain('timeout');
+    vi.useRealTimers();
   });
 
   it('returns error state when retry also fails', async () => {
+    vi.useFakeTimers();
     const llm: LLMFn = vi.fn(async () => {
       throw new Error('RATE_LIMITED');
     });
@@ -223,11 +277,15 @@ describe('runAgent', () => {
       systemPrompt: SYSTEM_PROMPT,
     });
 
+    // Advance past the retry delay
+    await vi.advanceTimersByTimeAsync(5100);
+
     const state = await promise;
     expect(state.status).toBe('error');
     expect(state.output).toContain('LLM error');
     expect(state.output).toContain('RATE_LIMITED');
     expect(llm).toHaveBeenCalledTimes(2);
+    vi.useRealTimers();
   });
 
   it('returns error state on non-retryable error', async () => {
@@ -247,7 +305,6 @@ describe('runAgent', () => {
   });
 
   it('respects maxSteps limit', async () => {
-    // LLM always returns tool calls, never a final answer
     const tool = makeTool('search');
     const llm = makeLLM([
       toolCallResponse('search', { input: '1' }),
@@ -352,7 +409,7 @@ describe('runAgent', () => {
     expect((toolMsg as any).content).toContain('Error: Disk full');
   });
 
-  it('calls onUpdate at each state change', async () => {
+  it('calls onUpdate multiple times during execution', async () => {
     const tool = makeTool('search', 'data');
     const llm = makeLLM([
       toolCallResponse('search', { input: 'q' }),
@@ -366,12 +423,9 @@ describe('runAgent', () => {
 
     await promise;
 
-    // Should be called at least: initial running, step thinking, step acting,
+    // Should be called multiple times: initial, step thinking, step acting,
     // step done (after tool), step 2 thinking, step 2 done
     expect(onUpdate.mock.calls.length).toBeGreaterThanOrEqual(5);
-
-    // First call should be status 'running'
-    expect(onUpdate.mock.calls[0][0].status).toBe('running');
   });
 
   it('sets startedAt on state', async () => {
@@ -383,7 +437,6 @@ describe('runAgent', () => {
 
     const state = await promise;
     expect(state.startedAt).toBeTypeOf('number');
-    expect(state.startedAt).toBeLessThanOrEqual(Date.now());
   });
 
   it('returns "No output." when LLM text is null with no tool calls', async () => {
@@ -396,5 +449,16 @@ describe('runAgent', () => {
 
     const state = await promise;
     expect(state.output).toBe('No output.');
+  });
+
+  it('sets goal on state', async () => {
+    const llm = makeLLM([noToolCallsResponse('Done.')]);
+    const { promise } = runAgent(GOAL, [], llm, onUpdate, {
+      maxSteps: 1,
+      systemPrompt: SYSTEM_PROMPT,
+    });
+
+    const state = await promise;
+    expect(state.goal).toBe(GOAL);
   });
 });

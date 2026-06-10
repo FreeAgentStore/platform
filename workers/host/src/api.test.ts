@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { handleApiRoute } from './api';
 import type { Env } from './index';
 
@@ -610,5 +610,322 @@ describe('handleApiRoute', () => {
     const body = (await res.json()) as { calls: number; lastUsed: string | null };
     expect(body.calls).toBe(0);
     expect(body.lastUsed).toBeNull();
+  });
+});
+
+// ── /v1/search ────────────────────────────────────────────────────────────────
+
+describe('/v1/search', () => {
+  it('returns 400 if no ?q= parameter', async () => {
+    const res = await handleApiRoute(
+      makeRequest('GET', '/v1/search'),
+      new URL('https://freeagentstore.online/v1/search'),
+      mockEnv(),
+    );
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toContain('?q=');
+  });
+
+  it('returns results array on success', async () => {
+    const fakeDdgHtml = `
+      <div class="result">
+        <a class="result__a" href="https://duckduckgo.com/l/?uddg=https%3A%2F%2Fexample.com%2Fpage">Example Page</a>
+        <a class="result__snippet">This is a snippet about the example page.</a>
+      </div>
+      <div class="result">
+        <a class="result__a" href="https://duckduckgo.com/l/?uddg=https%3A%2F%2Fother.com">Other Site</a>
+        <a class="result__snippet">Another snippet here.</a>
+      </div>
+    `;
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response(fakeDdgHtml, { status: 200, headers: { 'Content-Type': 'text/html' } }),
+    );
+
+    const res = await handleApiRoute(
+      makeRequest('GET', '/v1/search'),
+      new URL('https://freeagentstore.online/v1/search?q=example'),
+      mockEnv(),
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { query: string; results: { title: string; url: string; snippet: string }[]; count: number };
+    expect(body.query).toBe('example');
+    expect(body.results).toBeInstanceOf(Array);
+    expect(body.results.length).toBe(2);
+    expect(body.results[0].title).toBe('Example Page');
+    expect(body.results[0].url).toBe('https://example.com/page');
+    expect(body.results[0].snippet).toContain('snippet about the example');
+    expect(body.results[1].url).toBe('https://other.com');
+
+    fetchSpy.mockRestore();
+  });
+
+  it('returns CORS headers', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response('<html></html>', { status: 200, headers: { 'Content-Type': 'text/html' } }),
+    );
+
+    const res = await handleApiRoute(
+      makeRequest('GET', '/v1/search'),
+      new URL('https://freeagentstore.online/v1/search?q=test'),
+      mockEnv(),
+    );
+    expect(res.status).toBe(200);
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('*');
+
+    vi.restoreAllMocks();
+  });
+});
+
+// ── /v1/fetch ─────────────────────────────────────────────────────────────────
+
+describe('/v1/fetch', () => {
+  it('returns 400 if no ?url= parameter', async () => {
+    const res = await handleApiRoute(
+      makeRequest('GET', '/v1/fetch'),
+      new URL('https://freeagentstore.online/v1/fetch'),
+      mockEnv(),
+    );
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toContain('?url=');
+  });
+
+  it('returns 400 for invalid URL', async () => {
+    const res = await handleApiRoute(
+      makeRequest('GET', '/v1/fetch'),
+      new URL('https://freeagentstore.online/v1/fetch?url=not-a-url'),
+      mockEnv(),
+    );
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toContain('Invalid URL');
+  });
+
+  it('returns 403 for blocked host localhost', async () => {
+    const res = await handleApiRoute(
+      makeRequest('GET', '/v1/fetch'),
+      new URL('https://freeagentstore.online/v1/fetch?url=http%3A%2F%2Flocalhost%2Fsecret'),
+      mockEnv(),
+    );
+    expect(res.status).toBe(403);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toContain('Blocked');
+  });
+
+  it('returns 403 for blocked host 127.0.0.1', async () => {
+    const res = await handleApiRoute(
+      makeRequest('GET', '/v1/fetch'),
+      new URL('https://freeagentstore.online/v1/fetch?url=http%3A%2F%2F127.0.0.1%2Fpath'),
+      mockEnv(),
+    );
+    expect(res.status).toBe(403);
+  });
+
+  it('returns 403 for blocked host 10.x.x.x', async () => {
+    const res = await handleApiRoute(
+      makeRequest('GET', '/v1/fetch'),
+      new URL('https://freeagentstore.online/v1/fetch?url=http%3A%2F%2F10.0.0.1%2Fpath'),
+      mockEnv(),
+    );
+    expect(res.status).toBe(403);
+  });
+
+  it('returns 403 for blocked host 169.254.169.254', async () => {
+    const res = await handleApiRoute(
+      makeRequest('GET', '/v1/fetch'),
+      new URL('https://freeagentstore.online/v1/fetch?url=http%3A%2F%2F169.254.169.254%2Flatest%2Fmeta-data'),
+      mockEnv(),
+    );
+    expect(res.status).toBe(403);
+  });
+
+  it('returns clean text content with title extracted', async () => {
+    const fakeHtml = `
+      <html>
+        <head><title>Test Page Title</title></head>
+        <body>
+          <script>console.log("removed")</script>
+          <style>.removed{}</style>
+          <h1>Hello World</h1>
+          <p>Some <b>important</b> content here.</p>
+        </body>
+      </html>
+    `;
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response(fakeHtml, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } }),
+    );
+
+    const res = await handleApiRoute(
+      makeRequest('GET', '/v1/fetch'),
+      new URL('https://freeagentstore.online/v1/fetch?url=https%3A%2F%2Fexample.com'),
+      mockEnv(),
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { url: string; title: string; content: string; length: number; truncated: boolean };
+    expect(body.url).toBe('https://example.com');
+    expect(body.title).toBe('Test Page Title');
+    expect(body.content).toContain('Hello World');
+    expect(body.content).toContain('important');
+    expect(body.content).toContain('content here');
+
+    fetchSpy.mockRestore();
+  });
+
+  it('strips HTML tags from response', async () => {
+    const fakeHtml = '<html><head><title>T</title></head><body><p>Clean <b>text</b></p></body></html>';
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response(fakeHtml, { status: 200, headers: { 'Content-Type': 'text/html' } }),
+    );
+
+    const res = await handleApiRoute(
+      makeRequest('GET', '/v1/fetch'),
+      new URL('https://freeagentstore.online/v1/fetch?url=https%3A%2F%2Fexample.com'),
+      mockEnv(),
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { content: string };
+    expect(body.content).not.toContain('<b>');
+    expect(body.content).not.toContain('<p>');
+    expect(body.content).not.toContain('</html>');
+    expect(body.content).toContain('Clean');
+    expect(body.content).toContain('text');
+
+    fetchSpy.mockRestore();
+  });
+
+  it('returns CORS headers', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response('<html><body>ok</body></html>', { status: 200, headers: { 'Content-Type': 'text/html' } }),
+    );
+
+    const res = await handleApiRoute(
+      makeRequest('GET', '/v1/fetch'),
+      new URL('https://freeagentstore.online/v1/fetch?url=https%3A%2F%2Fexample.com'),
+      mockEnv(),
+    );
+    expect(res.status).toBe(200);
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('*');
+
+    fetchSpy.mockRestore();
+  });
+});
+
+// ── /v1/mcp-proxy ─────────────────────────────────────────────────────────────
+
+describe('/v1/mcp-proxy', () => {
+  it('returns 400 if no ?server= parameter', async () => {
+    const res = await handleApiRoute(
+      makeRequest('POST', '/v1/mcp-proxy', {
+        body: JSON.stringify({ jsonrpc: '2.0', method: 'initialize', id: 1 }),
+        headers: { 'Content-Type': 'application/json' },
+      }),
+      new URL('https://freeagentstore.online/v1/mcp-proxy'),
+      mockEnv(),
+    );
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toContain('?server=');
+  });
+
+  it('returns 403 for blocked methods (not in allowlist)', async () => {
+    const res = await handleApiRoute(
+      makeRequest('POST', '/v1/mcp-proxy', {
+        body: JSON.stringify({ jsonrpc: '2.0', method: 'resources/list', id: 1 }),
+        headers: { 'Content-Type': 'application/json' },
+      }),
+      new URL('https://freeagentstore.online/v1/mcp-proxy?server=https%3A%2F%2Fmcp.example.com%2Fmcp'),
+      mockEnv(),
+    );
+    expect(res.status).toBe(403);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toContain('Method not allowed');
+  });
+
+  it('returns 403 for blocked hosts (SSRF protection)', async () => {
+    const res = await handleApiRoute(
+      makeRequest('POST', '/v1/mcp-proxy', {
+        body: JSON.stringify({ jsonrpc: '2.0', method: 'initialize', id: 1 }),
+        headers: { 'Content-Type': 'application/json' },
+      }),
+      new URL('https://freeagentstore.online/v1/mcp-proxy?server=https%3A%2F%2Flocalhost%2Fmcp'),
+      mockEnv(),
+    );
+    expect(res.status).toBe(403);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toContain('Blocked');
+  });
+
+  it('returns 400 for non-https URLs', async () => {
+    const res = await handleApiRoute(
+      makeRequest('POST', '/v1/mcp-proxy', {
+        body: JSON.stringify({ jsonrpc: '2.0', method: 'initialize', id: 1 }),
+        headers: { 'Content-Type': 'application/json' },
+      }),
+      new URL('https://freeagentstore.online/v1/mcp-proxy?server=http%3A%2F%2Fmcp.example.com%2Fmcp'),
+      mockEnv(),
+    );
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toContain('https');
+  });
+
+  it('forwards allowed methods (initialize, tools/list, tools/call)', async () => {
+    const methods = ['initialize', 'tools/list', 'tools/call'];
+    for (const method of methods) {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+        new Response(JSON.stringify({ jsonrpc: '2.0', result: {}, id: 1 }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+
+      const res = await handleApiRoute(
+        makeRequest('POST', '/v1/mcp-proxy', {
+          body: JSON.stringify({ jsonrpc: '2.0', method, id: 1 }),
+          headers: { 'Content-Type': 'application/json' },
+        }),
+        new URL('https://freeagentstore.online/v1/mcp-proxy?server=https%3A%2F%2Fmcp.example.com%2Fmcp'),
+        mockEnv(),
+      );
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { jsonrpc: string; result: unknown };
+      expect(body.jsonrpc).toBe('2.0');
+
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it('returns 429 when rate limited', async () => {
+    // Exhaust the rate limit (60 requests/minute/IP)
+    // We mock the rate counter by sending many requests from the same IP
+    // Since the MCP rate limiter is in-memory, we need to hit the endpoint many times.
+    // Instead, we'll directly test by making 61 rapid requests.
+    // But that's slow, so we'll use a trick: mock CF-Connecting-IP to a unique IP
+    // and send enough requests to exceed the limit.
+    const uniqueIp = `rate-test-${Date.now()}`;
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ jsonrpc: '2.0', result: {}, id: 1 }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+
+    let lastStatus = 200;
+    for (let i = 0; i < 62; i++) {
+      const res = await handleApiRoute(
+        makeRequest('POST', '/v1/mcp-proxy', {
+          body: JSON.stringify({ jsonrpc: '2.0', method: 'initialize', id: 1 }),
+          headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': uniqueIp },
+        }),
+        new URL('https://freeagentstore.online/v1/mcp-proxy?server=https%3A%2F%2Fmcp.example.com%2Fmcp'),
+        mockEnv(),
+      );
+      lastStatus = res.status;
+      if (lastStatus === 429) break;
+    }
+    expect(lastStatus).toBe(429);
+
+    fetchSpy.mockRestore();
   });
 });

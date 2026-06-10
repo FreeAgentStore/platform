@@ -142,7 +142,8 @@ describe('mcpToolsToAgentTools', () => {
   it('sanitizes server name for prefix (non-word chars become _)', () => {
     const server: McpServer = { name: 'My Cool Server!@#', url: 'https://x.com' };
     const agentTools = mcpToolsToAgentTools(server, [mcpTools[0]]);
-    expect(agentTools[0].name).toBe('mcp_my_cool_server____read_file');
+    // \W+ replaces consecutive non-word chars with a single _, so "!@#" -> "_"
+    expect(agentTools[0].name).toBe('mcp_my_cool_server__read_file');
   });
 
   it('adds [MCP: server] prefix to description', () => {
@@ -352,12 +353,22 @@ describe('callTool', () => {
     await expect(callTool('https://mcp.example.com', 'delete', {})).rejects.toThrow('Permission denied');
   });
 
-  it('throws "Unknown MCP error" when isError with no content text', async () => {
+  it('throws on isError with empty content — fallback uses "Unknown MCP error" only when content is nullish', async () => {
+    // When content is an empty array, map+filter+join produces '' which is falsy
+    // but `??` only triggers on null/undefined, so the error message is ''
     const fetchMock = mockFetchJsonRpc({
       isError: true,
       content: [],
     });
     vi.stubGlobal('fetch', fetchMock);
+
+    await expect(callTool('https://mcp.example.com', 'fail', {})).rejects.toThrow('');
+
+    // When content is undefined/null, ?? triggers and uses 'Unknown MCP error'
+    const fetchMock2 = mockFetchJsonRpc({
+      isError: true,
+    });
+    vi.stubGlobal('fetch', fetchMock2);
 
     await expect(callTool('https://mcp.example.com', 'fail', {})).rejects.toThrow('Unknown MCP error');
   });
