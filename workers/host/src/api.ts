@@ -1149,8 +1149,40 @@ async function handleUsage(db: D1Database, userId: string): Promise<Response> {
 
 const MCP_PROXY_ALLOWED_METHODS = new Set(['initialize', 'notifications/initialized', 'tools/list', 'tools/call', 'ping']);
 const MCP_PROXY_MAX_BODY = 256 * 1024; // 256 KB
+const MCP_PROXY_RATE_WINDOW = 60_000;
+const MCP_PROXY_RATE_MAX = 60; // 60 requests/minute/IP
+const mcpRateCounts = new Map<string, { count: number; resetAt: number }>();
+
+// Block internal/private IPs (SSRF protection)
+function isBlockedHost(hostname: string): boolean {
+  // Block localhost, private IPs, link-local, metadata endpoints
+  const blocked = [
+    'localhost', '127.0.0.1', '0.0.0.0', '[::1]', '[::]',
+    'metadata.google.internal', '169.254.169.254',
+    'metadata.google', 'metadata',
+  ];
+  if (blocked.includes(hostname.toLowerCase())) return true;
+  // Block 10.x, 172.16-31.x, 192.168.x
+  if (/^10\./.test(hostname)) return true;
+  if (/^172\.(1[6-9]|2\d|3[01])\./.test(hostname)) return true;
+  if (/^192\.168\./.test(hostname)) return true;
+  return false;
+}
 
 async function handleMcpProxy(request: Request, url: URL): Promise<Response> {
+  // Rate limit per IP
+  const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
+  const now = Date.now();
+  const entry = mcpRateCounts.get(ip);
+  if (entry && now < entry.resetAt) {
+    if (entry.count >= MCP_PROXY_RATE_MAX) {
+      return jsonResponse({ error: 'Rate limit exceeded. Try again later.' }, 429);
+    }
+    entry.count++;
+  } else {
+    mcpRateCounts.set(ip, { count: 1, resetAt: now + MCP_PROXY_RATE_WINDOW });
+  }
+
   const serverUrl = url.searchParams.get('server');
   if (!serverUrl) {
     return jsonResponse({ error: 'Missing ?server= parameter' }, 400);
@@ -1163,8 +1195,11 @@ async function handleMcpProxy(request: Request, url: URL): Promise<Response> {
   } catch {
     return jsonResponse({ error: 'Invalid server URL' }, 400);
   }
-  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
-    return jsonResponse({ error: 'Server URL must be http or https' }, 400);
+  if (parsed.protocol !== 'https:') {
+    return jsonResponse({ error: 'Server URL must use https' }, 400);
+  }
+  if (isBlockedHost(parsed.hostname)) {
+    return jsonResponse({ error: 'Blocked host' }, 403);
   }
 
   // Read and validate JSON-RPC body
@@ -1185,15 +1220,22 @@ async function handleMcpProxy(request: Request, url: URL): Promise<Response> {
     return jsonResponse({ error: `Method not allowed: ${rpc.method}` }, 403);
   }
 
-  // Forward to the MCP server
-  const upstream = await fetch(serverUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
-    body: bodyBuf,
-  });
+  // Forward to the MCP server with timeout
+  let upstream: Response;
+  try {
+    upstream = await fetch(serverUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: bodyBuf,
+      signal: AbortSignal.timeout(30_000),
+    });
+  } catch (err: any) {
+    const msg = err.name === 'TimeoutError' ? 'MCP server timed out (30s)' : `MCP server unreachable: ${err.message}`;
+    return jsonResponse({ error: msg }, 502);
+  }
 
   // Return response with CORS headers
   const respHeaders = corsHeaders();

@@ -41,6 +41,13 @@ export interface AgentHandle {
   stop: () => void;
 }
 
+// Truncate tool results to avoid blowing context window
+const MAX_TOOL_RESULT = 8000;
+function truncateResult(s: string): string {
+  if (s.length <= MAX_TOOL_RESULT) return s;
+  return s.slice(0, MAX_TOOL_RESULT) + `\n\n[... truncated, ${s.length - MAX_TOOL_RESULT} chars omitted]`;
+}
+
 function toolsToToolDefs(tools: Tool[]): ToolDef[] {
   return tools.map((t) => ({
     name: t.name,
@@ -62,7 +69,7 @@ export function runAgent(
   const handle: AgentHandle = {
     pause: () => { paused = true; },
     resume: () => { paused = false; },
-    stop: () => { stopped = true; },
+    stop: () => { stopped = true; paused = false; },
   };
 
   const toolDefs = toolsToToolDefs(tools);
@@ -83,20 +90,28 @@ export function runAgent(
     ];
 
     for (let i = 0; i < options.maxSteps; i++) {
+      // Check stop before starting a new step
       if (stopped) {
         state.status = 'done';
         state.output = 'Stopped by user.';
         state.completedAt = Date.now();
         onUpdate({ ...state });
-        break;
+        return state;
       }
 
-      while (paused && !stopped) {
+      // Handle pause
+      while (paused) {
         state.status = 'paused';
         onUpdate({ ...state });
         await new Promise((r) => setTimeout(r, 500));
+        if (stopped) {
+          state.status = 'done';
+          state.output = 'Stopped by user.';
+          state.completedAt = Date.now();
+          onUpdate({ ...state });
+          return state;
+        }
       }
-      if (stopped) continue;
       state.status = 'running';
 
       // Create step
@@ -104,19 +119,38 @@ export function runAgent(
       state.steps = [...state.steps, step];
       onUpdate({ ...state });
 
-      // Call LLM with tools
+      // Call LLM with tools — retry once on transient errors
       let response: LLMResponse;
       try {
         response = await llm(messages, toolDefs);
       } catch (err: any) {
-        step.status = 'error';
-        step.error = err.message;
-        step.duration = Date.now() - step.timestamp;
-        state.status = 'error';
-        state.output = `LLM error: ${err.message}`;
-        state.completedAt = Date.now();
-        onUpdate({ ...state });
-        break;
+        // Retry once for rate limits and timeouts
+        if (err.message === 'RATE_LIMITED' || err.name === 'TimeoutError') {
+          step.thought = `Retrying after ${err.message === 'RATE_LIMITED' ? 'rate limit' : 'timeout'}...`;
+          onUpdate({ ...state });
+          await new Promise((r) => setTimeout(r, err.message === 'RATE_LIMITED' ? 5000 : 2000));
+          try {
+            response = await llm(messages, toolDefs);
+          } catch (retryErr: any) {
+            step.status = 'error';
+            step.error = retryErr.message;
+            step.duration = Date.now() - step.timestamp;
+            state.status = 'error';
+            state.output = `LLM error: ${retryErr.message}`;
+            state.completedAt = Date.now();
+            onUpdate({ ...state });
+            return state;
+          }
+        } else {
+          step.status = 'error';
+          step.error = err.message;
+          step.duration = Date.now() - step.timestamp;
+          state.status = 'error';
+          state.output = `LLM error: ${err.message}`;
+          state.completedAt = Date.now();
+          onUpdate({ ...state });
+          return state;
+        }
       }
 
       step.thought = response.text;
@@ -128,12 +162,9 @@ export function runAgent(
         state.output = response.text ?? 'No output.';
         state.status = 'done';
         state.completedAt = Date.now();
-
-        // Add assistant message to history
         messages.push({ role: 'assistant', content: response.text ?? '' });
-
         onUpdate({ ...state });
-        break;
+        return state;
       }
 
       // Execute tool calls
@@ -141,19 +172,21 @@ export function runAgent(
       step.toolCalls = response.toolCalls.map((tc) => ({ name: tc.name, input: tc.input }));
       onUpdate({ ...state });
 
-      // Add assistant message with tool calls to history
       messages.push({ role: 'assistant', content: response.text ?? '', toolCalls: response.toolCalls });
 
       for (const tc of step.toolCalls) {
+        if (stopped) break;
+
         const tool = toolMap.get(tc.name);
         if (!tool) {
-          tc.error = `Unknown tool: ${tc.name}`;
-          messages.push({ role: 'tool', toolName: tc.name, content: `Error: unknown tool "${tc.name}"` });
+          tc.error = `Unknown tool: ${tc.name}. Available: ${[...toolMap.keys()].join(', ')}`;
+          messages.push({ role: 'tool', toolName: tc.name, content: tc.error });
           continue;
         }
         try {
-          tc.result = await tool.execute(tc.input);
-          messages.push({ role: 'tool', toolName: tc.name, content: tc.result });
+          const raw = await tool.execute(tc.input);
+          tc.result = raw;
+          messages.push({ role: 'tool', toolName: tc.name, content: truncateResult(raw) });
         } catch (err: any) {
           tc.error = err.message;
           messages.push({ role: 'tool', toolName: tc.name, content: `Error: ${err.message}` });
@@ -164,13 +197,10 @@ export function runAgent(
       onUpdate({ ...state });
     }
 
-    if (state.status === 'running') {
-      state.status = 'done';
-      state.output = 'Max steps reached.';
-      state.completedAt = Date.now();
-      onUpdate({ ...state });
-    }
-
+    state.status = 'done';
+    state.output = 'Max steps reached. Check step log for partial results.';
+    state.completedAt = Date.now();
+    onUpdate({ ...state });
     return state;
   })();
 

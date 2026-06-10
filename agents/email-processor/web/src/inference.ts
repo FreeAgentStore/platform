@@ -4,6 +4,7 @@
  */
 
 const PROXY_BASE = 'https://freeagentstore.online/v1/proxy';
+const LLM_TIMEOUT = 120_000; // 2 minutes
 
 export interface LLMConfig {
   provider: string;
@@ -39,6 +40,12 @@ function getSession(): string | null {
   }
 }
 
+// Unique ID generator for tool call IDs
+let _callIdCounter = 0;
+function nextCallId(): string {
+  return `call_${Date.now().toString(36)}_${(++_callIdCounter).toString(36)}`;
+}
+
 // ── Tool definition types (provider-agnostic) ─────────────────
 
 export interface ToolDef {
@@ -53,8 +60,8 @@ export interface ToolCall {
 }
 
 export interface LLMResponse {
-  text: string | null;       // assistant text (thought/reasoning)
-  toolCalls: ToolCall[];     // structured tool calls from the model
+  text: string | null;
+  toolCalls: ToolCall[];
   stopReason: 'tool_use' | 'end' | 'length';
 }
 
@@ -83,30 +90,32 @@ function toolsToOpenAI(tools: ToolDef[]) {
   }));
 }
 
+// Track tool_call IDs so tool results match the right call
+const _openaiCallIds = new Map<string, string>(); // "assistantMsg:toolName:index" → callId
+
 function messagesToOpenAI(messages: Message[]) {
   const out: unknown[] = [];
+  let assistantIdx = 0;
   for (const m of messages) {
     if (m.role === 'system' || m.role === 'user') {
       out.push({ role: m.role, content: m.content });
     } else if (m.role === 'assistant') {
       if (m.toolCalls?.length) {
-        out.push({
-          role: 'assistant',
-          content: m.content || null,
-          tool_calls: m.toolCalls.map((tc, i) => ({
-            id: `call_${i}`,
-            type: 'function',
-            function: { name: tc.name, arguments: JSON.stringify(tc.input) },
-          })),
+        const toolCallMsgs = m.toolCalls.map((tc, i) => {
+          const id = nextCallId();
+          _openaiCallIds.set(`${assistantIdx}:${tc.name}:${i}`, id);
+          return { id, type: 'function', function: { name: tc.name, arguments: JSON.stringify(tc.input) } };
         });
+        out.push({ role: 'assistant', content: m.content || null, tool_calls: toolCallMsgs });
+        assistantIdx++;
       } else {
         out.push({ role: 'assistant', content: m.content });
       }
     } else if (m.role === 'tool') {
-      // Find the matching tool_call_id from the previous assistant message
+      // Find the matching tool_call_id
       const prevAssistant = out.findLast((x: any) => x.role === 'assistant' && x.tool_calls);
-      const callId = (prevAssistant as any)?.tool_calls?.find((tc: any) => tc.function.name === m.toolName)?.id ?? 'call_0';
-      out.push({ role: 'tool', tool_call_id: callId, content: m.content });
+      const tc = (prevAssistant as any)?.tool_calls?.find((c: any) => c.function.name === m.toolName);
+      out.push({ role: 'tool', tool_call_id: tc?.id ?? nextCallId(), content: m.content });
     }
   }
   return out;
@@ -115,10 +124,11 @@ function messagesToOpenAI(messages: Message[]) {
 function parseOpenAIResponse(data: any): LLMResponse {
   const choice = data.choices?.[0];
   const msg = choice?.message;
-  const toolCalls: ToolCall[] = (msg?.tool_calls ?? []).map((tc: any) => ({
-    name: tc.function.name,
-    input: JSON.parse(tc.function.arguments || '{}'),
-  }));
+  const toolCalls: ToolCall[] = (msg?.tool_calls ?? []).map((tc: any) => {
+    let input: Record<string, unknown> = {};
+    try { input = JSON.parse(tc.function.arguments || '{}'); } catch { input = { _raw: tc.function.arguments }; }
+    return { name: tc.function.name, input };
+  });
   return {
     text: msg?.content ?? null,
     toolCalls,
@@ -144,25 +154,52 @@ function toolsToAnthropic(tools: ToolDef[]) {
 
 function messagesToAnthropic(messages: Message[]) {
   const system = messages.find((m) => m.role === 'system')?.content ?? '';
-  const out: unknown[] = [];
+  const out: Array<{ role: string; content: unknown }> = [];
+
   for (const m of messages) {
     if (m.role === 'system') continue;
     if (m.role === 'user') {
-      out.push({ role: 'user', content: m.content });
+      // Merge consecutive user messages (Anthropic rejects consecutive same-role)
+      const last = out[out.length - 1];
+      if (last?.role === 'user') {
+        if (typeof last.content === 'string') {
+          last.content = last.content + '\n\n' + m.content;
+        }
+      } else {
+        out.push({ role: 'user', content: m.content });
+      }
     } else if (m.role === 'assistant') {
       const content: unknown[] = [];
       if (m.content) content.push({ type: 'text', text: m.content });
       if (m.toolCalls?.length) {
         for (const tc of m.toolCalls) {
-          content.push({ type: 'tool_use', id: `tu_${tc.name}`, name: tc.name, input: tc.input });
+          content.push({ type: 'tool_use', id: nextCallId(), name: tc.name, input: tc.input });
         }
       }
-      out.push({ role: 'assistant', content: content.length === 1 && !m.toolCalls?.length ? m.content : content });
+      if (content.length === 0) content.push({ type: 'text', text: '(thinking)' });
+      out.push({ role: 'assistant', content });
     } else if (m.role === 'tool') {
-      out.push({
-        role: 'user',
-        content: [{ type: 'tool_result', tool_use_id: `tu_${m.toolName}`, content: m.content }],
-      });
+      // tool_result must be in a user message
+      const toolUseId = (() => {
+        // Find the tool_use block in the preceding assistant message
+        for (let i = out.length - 1; i >= 0; i--) {
+          const msg = out[i];
+          if (msg.role === 'assistant' && Array.isArray(msg.content)) {
+            const block = (msg.content as any[]).find((b: any) => b.type === 'tool_use' && b.name === m.toolName);
+            if (block) return block.id;
+          }
+        }
+        return nextCallId();
+      })();
+
+      const resultBlock = { type: 'tool_result', tool_use_id: toolUseId, content: m.content };
+      // Merge into previous user message if it's a tool_result array
+      const last = out[out.length - 1];
+      if (last?.role === 'user' && Array.isArray(last.content)) {
+        (last.content as unknown[]).push(resultBlock);
+      } else {
+        out.push({ role: 'user', content: [resultBlock] });
+      }
     }
   }
   return { system, messages: out };
@@ -174,7 +211,7 @@ function parseAnthropicResponse(data: any): LLMResponse {
   const toolCalls: ToolCall[] = [];
   for (const block of blocks) {
     if (block.type === 'text') text = (text ?? '') + block.text;
-    if (block.type === 'tool_use') toolCalls.push({ name: block.name, input: block.input });
+    if (block.type === 'tool_use') toolCalls.push({ name: block.name, input: block.input ?? {} });
   }
   return {
     text,
@@ -216,10 +253,11 @@ function messagesToGoogle(messages: Message[]) {
           parts.push({ functionCall: { name: tc.name, args: tc.input } });
         }
       }
+      if (parts.length === 0) parts.push({ text: '' });
       contents.push({ role: 'model', parts });
     } else if (m.role === 'tool') {
       contents.push({
-        role: 'user',
+        role: 'function',
         parts: [{ functionResponse: { name: m.toolName, response: { result: m.content } } }],
       });
     }
@@ -266,7 +304,7 @@ async function chatWithTools(
       max_tokens: 4096,
       system,
       messages: msgs,
-      tools: toolsToAnthropic(tools),
+      ...(tools.length > 0 ? { tools: toolsToAnthropic(tools) } : {}),
     };
   } else if (config.provider === 'google') {
     url = `${PROXY_BASE}/${provider.host}/v1beta/models/${config.model}:generateContent`;
@@ -274,7 +312,7 @@ async function chatWithTools(
     body = {
       contents,
       systemInstruction: system ? { parts: [{ text: system }] } : undefined,
-      tools: toolsToGoogle(tools),
+      ...(tools.length > 0 ? { tools: toolsToGoogle(tools) } : {}),
       generationConfig: { temperature: config.temperature ?? 0.3 },
     };
   } else {
@@ -283,7 +321,7 @@ async function chatWithTools(
     body = {
       model: config.model,
       messages: messagesToOpenAI(messages),
-      tools: toolsToOpenAI(tools),
+      ...(tools.length > 0 ? { tools: toolsToOpenAI(tools) } : {}),
       temperature: config.temperature ?? 0.3,
     };
   }
@@ -295,12 +333,14 @@ async function chatWithTools(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(LLM_TIMEOUT),
   });
 
   if (!response.ok) {
     const text = await response.text().catch(() => '');
     if (response.status === 401) throw new Error('NOT_SIGNED_IN');
     if (response.status === 403) throw new Error('NO_API_KEY');
+    if (response.status === 429) throw new Error('RATE_LIMITED');
     throw new Error(`API error ${response.status}: ${text.slice(0, 300)}`);
   }
 
@@ -311,24 +351,22 @@ async function chatWithTools(
   return parseOpenAIResponse(data);
 }
 
-// ── Ollama (text-based fallback — no native tool calling) ────
+// ── Ollama (text-based fallback) ─────────────────────────────
 
 async function chatOllama(
   messages: Message[],
   tools: ToolDef[],
   model: string,
 ): Promise<LLMResponse> {
-  // Ollama doesn't have native tool calling — use text-based format
   const toolsDesc = tools.map((t) =>
     `${t.name}(${Object.entries(t.parameters).map(([k, v]) => `${k}: ${v.type}`).join(', ')}): ${t.description}`
   ).join('\n');
 
   const mapped = messages.map((m) => {
     if (m.role === 'system') {
-      return {
-        role: 'system',
-        content: `${m.content}\n\nYou have tools:\n${toolsDesc}\n\nTo call a tool respond EXACTLY:\nTOOL_CALL: tool_name\nARGS: {"key": "value"}\n\nTo give a final answer respond:\nFINAL: your answer`,
-      };
+      return { role: 'system', content: tools.length > 0
+        ? `${m.content}\n\nYou have tools:\n${toolsDesc}\n\nTo call a tool respond EXACTLY:\nTOOL_CALL: tool_name\nARGS: {"key": "value"}\n\nTo give a final answer respond:\nFINAL: your answer`
+        : m.content };
     }
     if (m.role === 'tool') return { role: 'user', content: `Tool ${m.toolName} returned: ${m.content}` };
     return { role: m.role, content: m.content ?? '' };
@@ -338,13 +376,13 @@ async function chatOllama(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ model: model || 'llama3.2', messages: mapped, stream: false }),
+    signal: AbortSignal.timeout(LLM_TIMEOUT),
   });
 
-  if (!response.ok) throw new Error('Ollama not running');
+  if (!response.ok) throw new Error('Ollama not running at localhost:11434');
   const data = await response.json();
   const text = data.message?.content ?? '';
 
-  // Parse text-based tool calls
   const toolMatch = text.match(/TOOL_CALL:\s*(\w[\w-]*)/i);
   const argsMatch = text.match(/ARGS:\s*(\{[\s\S]*?\})/i);
   if (toolMatch) {

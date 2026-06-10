@@ -2,31 +2,26 @@
  * MCP client for browser agents.
  *
  * Connects to MCP servers via Streamable HTTP transport,
- * discovers tools, and executes them. Works with:
- * - Direct HTTP MCP servers (if CORS allows)
- * - Platform MCP proxy (/v1/mcp-proxy?server=...) for CORS-blocked servers
- * - Local MCP servers via mcp-remote bridge on localhost
+ * discovers tools, and executes them.
  */
 
 import type { Tool } from './agent-loop';
 
 const MCP_PROXY = 'https://freeagentstore.online/v1/mcp-proxy';
+const MCP_TIMEOUT = 30_000;
 
 export interface McpServer {
-  /** User-facing label */
   name: string;
-  /** MCP server URL (e.g. https://mcp.example.com/mcp) */
   url: string;
-  /** Use the platform proxy to bypass CORS (default: auto-detect) */
   useProxy?: boolean;
 }
 
 export interface McpToolDef {
   name: string;
-  description: string;
-  inputSchema: {
-    type: 'object';
-    properties: Record<string, { type: string; description?: string }>;
+  description?: string;
+  inputSchema?: {
+    type: string;
+    properties?: Record<string, { type?: string; description?: string }>;
     required?: string[];
   };
 }
@@ -40,7 +35,9 @@ interface McpResponse {
 
 let requestId = 0;
 
-/** Send a JSON-RPC request to an MCP server */
+// Cache initialized servers to avoid re-initializing on every tool call
+const initializedServers = new Set<string>();
+
 async function mcpRequest(
   serverUrl: string,
   method: string,
@@ -50,19 +47,21 @@ async function mcpRequest(
   const id = ++requestId;
   const body = JSON.stringify({ jsonrpc: '2.0', id, method, params: params ?? {} });
 
-  // Try direct first, fall back to proxy on CORS error
   const tryFetch = async (url: string): Promise<McpResponse> => {
     const res = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body,
+      signal: AbortSignal.timeout(MCP_TIMEOUT),
     });
     if (!res.ok) {
       const text = await res.text().catch(() => '');
-      throw new Error(`MCP server error ${res.status}: ${text.slice(0, 200)}`);
+      throw new Error(`MCP ${res.status}: ${text.slice(0, 200)}`);
+    }
+    const contentType = res.headers.get('Content-Type') ?? '';
+    if (!contentType.includes('json')) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`MCP returned non-JSON (${contentType}): ${text.slice(0, 100)}`);
     }
     return await res.json() as McpResponse;
   };
@@ -70,20 +69,18 @@ async function mcpRequest(
   let response: McpResponse;
 
   if (useProxy === true) {
-    // Force proxy
-    const proxyUrl = `${MCP_PROXY}?server=${encodeURIComponent(serverUrl)}`;
-    response = await tryFetch(proxyUrl);
+    response = await tryFetch(`${MCP_PROXY}?server=${encodeURIComponent(serverUrl)}`);
   } else if (useProxy === false) {
-    // Force direct
     response = await tryFetch(serverUrl);
   } else {
-    // Auto: try direct, fall back to proxy
+    // Auto: try direct, fall back to proxy on network errors
     try {
       response = await tryFetch(serverUrl);
     } catch (err: any) {
-      if (err.message?.includes('Failed to fetch') || err.message?.includes('CORS') || err.message?.includes('NetworkError')) {
-        const proxyUrl = `${MCP_PROXY}?server=${encodeURIComponent(serverUrl)}`;
-        response = await tryFetch(proxyUrl);
+      const isNetworkError = err instanceof TypeError || err.name === 'TypeError'
+        || err.message?.includes('Failed to fetch') || err.message?.includes('NetworkError');
+      if (isNetworkError) {
+        response = await tryFetch(`${MCP_PROXY}?server=${encodeURIComponent(serverUrl)}`);
       } else {
         throw err;
       }
@@ -97,34 +94,34 @@ async function mcpRequest(
   return response.result;
 }
 
-/** Initialize connection — send initialize + initialized */
-async function initializeServer(serverUrl: string, useProxy?: boolean): Promise<void> {
+async function ensureInitialized(serverUrl: string, useProxy?: boolean): Promise<void> {
+  if (initializedServers.has(serverUrl)) return;
+
   await mcpRequest(serverUrl, 'initialize', {
     protocolVersion: '2025-03-26',
     capabilities: {},
     clientInfo: { name: 'FreeAgentStore', version: '1.0.0' },
   }, useProxy);
 
-  // Send initialized notification (no response expected, but send as request for HTTP transport)
   try {
     await mcpRequest(serverUrl, 'notifications/initialized', {}, useProxy);
   } catch {
-    // Some servers don't respond to notifications — that's fine
+    // Notifications may not get a response — fine
   }
+
+  initializedServers.add(serverUrl);
 }
 
-/** Discover tools from an MCP server */
 export async function discoverTools(server: McpServer): Promise<McpToolDef[]> {
-  await initializeServer(server.url, server.useProxy);
+  await ensureInitialized(server.url, server.useProxy);
 
   const result = await mcpRequest(server.url, 'tools/list', {}, server.useProxy) as {
-    tools: McpToolDef[];
+    tools?: McpToolDef[];
   };
 
-  return result.tools ?? [];
+  return result?.tools ?? [];
 }
 
-/** Call a tool on an MCP server */
 export async function callTool(
   serverUrl: string,
   toolName: string,
@@ -135,43 +132,46 @@ export async function callTool(
     name: toolName,
     arguments: args,
   }, useProxy) as {
-    content: Array<{ type: string; text?: string }>;
+    content?: Array<{ type: string; text?: string }>;
     isError?: boolean;
   };
 
-  if (result.isError) {
+  if (result?.isError) {
     const text = result.content?.map((c) => c.text).filter(Boolean).join('\n') ?? 'Unknown MCP error';
     throw new Error(text);
   }
 
-  return result.content
-    ?.map((c) => c.text ?? '')
+  return (result?.content ?? [])
+    .map((c) => c.text ?? '')
     .filter(Boolean)
     .join('\n') || 'OK';
 }
 
-/** Convert MCP tool definitions to agent Tool objects */
 export function mcpToolsToAgentTools(server: McpServer, mcpTools: McpToolDef[]): Tool[] {
-  return mcpTools.map((t) => ({
-    name: t.name,
-    description: `[MCP: ${server.name}] ${t.description ?? ''}`,
-    parameters: Object.fromEntries(
-      Object.entries(t.inputSchema?.properties ?? {}).map(([k, v]) => [
-        k,
-        {
-          type: v.type ?? 'string',
-          description: v.description ?? k,
-          required: t.inputSchema?.required?.includes(k) ?? false,
-        },
-      ]),
-    ),
-    execute: async (params: Record<string, unknown>) => {
-      return callTool(server.url, t.name, params, server.useProxy);
-    },
-  }));
+  return mcpTools.map((t) => {
+    // Prefix MCP tool names to avoid collisions with local tools
+    const prefixedName = `mcp_${server.name.replace(/\W+/g, '_').toLowerCase()}_${t.name}`;
+
+    return {
+      name: prefixedName,
+      description: `[MCP: ${server.name}] ${t.description ?? t.name}`,
+      parameters: Object.fromEntries(
+        Object.entries(t.inputSchema?.properties ?? {}).map(([k, v]) => [
+          k,
+          {
+            type: v.type ?? 'string',
+            description: v.description ?? k,
+            required: t.inputSchema?.required?.includes(k) ?? false,
+          },
+        ]),
+      ),
+      execute: async (params: Record<string, unknown>) => {
+        return callTool(server.url, t.name, params, server.useProxy);
+      },
+    };
+  });
 }
 
-/** Test if an MCP server is reachable */
 export async function testConnection(server: McpServer): Promise<{
   ok: boolean;
   toolCount: number;
@@ -192,7 +192,13 @@ const STORAGE_KEY = 'fags_mcp_servers';
 export function loadServers(): McpServer[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    // Validate each entry has name + url
+    return parsed.filter((s: unknown): s is McpServer =>
+      typeof s === 'object' && s !== null && typeof (s as any).name === 'string' && typeof (s as any).url === 'string'
+    );
   } catch {
     return [];
   }
@@ -200,4 +206,9 @@ export function loadServers(): McpServer[] {
 
 export function saveServers(servers: McpServer[]): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(servers));
+}
+
+/** Reset initialization cache (e.g. after reconnect) */
+export function resetInitCache(): void {
+  initializedServers.clear();
 }
