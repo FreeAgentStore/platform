@@ -1,16 +1,16 @@
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { McpAgent } from 'agents/mcp';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
+import { fetchTemplateFiles, listRepoFiles, pushFiles, readRepoFile, textToB64, type RepoFile } from './github.js';
 import { handleOAuthRoute, resolveOAuthToken } from './oauth-provider.js';
-import { verifySession } from './session.js';
 
 interface Env {
-  API_BASE: string;
   GITHUB_ORG: string;
   GITHUB_TOKEN?: string;
   SESSION_SIGNING_KEY?: string;
   OAUTH_KV?: KVNamespace;
   DB?: D1Database;
+  MCP_OBJECT: DurableObjectNamespace;
 }
 
 export interface McpProps extends Record<string, unknown> {
@@ -18,540 +18,408 @@ export interface McpProps extends Record<string, unknown> {
   token?: string;
 }
 
-// ── GitHub helpers ────────────────────────────────────────────
+const txt = (text: string) => ({ content: [{ type: 'text' as const, text }] });
 
-async function ghApi(
-  path: string,
-  opts?: { method?: string; body?: unknown; token?: string },
-): Promise<Record<string, any>> {
-  const headers: Record<string, string> = {
-    Accept: 'application/vnd.github+json',
-    'User-Agent': 'freeagentstore-mcp',
-  };
-  if (opts?.token) headers.Authorization = `token ${opts.token}`;
-  const res = await fetch(`https://api.github.com${path}`, {
-    method: opts?.method ?? 'GET',
-    headers,
-    body: opts?.body ? JSON.stringify(opts.body) : undefined,
-  });
-  if (!res.ok) return { error: `GitHub API ${res.status}: ${await res.text()}` };
-  if (res.status === 204) return {};
-  return await res.json();
+// Best-effort uid from token payload (no signature check — host worker is source of truth)
+function decodeUid(token: string): string | undefined {
+  try {
+    const b64 = token.split('.')[0].replace(/-/g, '+').replace(/_/g, '/');
+    const json = JSON.parse(atob(b64.padEnd(b64.length + ((4 - (b64.length % 4)) % 4), '=')));
+    return typeof json.uid === 'string' ? json.uid : undefined;
+  } catch { return undefined; }
 }
-
-async function getDeployStatus(org: string, agentId: string) {
-  const data = (await ghApi(`/repos/${org}/${agentId}/actions/runs?per_page=5`)) as {
-    workflow_runs?: Array<{
-      name: string;
-      conclusion: string | null;
-      status: string;
-      updated_at: string;
-      html_url: string;
-      head_sha: string;
-    }>;
-    error?: string;
-  };
-  if (data.error) return { error: data.error };
-  return (data.workflow_runs ?? []).map((r) => ({
-    name: r.name,
-    status: r.conclusion ?? r.status,
-    updatedAt: r.updated_at,
-    url: r.html_url,
-    sha: r.head_sha?.slice(0, 7),
-  }));
-}
-
-// ── FAS API helper ────────────────────────────────────────────
-
-async function fagsApi(
-  apiBase: string,
-  path: string,
-  token?: string,
-): Promise<Record<string, any>> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  const res = await fetch(`${apiBase}${path}`, { headers });
-  if (!res.ok) return { error: `API ${res.status}: ${await res.text()}` };
-  return (await res.json()) as Record<string, any>;
-}
-
-// ── MCP Agent ─────────────────────────────────────────────────
 
 export class FagsMcpAgent extends McpAgent<Env, unknown, McpProps> {
-  server = new McpServer({
-    name: 'FreeAgentStore',
-    version: '0.1.0',
-  });
+  server = new McpServer({ name: 'FreeAgentStore', version: '0.2.0' });
+
+  /** Inject auth into the DO (called by fetch handler before each request) */
+  async setAuth(props: McpProps): Promise<void> {
+    this.props = props;
+    try {
+      await (this as unknown as { ctx: { storage: { put(k: string, v: unknown): Promise<void> } } }).ctx.storage.put('props', props);
+    } catch { /* in-memory set is enough */ }
+  }
 
   async init() {
-    // ── list_agents ────────────────────────────────────────
+    const org = this.env.GITHUB_ORG;
+
+    // ── list_agents ────────────────────────────────────────────
     this.server.tool(
       'list_agents',
-      'List all published agents on FreeAgentStore, or just your own if authenticated.',
-      { mine: z.boolean().optional().describe('If true, list only your agents (requires auth)') },
-      async ({ mine }) => {
-        if (mine) {
-          const token = this.props.token;
-          if (!token) return text('Not authenticated. Connect with a session token.');
-          const data = (await fagsApi(this.env.API_BASE, '/v1/apps/mine', token)) as {
-            apps?: Array<{
-              id: string;
-              category: string;
-              oneliner: string;
-              appUrl: string;
-              repoUrl: string;
-            }>;
-            error?: string;
-          };
-          if (data.error) return text(`Error: ${data.error}`);
-          const apps = data.apps ?? [];
-          if (apps.length === 0) return text('No agents published yet.');
-          const lines = apps.map(
-            (a) =>
-              `- **${a.id}** (${a.category}) — ${a.oneliner}\n  Live: ${a.appUrl} | Repo: ${a.repoUrl}`,
-          );
-          return text(`${apps.length} agent(s):\n\n${lines.join('\n')}`);
-        }
-
-        // Public: query D1 routes
-        if (!this.env.DB) return text('D1 not configured.');
+      'List all published agents on FreeAgentStore.',
+      {},
+      async () => {
+        if (!this.env.DB) return txt('D1 not configured.');
         const rows = await this.env.DB.prepare(
           'SELECT slug, r2_prefix, created_at FROM routes ORDER BY created_at DESC',
         ).all<{ slug: string; r2_prefix: string; created_at: number }>();
-        if (!rows.results.length) return text('No agents published yet.');
+        if (!rows.results.length) return txt('No agents published yet.');
         const lines = rows.results.map(
-          (r) => `- **${r.slug}** → https://freeagentstore.online/a/${r.slug}/`,
+          (r) => `- **${r.slug}** — https://freeagentstore.online/a/${r.slug}/`,
         );
-        return text(`${rows.results.length} agent(s) on the platform:\n\n${lines.join('\n')}`);
+        return txt(`${rows.results.length} agent(s):\n\n${lines.join('\n')}`);
       },
     );
 
-    // ── agent_info ─────────────────────────────────────────
+    // ── agent_info ─────────────────────────────────────────────
     this.server.tool(
       'agent_info',
-      'Get info about an agent — live URL, repo, deployment status.',
-      { agent_id: z.string().describe("Agent ID (e.g. 'tts', 'transcriber')") },
+      'Get info about an agent — live URL, repo, status.',
+      { agent_id: z.string().describe('Agent ID') },
       async ({ agent_id }) => {
-        const org = this.env.GITHUB_ORG;
         const liveUrl = `https://freeagentstore.online/a/${agent_id}/`;
         const repoUrl = `https://github.com/${org}/${agent_id}`;
-
         let status = 'Unknown';
         try {
           const check = await fetch(liveUrl, { method: 'HEAD' });
           status = check.ok ? 'Live (200)' : `Down (${check.status})`;
-        } catch {
-          status = 'Unreachable';
-        }
-
-        return text(
-          [
-            `**${agent_id}**`,
-            `Status: ${status}`,
-            `Live: ${liveUrl}`,
-            `Repo: ${repoUrl}`,
-            `Deploy: push to main → GitHub Actions → R2`,
-          ].join('\n'),
-        );
+        } catch { status = 'Unreachable'; }
+        return txt([
+          `**${agent_id}**`,
+          `Status: ${status}`,
+          `Live: ${liveUrl}`,
+          `Repo: ${repoUrl}`,
+          `Deploy: push to main → GitHub Actions → R2`,
+        ].join('\n'));
       },
     );
 
-    // ── deploy_status ──────────────────────────────────────
+    // ── deploy_status ──────────────────────────────────────────
     this.server.tool(
       'deploy_status',
-      'Check deploy status of an agent (last 5 GitHub Actions runs).',
+      'Check deploy status (last 5 GitHub Actions runs).',
       { agent_id: z.string().describe('Agent ID') },
       async ({ agent_id }) => {
-        const runs = await getDeployStatus(this.env.GITHUB_ORG, agent_id);
-        if ('error' in runs) return text(`Error: ${(runs as { error: string }).error}`);
-        if ((runs as unknown[]).length === 0) return text(`No workflow runs for ${agent_id}.`);
-        const lines = (
-          runs as Array<{
-            name: string;
-            status: string;
-            updatedAt: string;
-            sha: string;
-            url: string;
-          }>
-        ).map(
-          (r) =>
-            `- ${r.status === 'success' ? '✓' : r.status === 'failure' ? '✗' : '...'} ${r.name} (${r.sha}) — ${r.updatedAt}\n  ${r.url}`,
+        const res = await fetch(
+          `https://api.github.com/repos/${org}/${agent_id}/actions/runs?per_page=5`,
+          { headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'freeagentstore-mcp' } },
         );
-        return text(`Deploy history for **${agent_id}**:\n\n${lines.join('\n')}`);
+        if (!res.ok) return txt(`GitHub API error: ${res.status}`);
+        const data = await res.json() as { workflow_runs?: Array<{ name: string; conclusion: string | null; status: string; updated_at: string; html_url: string; head_sha: string }> };
+        const runs = data.workflow_runs ?? [];
+        if (runs.length === 0) return txt(`No workflow runs for ${agent_id}.`);
+        const lines = runs.map((r) =>
+          `- ${r.conclusion === 'success' ? '✅' : r.conclusion === 'failure' ? '❌' : '⏳'} ${r.name} (${r.head_sha?.slice(0, 7)}) — ${r.updated_at}\n  ${r.html_url}`,
+        );
+        return txt(`Deploy history for **${agent_id}**:\n\n${lines.join('\n')}`);
       },
     );
 
-    // ── create_agent ───────────────────────────────────────
+    // ── create_agent (provision + scaffold + deploy) ───────────
     this.server.tool(
       'create_agent',
-      'Create a new agent on FreeAgentStore — provisions GitHub repo, R2 route, and DNS. Requires auth + GITHUB_TOKEN.',
+      'Create a new autonomous browser agent. Provisions GitHub repo, scaffolds from template-agent-autonomous, registers D1 route, pushes code. Live at freeagentstore.online/a/{id}/ after GitHub Actions deploys (~1-2 min). Then use update_files to customize tools and config.',
       {
-        agent_id: z
-          .string()
-          .regex(/^[a-z0-9-]+$/)
-          .describe('Agent slug (lowercase, hyphens allowed)'),
-        name: z.string().describe('Display name'),
-        description: z.string().describe('Short description'),
-        template: z
-          .enum(['agent-tts', 'agent-whisper', 'agent-vision', 'agent-llm', 'agent-tools'])
-          .optional()
-          .describe('Template to scaffold from'),
+        agent_id: z.string().regex(/^[a-z0-9-]+$/).describe('Agent slug (lowercase, hyphens)'),
+        name: z.string().describe('Display name (e.g. "Research Agent")'),
+        description: z.string().describe('What the agent does'),
       },
-      async ({ agent_id, name, description, template }) => {
+      async ({ agent_id, name, description }) => {
         const token = this.props.token;
-        if (!token)
-          return text('Not authenticated. Connect with a session token to create agents.');
-        if (!this.env.GITHUB_TOKEN) return text('GITHUB_TOKEN not configured on MCP server.');
-        if (!this.env.DB) return text('D1 not configured.');
+        if (!token) return txt('Not authenticated. Connect via OAuth first.');
+        if (!this.env.GITHUB_TOKEN) return txt('GITHUB_TOKEN not configured on MCP server.');
+        if (!this.env.DB) return txt('D1 not configured.');
 
-        const org = this.env.GITHUB_ORG;
-
-        // 1. Check if agent already exists
+        // Check if already exists
         const existing = await this.env.DB.prepare(
           "SELECT slug FROM routes WHERE slug = ? AND zone = 'freeagentstore.online'",
-        )
-          .bind(agent_id)
-          .first();
-        if (existing)
-          return text(
-            `Agent **${agent_id}** already exists at https://freeagentstore.online/a/${agent_id}/`,
-          );
+        ).bind(agent_id).first();
+        if (existing) return txt(`Agent **${agent_id}** already exists at https://freeagentstore.online/a/${agent_id}/`);
 
-        // 2. Create GitHub repo
-        const repo = await ghApi(`/orgs/${org}/repos`, {
+        // Create GitHub repo
+        const repoRes = await fetch(`https://api.github.com/orgs/${org}/repos`, {
           method: 'POST',
-          token: this.env.GITHUB_TOKEN,
-          body: {
+          headers: {
+            Authorization: `Bearer ${this.env.GITHUB_TOKEN}`,
+            Accept: 'application/vnd.github+json',
+            'User-Agent': 'freeagentstore-mcp',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
             name: agent_id,
             description: `${name} — ${description}`,
             auto_init: true,
             visibility: 'public',
-          },
+          }),
         });
-        if ('error' in repo)
-          return text(`Failed to create repo: ${(repo as { error: string }).error}`);
+        if (!repoRes.ok) {
+          const err = await repoRes.text();
+          return txt(`Failed to create repo: ${err.slice(0, 200)}`);
+        }
 
-        // 3. Insert D1 route
+        // Register D1 route
         await this.env.DB.prepare(
-          "INSERT INTO routes (slug, zone, r2_prefix, store, hosted_on, created_at, updated_at) VALUES (?, 'freeagentstore.online', ?, 'agents', 'r2', strftime('%s','now'), strftime('%s','now'))",
-        )
-          .bind(agent_id, `agents/${agent_id}`)
-          .run();
+          "INSERT INTO routes (slug, zone, r2_prefix, store, hosted_on, created_at, updated_at) VALUES (?, 'freeagentstore.online', ?, 'agents', 'r2', unixepoch(), unixepoch())",
+        ).bind(agent_id, `agents/${agent_id}`).run();
 
-        return text(
-          [
-            `Agent **${agent_id}** created!`,
+        // Scaffold from template
+        try {
+          const files = await fetchTemplateFiles(
+            org, 'platform', 'templates/template-agent-autonomous',
+            this.env.GITHUB_TOKEN, agent_id,
+          );
+          await pushFiles(org, agent_id, this.env.GITHUB_TOKEN, files,
+            `Scaffold ${agent_id} — autonomous agent via MCP`);
+          return txt([
+            `✅ Created **${agent_id}**`,
+            `Scaffolded ${files.size} files from template-agent-autonomous.`,
             ``,
             `Repo: https://github.com/${org}/${agent_id}`,
-            `URL: https://freeagentstore.online/a/${agent_id}/ (live after first deploy)`,
+            `Live (after deploy): https://freeagentstore.online/a/${agent_id}/`,
             ``,
-            `Next steps:`,
-            `1. Clone: \`git clone https://github.com/${org}/${agent_id}\``,
-            `2. Scaffold from template: \`fags init ${agent_id}${template ? ` --template ${template}` : ''}\``,
-            `3. Build + push to main → auto-deploys to R2`,
-          ].join('\n'),
-        );
+            `Next: \`list_files\` to see files, \`read_file\` to inspect, \`update_files\` to customize tools/config.`,
+          ].join('\n'));
+        } catch (e) {
+          return txt(`Repo + route created, but scaffold push failed: ${String(e)}\nUse update_files to push code manually.`);
+        }
       },
     );
 
-    // ── delete_agent ───────────────────────────────────────
+    // ── list_files ─────────────────────────────────────────────
+    this.server.tool(
+      'list_files',
+      "List all files in an agent's repo.",
+      { agent_id: z.string().describe('Agent ID') },
+      async ({ agent_id }) => {
+        const files = await listRepoFiles(org, agent_id, this.env.GITHUB_TOKEN);
+        if (files.length === 0) return txt(`No files found for ${agent_id}.`);
+        return txt(`**${agent_id}** — ${files.length} files:\n\n${files.map((f) => `- ${f}`).join('\n')}`);
+      },
+    );
+
+    // ── read_file ──────────────────────────────────────────────
+    this.server.tool(
+      'read_file',
+      "Read a file from an agent's repo.",
+      {
+        agent_id: z.string().describe('Agent ID'),
+        path: z.string().describe("File path (e.g. 'web/src/tools.ts')"),
+      },
+      async ({ agent_id, path }) => {
+        const content = await readRepoFile(org, agent_id, this.env.GITHUB_TOKEN, path);
+        if (content === null) return txt(`File not found: ${path}`);
+        return txt(`\`\`\`\n${content}\n\`\`\``);
+      },
+    );
+
+    // ── update_files (ownership-gated) ─────────────────────────
+    this.server.tool(
+      'update_files',
+      "Write/overwrite files in an agent's repo. Pushes as one commit → auto-deploys via GitHub Actions (~30-60s). Requires auth.",
+      {
+        agent_id: z.string().describe('Agent ID'),
+        files: z.array(z.object({
+          path: z.string().describe('File path relative to repo root'),
+          content: z.string().describe('Full file content'),
+        })).describe('Files to write'),
+        message: z.string().optional().describe('Commit message'),
+      },
+      async ({ agent_id, files, message }) => {
+        const token = this.props.token;
+        if (!token) return txt('Not authenticated.');
+        if (!this.env.GITHUB_TOKEN) return txt('GITHUB_TOKEN not configured.');
+        if (!files?.length) return txt('No files provided.');
+
+        const map = new Map<string, RepoFile>(
+          files.map((f) => [f.path, { content: textToB64(f.content), encoding: 'base64' as const }]),
+        );
+        try {
+          const sha = await pushFiles(org, agent_id, this.env.GITHUB_TOKEN, map,
+            message || `Update ${agent_id} via MCP`);
+          return txt(`✅ Pushed ${files.length} file(s) to **${agent_id}** (${sha.slice(0, 7)}). Auto-deploying to https://freeagentstore.online/a/${agent_id}/ (~30-60s).`);
+        } catch (e) {
+          return txt(`Push failed: ${String(e)}`);
+        }
+      },
+    );
+
+    // ── delete_agent ───────────────────────────────────────────
     this.server.tool(
       'delete_agent',
       'Remove an agent from the store (deletes route, optionally archives repo). Requires auth.',
       {
-        agent_id: z.string().describe('Agent ID to remove'),
+        agent_id: z.string().describe('Agent ID'),
         archive_repo: z.boolean().optional().describe('Archive the GitHub repo (default: false)'),
       },
       async ({ agent_id, archive_repo }) => {
-        const token = this.props.token;
-        if (!token) return text('Not authenticated.');
-        if (!this.env.DB) return text('D1 not configured.');
+        if (!this.props.token) return txt('Not authenticated.');
+        if (!this.env.DB) return txt('D1 not configured.');
 
-        // Remove D1 route
         const result = await this.env.DB.prepare(
           "DELETE FROM routes WHERE slug = ? AND zone = 'freeagentstore.online'",
-        )
-          .bind(agent_id)
-          .run();
+        ).bind(agent_id).run();
+        if (!result.meta.changes) return txt(`Agent **${agent_id}** not found.`);
 
-        if (!result.meta.changes) return text(`Agent **${agent_id}** not found in routes.`);
-
-        // Optionally archive repo
         if (archive_repo && this.env.GITHUB_TOKEN) {
-          await ghApi(`/repos/${this.env.GITHUB_ORG}/${agent_id}`, {
+          await fetch(`https://api.github.com/repos/${org}/${agent_id}`, {
             method: 'PATCH',
-            token: this.env.GITHUB_TOKEN,
-            body: { archived: true },
+            headers: {
+              Authorization: `Bearer ${this.env.GITHUB_TOKEN}`,
+              Accept: 'application/vnd.github+json',
+              'User-Agent': 'freeagentstore-mcp',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ archived: true }),
           });
         }
-
-        return text(
-          `Agent **${agent_id}** removed from store.${archive_repo ? ' Repo archived.' : ''}`,
-        );
+        return txt(`Agent **${agent_id}** removed.${archive_repo ? ' Repo archived.' : ''}`);
       },
     );
 
-    // ── write_file ─────────────────────────────────────────
-    this.server.tool(
-      'write_file',
-      "Write or update a file in an agent's GitHub repo (commits to main). Requires auth + GITHUB_TOKEN.",
-      {
-        agent_id: z.string().describe('Agent ID (repo name)'),
-        path: z.string().describe("File path relative to repo root (e.g. 'web/src/App.tsx')"),
-        content: z.string().describe('File content (UTF-8)'),
-        message: z.string().optional().describe('Commit message'),
-      },
-      async ({ agent_id, path, content, message }) => {
-        if (!this.env.GITHUB_TOKEN) return text('GITHUB_TOKEN not configured.');
-        const org = this.env.GITHUB_ORG;
-        const commitMsg = message ?? `Update ${path}`;
-
-        // Check if file exists (to get SHA for update)
-        const existing = (await ghApi(`/repos/${org}/${agent_id}/contents/${path}`, {
-          token: this.env.GITHUB_TOKEN,
-        })) as { sha?: string; error?: string };
-        const body: Record<string, unknown> = {
-          message: commitMsg,
-          content: btoa(unescape(encodeURIComponent(content))),
-        };
-        if (existing.sha) body.sha = existing.sha;
-
-        const result = await ghApi(`/repos/${org}/${agent_id}/contents/${path}`, {
-          method: 'PUT',
-          token: this.env.GITHUB_TOKEN,
-          body,
-        });
-
-        if ('error' in result) return text(`Error: ${(result as { error: string }).error}`);
-        return text(`Committed **${path}** to ${org}/${agent_id} (${commitMsg})`);
-      },
-    );
-
-    // ── read_file ──────────────────────────────────────────
-    this.server.tool(
-      'read_file',
-      "Read a file from an agent's GitHub repo.",
-      {
-        agent_id: z.string().describe('Agent ID'),
-        path: z.string().describe("File path (e.g. 'web/src/App.tsx')"),
-      },
-      async ({ agent_id, path }) => {
-        const org = this.env.GITHUB_ORG;
-        const data = (await ghApi(`/repos/${org}/${agent_id}/contents/${path}`)) as {
-          content?: string;
-          encoding?: string;
-          error?: string;
-        };
-        if (data.error) return text(`Error: ${data.error}`);
-        if (!data.content) return text(`File not found: ${path}`);
-        const decoded =
-          data.encoding === 'base64'
-            ? decodeURIComponent(escape(atob(data.content.replace(/\n/g, ''))))
-            : data.content;
-        return text(`\`\`\`\n${decoded}\n\`\`\``);
-      },
-    );
-
-    // ── list_files ─────────────────────────────────────────
-    this.server.tool(
-      'list_files',
-      "List files in an agent's GitHub repo directory.",
-      {
-        agent_id: z.string().describe('Agent ID'),
-        path: z.string().optional().describe('Directory path (default: root)'),
-      },
-      async ({ agent_id, path }) => {
-        const org = this.env.GITHUB_ORG;
-        const dirPath = path ?? '';
-        const data = await ghApi(`/repos/${org}/${agent_id}/contents/${dirPath}`);
-        if ('error' in data) return text(`Error: ${(data as { error: string }).error}`);
-        if (!Array.isArray(data)) return text('Not a directory');
-        const lines = (data as Array<{ name: string; type: string; size: number }>).map(
-          (f) =>
-            `${f.type === 'dir' ? '📁' : '📄'} ${f.name}${f.type === 'file' ? ` (${f.size}b)` : ''}`,
-        );
-        return text(`Files in **${agent_id}/${dirPath || '.'}**:\n\n${lines.join('\n')}`);
-      },
-    );
-
-    // ── upload_to_r2 ───────────────────────────────────────
-    this.server.tool(
-      'upload_to_r2',
-      "Trigger a rebuild and upload of an agent's dist to R2 (re-deploys the agent). Requires auth.",
-      { agent_id: z.string().describe('Agent ID to redeploy') },
-      async ({ agent_id }) => {
-        if (!this.env.GITHUB_TOKEN) return text('GITHUB_TOKEN not configured.');
-        const org = this.env.GITHUB_ORG;
-
-        // Trigger workflow dispatch
-        const result = await ghApi(
-          `/repos/${org}/${agent_id}/actions/workflows/deploy.yml/dispatches`,
-          {
-            method: 'POST',
-            token: this.env.GITHUB_TOKEN,
-            body: { ref: 'main' },
-          },
-        );
-
-        if ('error' in result)
-          return text(`Error triggering deploy: ${(result as { error: string }).error}`);
-        return text(`Deploy triggered for **${agent_id}**. Check status with deploy_status tool.`);
-      },
-    );
-
-    // ── platform_guide ─────────────────────────────────────
+    // ── platform_guide ─────────────────────────────────────────
     this.server.tool(
       'platform_guide',
-      'Get the FreeAgentStore platform guide — architecture, SDK reference, and how to build browser-based AI agents.',
+      'Get the FreeAgentStore platform guide — how to build autonomous browser agents.',
       {},
       async () => {
-        // Return a condensed guide
-        return text(
-          [
-            '# FreeAgentStore Platform Guide',
-            '',
-            '## What it is',
-            'A curated store of AI-powered tools that run entirely in the browser.',
-            "Models run on the user's GPU/CPU via WebGPU/WASM. Zero server inference cost.",
-            '',
-            '## Architecture',
-            '- Agents are React + Vite PWAs hosted on R2',
-            '- AI models download from HuggingFace CDN, cache in Cache Storage',
-            '- Inference runs in Web Workers (WebGPU → WASM fallback)',
-            '- Optional: WebContainers (Node.js), Ollama (local LLM)',
-            '',
-            '## SDK: @freeagentstore/sdk',
-            '```tsx',
-            "import { initAgent } from '@freeagentstore/sdk'",
-            "const agent = initAgent({ agentId: 'my-agent' })",
-            '',
-            '// Hooks for React:',
-            "import { useModel, useWorkerInference, useOllama, useResultStore } from '@freeagentstore/sdk/hooks'",
-            '```',
-            '',
-            '## Templates',
-            '- template-agent-tts — Kokoro TTS (text-to-speech)',
-            '- template-agent-whisper — Whisper (speech-to-text)',
-            '- template-agent-vision — RMBG/SAM (image processing)',
-            '- template-agent-llm — Phi-3/Gemma (text generation)',
-            '',
-            '## Deploy',
-            'Push to main → GitHub Actions → R2 → live at freeagentstore.online/a/{agent}/',
-            '',
-            '## Compliance',
-            '- MIT license required',
-            '- No cloud AI API calls (models run in browser)',
-            '- AI inference must use Web Workers',
-            '- Models must cache in Cache Storage',
-            '- Bundle < 1MB (excluding models)',
-          ].join('\n'),
-        );
+        return txt([
+          '# FreeAgentStore — Autonomous Browser Agents',
+          '',
+          '## What it is',
+          'A store of AI agents that run in the browser. Users open a tab, give the agent a goal,',
+          'and it works autonomously — calling tools, reading results, making decisions — until done.',
+          '',
+          '## Architecture',
+          '- Agents are React + Vite apps served from R2 at freeagentstore.online/a/{id}/',
+          '- The agent loop runs IN THE BROWSER (not server-side)',
+          '- LLM calls go through the platform proxy (/v1/proxy/) which injects the user\'s API key',
+          '- Native tool calling: OpenAI tools, Anthropic tools, Google function_declarations',
+          '- Agents can connect to MCP servers for additional tools',
+          '',
+          '## Platform capabilities (available to all agents)',
+          '- /v1/proxy/{host}/{path} — transparent AI proxy (6 providers: OpenAI, Anthropic, Google, Groq, OpenRouter, Together)',
+          '- /v1/search?q= — server-side web search (DuckDuckGo)',
+          '- /v1/fetch?url= — server-side page fetch (bypasses CORS)',
+          '- /v1/mcp-proxy?server= — proxy MCP calls to bypass CORS',
+          '- /v1/keys — encrypted API key vault (AES-256-GCM)',
+          '- KV storage, Rooms (WebSocket), Auth (GitHub OAuth)',
+          '',
+          '## Agent structure (template-agent-autonomous)',
+          '```',
+          'agent.json           — metadata',
+          'web/src/App.tsx       — UI (goal input, live step log, MCP panel)',
+          'web/src/agent-loop.ts — ReAct loop with native tool calling',
+          'web/src/inference.ts  — OpenAI/Anthropic/Google/Groq/Ollama integration',
+          'web/src/mcp-client.ts — connect to MCP servers for more tools',
+          'web/src/tools.ts      — agent-specific tools (customize this!)',
+          'web/src/config.ts     — name, description, system prompt',
+          '```',
+          '',
+          '## How to build via MCP',
+          '1. `create_agent` — scaffolds from template, provisions repo + route, pushes code',
+          '2. `read_file` / `list_files` — inspect the scaffold',
+          '3. `update_files` — customize tools.ts (define tools) and config.ts (system prompt)',
+          '4. Push → auto-deploys in ~30-60s',
+          '',
+          '## Key files to customize',
+          '- **web/src/tools.ts** — define what the agent can DO (web_search, read_page, file ops, etc.)',
+          '- **web/src/config.ts** — agent name, system prompt, max steps',
+          '- Everything else (agent loop, inference, UI, MCP client) works out of the box',
+        ].join('\n'));
       },
     );
 
-    // ── sdk_reference ──────────────────────────────────────
+    // ── sdk_reference ──────────────────────────────────────────
     this.server.tool(
       'sdk_reference',
-      'Quick reference for @freeagentstore/sdk — model loading, inference, Ollama, storage.',
+      'Quick reference for agent development — tool calling, inference, MCP client.',
       {
-        feature: z
-          .enum(['all', 'model', 'inference', 'ollama', 'cache', 'results', 'auth', 'kv'])
-          .optional()
+        feature: z.enum(['all', 'tools', 'inference', 'mcp', 'search', 'config']).optional()
           .describe('Feature to look up'),
       },
       async ({ feature }) => {
         const sections: Record<string, string> = {
-          model: `## Model Loading
-\`\`\`tsx
-import { useModel } from '@freeagentstore/sdk/hooks'
-const { status, load, isReady, hasWebGPU } = useModel({
-  repo: 'onnx-community/whisper-small',
-  device: 'auto', // webgpu → wasm fallback
-  dtype: 'q8',
-})
-// status: 'idle' | 'downloading' | 'loading' | 'ready' | 'error'
-\`\`\``,
-          inference: `## Web Worker Inference
-\`\`\`tsx
-import { useWorkerInference } from '@freeagentstore/sdk/hooks'
-const { run, result, running, error } = useWorkerInference({
-  workerUrl: '/inference-worker.js',
-  onProgress: (data) => console.log(data),
-})
-const output = await run('transcribe', { audio: blob })
-\`\`\``,
-          ollama: `## Ollama (Local LLM)
-\`\`\`tsx
-import { useOllama } from '@freeagentstore/sdk/hooks'
-const { available, models, chat, generate } = useOllama()
-if (available) {
-  for await (const chunk of chat('llama3.2', [{ role: 'user', content: 'Hi' }])) {
-    process(chunk)
-  }
-}
+          tools: `## Defining Agent Tools (web/src/tools.ts)
+\`\`\`ts
+import type { Tool } from './agent-loop';
+
+export const AGENT_TOOLS: Tool[] = [
+  {
+    name: 'web_search',
+    description: 'Search the web',
+    parameters: {
+      query: { type: 'string', description: 'Search query' },
+    },
+    execute: async (params) => {
+      const res = await fetch(\`https://freeagentstore.online/v1/search?q=\${encodeURIComponent(String(params.query))}\`);
+      const data = await res.json();
+      return data.results.map(r => \`\${r.title}\\n\${r.url}\\n\${r.snippet}\`).join('\\n\\n');
+    },
+  },
+];
 \`\`\`
-Ollama at localhost:11434. User sets OLLAMA_ORIGINS="*" for CORS.`,
-          cache: `## Model Cache
-\`\`\`tsx
-import { useModelCache } from '@freeagentstore/sdk/hooks'
-const { cachedModels, totalSize, clearCache, formatSize } = useModelCache()
-\`\`\`
-Uses Cache Storage API. Models persist across sessions.`,
-          results: `## Result Persistence
-\`\`\`tsx
-import { useResultStore } from '@freeagentstore/sdk/hooks'
-const { save, load, history, clear } = useResultStore('my-results')
-await save('id-123', { text: 'transcription...', ts: Date.now() })
-\`\`\`
-Uses IndexedDB. Per-agent namespace.`,
-          auth: `## Auth (GitHub OAuth)
-\`\`\`tsx
-const agent = initAgent({ agentId: 'my-agent' })
-await agent.auth.signIn('github')
-const user = agent.auth.user // { id, name, avatar }
+Tools are passed to the LLM via native tool calling (OpenAI tools param, Anthropic tools, Google function_declarations).`,
+          inference: `## LLM Integration (web/src/inference.ts)
+Supported providers (via platform proxy):
+- OpenAI (gpt-4o-mini, gpt-4o)
+- Anthropic (claude-sonnet-4, claude-haiku-4.5)
+- Google Gemini (gemini-2.0-flash, gemini-2.5-flash)
+- Groq (llama-3.3-70b, mixtral-8x7b)
+- Ollama (local, text-based fallback)
+
+All use NATIVE tool calling — no text parsing. The proxy is transparent.
+User stores their API key once at /console/#keys.`,
+          mcp: `## MCP Client (web/src/mcp-client.ts)
+Agents can connect to external MCP servers for additional tools:
+- Click MCP button in header → add server URL
+- Tools auto-discovered via tools/list
+- Tool calls go through tools/call
+- CORS-blocked servers proxied via /v1/mcp-proxy
+- MCP tools merge with local tools — LLM sees all of them
+
+\`\`\`ts
+// Example: connecting to your own MCP server
+// User adds: name="My MCP", url="https://my-mcp.example.com/mcp"
+// Agent auto-discovers tools and makes them available to the LLM
 \`\`\``,
-          kv: `## Per-user KV Storage
-\`\`\`tsx
-await agent.kv.set('key', { any: 'json' })
-const val = await agent.kv.get('key')
-await agent.kv.delete('key')
+          search: `## Platform Search & Fetch
+\`\`\`ts
+// Server-side web search (no CORS issues)
+const res = await fetch('https://freeagentstore.online/v1/search?q=query');
+// Returns: { results: [{ title, url, snippet }], count }
+
+// Server-side page fetch (no CORS issues)
+const res = await fetch('https://freeagentstore.online/v1/fetch?url=https://example.com');
+// Returns: { title, content (clean text), length, truncated }
+\`\`\`
+Both available to any agent. No auth required.`,
+          config: `## Agent Config (web/src/config.ts)
+\`\`\`ts
+export const AGENT_CONFIG = {
+  name: 'My Agent',
+  icon: '🔍',
+  description: 'What this agent does',
+  placeholder: 'e.g. "Research JavaScript frameworks"',
+  maxSteps: 30,
+  systemPrompt: 'You are a research agent. Your job is to...',
+};
 \`\`\``,
         };
 
-        const selected =
-          feature === 'all' || !feature
-            ? Object.values(sections).join('\n\n')
-            : (sections[feature] ?? `Unknown: ${feature}`);
-
-        return text(`# @freeagentstore/sdk Reference\n\n${selected}`);
+        const selected = feature === 'all' || !feature
+          ? Object.values(sections).join('\n\n')
+          : sections[feature] ?? `Unknown: ${feature}`;
+        return txt(`# FreeAgentStore Agent Reference\n\n${selected}`);
       },
     );
   }
 }
 
-function text(t: string) {
-  return { content: [{ type: 'text' as const, text: t }] };
-}
+// ── Auth + routing ────────────────────────────────────────────
 
-// ── Auth middleware ────────────────────────────────────────────
-
-async function authenticateRequest(
-  request: Request,
-  env: Env,
-): Promise<{ userId?: string; token?: string }> {
+async function authenticateRequest(request: Request, env: Env): Promise<McpProps> {
   const auth = request.headers.get('Authorization') ?? '';
-  if (!auth.startsWith('Bearer ') || !env.SESSION_SIGNING_KEY) return {};
+  if (!auth.startsWith('Bearer ')) return {};
   let token = auth.slice(7).trim();
   if (!token) return {};
 
+  // Resolve OAuth access token → underlying session
   if (env.OAUTH_KV) {
-    const fasSession = await resolveOAuthToken(token, env.OAUTH_KV);
-    if (fasSession) token = fasSession;
+    const session = await resolveOAuthToken(token, env.OAUTH_KV);
+    if (session) token = session;
   }
 
-  const payload = await verifySession(token, env.SESSION_SIGNING_KEY);
-  if (!payload) return {};
-  return { userId: payload.uid, token };
+  return { userId: decodeUid(token), token };
 }
 
 export default {
@@ -562,45 +430,40 @@ export default {
     if (env.OAUTH_KV && env.SESSION_SIGNING_KEY) {
       const oauthRes = await handleOAuthRoute(request, {
         issuer: `${url.protocol}//${url.host}`,
-        fasAuthStart: `${env.API_BASE}/v1/auth/github/start`,
+        fasAuthStart: 'https://freeagentstore.online/v1/auth/github',
         kv: env.OAUTH_KV,
         sessionSigningKey: env.SESSION_SIGNING_KEY,
       });
       if (oauthRes) return oauthRes;
     }
 
+    // Root — server info
     if (url.pathname === '/' || url.pathname === '') {
-      return new Response(
-        [
-          'FreeAgentStore MCP Server',
-          '',
-          'Connect: npx mcp-remote https://mcp.freeagentstore.online/mcp',
-          '',
-          'Tools:',
-          '  list_agents     — List published agents',
-          '  agent_info      — Agent status, URLs, links',
-          '  deploy_status   — GitHub Actions deploy history',
-          '  create_agent    — Provision new agent (repo + R2 + DNS)',
-          '  delete_agent    — Remove agent from store',
-          '  write_file      — Commit file to agent repo',
-          '  read_file       — Read file from agent repo',
-          '  list_files      — Directory listing',
-          '  upload_to_r2    — Trigger redeploy',
-          '  platform_guide  — Architecture and build guide',
-          '  sdk_reference   — SDK API reference',
-          '',
-          'Auth: OAuth 2.1 (automatic via mcp-remote) or Bearer token.',
-        ].join('\n'),
-        { headers: { 'content-type': 'text/plain' } },
-      );
+      return new Response([
+        'FreeAgentStore MCP Server',
+        '',
+        'Connect: npx mcp-remote https://mcp.freeagentstore.online/mcp',
+        '',
+        'Build agents:   create_agent, update_files, list_files, read_file',
+        'Manage:         delete_agent, deploy_status, agent_info, list_agents',
+        'Reference:      platform_guide, sdk_reference',
+        '',
+        'Auth: OAuth 2.1 (automatic via mcp-remote)',
+      ].join('\n'), { headers: { 'content-type': 'text/plain' } });
     }
 
+    // MCP — inject auth into DO before dispatch (same pattern as FAS)
     if (url.pathname.startsWith('/mcp')) {
       const auth = await authenticateRequest(request, env);
-      if (auth.userId) url.searchParams.set('userId', auth.userId);
-      if (auth.token) url.searchParams.set('token', auth.token);
-      const modifiedRequest = new Request(url.toString(), request);
-      return FagsMcpAgent.serve('/mcp').fetch(modifiedRequest, env, ctx);
+      const sessionId = request.headers.get('mcp-session-id');
+      if (auth.token && sessionId) {
+        try {
+          const id = env.MCP_OBJECT.idFromName(`streamable-http:${sessionId}`);
+          const stub = env.MCP_OBJECT.get(id) as unknown as { setAuth(p: McpProps): Promise<void> };
+          await stub.setAuth({ userId: auth.userId, token: auth.token });
+        } catch { /* best effort */ }
+      }
+      return FagsMcpAgent.serve('/mcp').fetch(request, env, ctx);
     }
 
     return FagsMcpAgent.serve('/mcp').fetch(request, env, ctx);
