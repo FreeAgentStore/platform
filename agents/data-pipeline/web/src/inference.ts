@@ -1,6 +1,6 @@
 /**
- * LLM integration — proxy (user API key), Ollama, or Chrome Built-in AI.
- * Agents need a capable model for tool-calling, so we prefer proxy > Ollama > Chrome AI.
+ * LLM integration with native tool calling.
+ * The proxy is transparent — tools param passes straight through to the provider.
  */
 
 const PROXY_BASE = 'https://freeagentstore.online/v1/proxy';
@@ -16,7 +16,7 @@ export interface Provider {
   name: string;
   host: string;
   models: string[];
-  capable: boolean; // Can follow structured THOUGHT/ACTION/INPUT format
+  capable: boolean;
 }
 
 export const PROVIDERS: Provider[] = [
@@ -39,18 +39,220 @@ function getSession(): string | null {
   }
 }
 
-function getProvider(id: string): Provider | undefined {
-  return PROVIDERS.find((p) => p.id === id);
+// ── Tool definition types (provider-agnostic) ─────────────────
+
+export interface ToolDef {
+  name: string;
+  description: string;
+  parameters: Record<string, { type: string; description: string; required?: boolean }>;
 }
 
-async function chatViaProxy(
-  messages: Array<{ role: string; content: string }>,
+export interface ToolCall {
+  name: string;
+  input: Record<string, unknown>;
+}
+
+export interface LLMResponse {
+  text: string | null;       // assistant text (thought/reasoning)
+  toolCalls: ToolCall[];     // structured tool calls from the model
+  stopReason: 'tool_use' | 'end' | 'length';
+}
+
+export type Message =
+  | { role: 'system'; content: string }
+  | { role: 'user'; content: string }
+  | { role: 'assistant'; content: string; toolCalls?: ToolCall[] }
+  | { role: 'tool'; toolName: string; content: string };
+
+// ── OpenAI format ────────────────────────────────────────────
+
+function toolsToOpenAI(tools: ToolDef[]) {
+  return tools.map((t) => ({
+    type: 'function' as const,
+    function: {
+      name: t.name,
+      description: t.description,
+      parameters: {
+        type: 'object',
+        properties: Object.fromEntries(
+          Object.entries(t.parameters).map(([k, v]) => [k, { type: v.type, description: v.description }]),
+        ),
+        required: Object.entries(t.parameters).filter(([, v]) => v.required !== false).map(([k]) => k),
+      },
+    },
+  }));
+}
+
+function messagesToOpenAI(messages: Message[]) {
+  const out: unknown[] = [];
+  for (const m of messages) {
+    if (m.role === 'system' || m.role === 'user') {
+      out.push({ role: m.role, content: m.content });
+    } else if (m.role === 'assistant') {
+      if (m.toolCalls?.length) {
+        out.push({
+          role: 'assistant',
+          content: m.content || null,
+          tool_calls: m.toolCalls.map((tc, i) => ({
+            id: `call_${i}`,
+            type: 'function',
+            function: { name: tc.name, arguments: JSON.stringify(tc.input) },
+          })),
+        });
+      } else {
+        out.push({ role: 'assistant', content: m.content });
+      }
+    } else if (m.role === 'tool') {
+      // Find the matching tool_call_id from the previous assistant message
+      const prevAssistant = out.findLast((x: any) => x.role === 'assistant' && x.tool_calls);
+      const callId = (prevAssistant as any)?.tool_calls?.find((tc: any) => tc.function.name === m.toolName)?.id ?? 'call_0';
+      out.push({ role: 'tool', tool_call_id: callId, content: m.content });
+    }
+  }
+  return out;
+}
+
+function parseOpenAIResponse(data: any): LLMResponse {
+  const choice = data.choices?.[0];
+  const msg = choice?.message;
+  const toolCalls: ToolCall[] = (msg?.tool_calls ?? []).map((tc: any) => ({
+    name: tc.function.name,
+    input: JSON.parse(tc.function.arguments || '{}'),
+  }));
+  return {
+    text: msg?.content ?? null,
+    toolCalls,
+    stopReason: choice?.finish_reason === 'tool_calls' || toolCalls.length > 0 ? 'tool_use' : 'end',
+  };
+}
+
+// ── Anthropic format ─────────────────────────────────────────
+
+function toolsToAnthropic(tools: ToolDef[]) {
+  return tools.map((t) => ({
+    name: t.name,
+    description: t.description,
+    input_schema: {
+      type: 'object',
+      properties: Object.fromEntries(
+        Object.entries(t.parameters).map(([k, v]) => [k, { type: v.type, description: v.description }]),
+      ),
+      required: Object.entries(t.parameters).filter(([, v]) => v.required !== false).map(([k]) => k),
+    },
+  }));
+}
+
+function messagesToAnthropic(messages: Message[]) {
+  const system = messages.find((m) => m.role === 'system')?.content ?? '';
+  const out: unknown[] = [];
+  for (const m of messages) {
+    if (m.role === 'system') continue;
+    if (m.role === 'user') {
+      out.push({ role: 'user', content: m.content });
+    } else if (m.role === 'assistant') {
+      const content: unknown[] = [];
+      if (m.content) content.push({ type: 'text', text: m.content });
+      if (m.toolCalls?.length) {
+        for (const tc of m.toolCalls) {
+          content.push({ type: 'tool_use', id: `tu_${tc.name}`, name: tc.name, input: tc.input });
+        }
+      }
+      out.push({ role: 'assistant', content: content.length === 1 && !m.toolCalls?.length ? m.content : content });
+    } else if (m.role === 'tool') {
+      out.push({
+        role: 'user',
+        content: [{ type: 'tool_result', tool_use_id: `tu_${m.toolName}`, content: m.content }],
+      });
+    }
+  }
+  return { system, messages: out };
+}
+
+function parseAnthropicResponse(data: any): LLMResponse {
+  const blocks = data.content ?? [];
+  let text: string | null = null;
+  const toolCalls: ToolCall[] = [];
+  for (const block of blocks) {
+    if (block.type === 'text') text = (text ?? '') + block.text;
+    if (block.type === 'tool_use') toolCalls.push({ name: block.name, input: block.input });
+  }
+  return {
+    text,
+    toolCalls,
+    stopReason: data.stop_reason === 'tool_use' || toolCalls.length > 0 ? 'tool_use' : 'end',
+  };
+}
+
+// ── Google Gemini format ─────────────────────────────────────
+
+function toolsToGoogle(tools: ToolDef[]) {
+  return [{
+    function_declarations: tools.map((t) => ({
+      name: t.name,
+      description: t.description,
+      parameters: {
+        type: 'object',
+        properties: Object.fromEntries(
+          Object.entries(t.parameters).map(([k, v]) => [k, { type: v.type, description: v.description }]),
+        ),
+        required: Object.entries(t.parameters).filter(([, v]) => v.required !== false).map(([k]) => k),
+      },
+    })),
+  }];
+}
+
+function messagesToGoogle(messages: Message[]) {
+  const system = messages.find((m) => m.role === 'system')?.content;
+  const contents: unknown[] = [];
+  for (const m of messages) {
+    if (m.role === 'system') continue;
+    if (m.role === 'user') {
+      contents.push({ role: 'user', parts: [{ text: m.content }] });
+    } else if (m.role === 'assistant') {
+      const parts: unknown[] = [];
+      if (m.content) parts.push({ text: m.content });
+      if (m.toolCalls?.length) {
+        for (const tc of m.toolCalls) {
+          parts.push({ functionCall: { name: tc.name, args: tc.input } });
+        }
+      }
+      contents.push({ role: 'model', parts });
+    } else if (m.role === 'tool') {
+      contents.push({
+        role: 'user',
+        parts: [{ functionResponse: { name: m.toolName, response: { result: m.content } } }],
+      });
+    }
+  }
+  return { system, contents };
+}
+
+function parseGoogleResponse(data: any): LLMResponse {
+  const parts = data.candidates?.[0]?.content?.parts ?? [];
+  let text: string | null = null;
+  const toolCalls: ToolCall[] = [];
+  for (const part of parts) {
+    if (part.text) text = (text ?? '') + part.text;
+    if (part.functionCall) toolCalls.push({ name: part.functionCall.name, input: part.functionCall.args ?? {} });
+  }
+  return {
+    text,
+    toolCalls,
+    stopReason: toolCalls.length > 0 ? 'tool_use' : 'end',
+  };
+}
+
+// ── Main chat function ───────────────────────────────────────
+
+async function chatWithTools(
+  messages: Message[],
+  tools: ToolDef[],
   config: LLMConfig,
-): Promise<string> {
+): Promise<LLMResponse> {
   const session = getSession();
   if (!session) throw new Error('NOT_SIGNED_IN');
 
-  const provider = getProvider(config.provider);
+  const provider = PROVIDERS.find((p) => p.id === config.provider);
   if (!provider?.host) throw new Error(`Unknown provider: ${config.provider}`);
 
   let url: string;
@@ -58,33 +260,30 @@ async function chatViaProxy(
 
   if (config.provider === 'anthropic') {
     url = `${PROXY_BASE}/${provider.host}/v1/messages`;
-    const systemMsg = messages.find((m) => m.role === 'system');
-    const chatMsgs = messages.filter((m) => m.role !== 'system');
+    const { system, messages: msgs } = messagesToAnthropic(messages);
     body = {
       model: config.model,
       max_tokens: 4096,
-      system: systemMsg?.content ?? '',
-      messages: chatMsgs.map((m) => ({ role: m.role, content: m.content })),
+      system,
+      messages: msgs,
+      tools: toolsToAnthropic(tools),
     };
   } else if (config.provider === 'google') {
     url = `${PROXY_BASE}/${provider.host}/v1beta/models/${config.model}:generateContent`;
-    const contents = messages
-      .filter((m) => m.role !== 'system')
-      .map((m) => ({
-        role: m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: m.content }],
-      }));
-    const systemMsg = messages.find((m) => m.role === 'system');
+    const { system, contents } = messagesToGoogle(messages);
     body = {
       contents,
-      systemInstruction: systemMsg ? { parts: [{ text: systemMsg.content }] } : undefined,
+      systemInstruction: system ? { parts: [{ text: system }] } : undefined,
+      tools: toolsToGoogle(tools),
       generationConfig: { temperature: config.temperature ?? 0.3 },
     };
   } else {
+    // OpenAI-compatible (OpenAI, Groq)
     url = `${PROXY_BASE}/${provider.host}/v1/chat/completions`;
     body = {
       model: config.model,
-      messages: messages.map((m) => ({ role: m.role, content: m.content })),
+      messages: messagesToOpenAI(messages),
+      tools: toolsToOpenAI(tools),
       temperature: config.temperature ?? 0.3,
     };
   }
@@ -101,82 +300,70 @@ async function chatViaProxy(
   if (!response.ok) {
     const text = await response.text().catch(() => '');
     if (response.status === 401) throw new Error('NOT_SIGNED_IN');
-    if (response.status === 403) {
-      // Check if it's a no_key error
-      try {
-        const err = JSON.parse(text);
-        if (err.error === 'no_key') throw new Error('NO_API_KEY');
-      } catch (e) {
-        if (e instanceof Error && e.message === 'NO_API_KEY') throw e;
-      }
-      throw new Error('NO_API_KEY');
-    }
-    throw new Error(`API error ${response.status}: ${text.slice(0, 200)}`);
+    if (response.status === 403) throw new Error('NO_API_KEY');
+    throw new Error(`API error ${response.status}: ${text.slice(0, 300)}`);
   }
 
   const data = await response.json();
 
-  if (config.provider === 'anthropic') {
-    return data.content?.[0]?.text ?? '';
-  }
-  if (config.provider === 'google') {
-    return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-  }
-  return data.choices?.[0]?.message?.content ?? '';
+  if (config.provider === 'anthropic') return parseAnthropicResponse(data);
+  if (config.provider === 'google') return parseGoogleResponse(data);
+  return parseOpenAIResponse(data);
 }
 
-async function chatViaOllama(
-  messages: Array<{ role: string; content: string }>,
+// ── Ollama (text-based fallback — no native tool calling) ────
+
+async function chatOllama(
+  messages: Message[],
+  tools: ToolDef[],
   model: string,
-): Promise<string> {
+): Promise<LLMResponse> {
+  // Ollama doesn't have native tool calling — use text-based format
+  const toolsDesc = tools.map((t) =>
+    `${t.name}(${Object.entries(t.parameters).map(([k, v]) => `${k}: ${v.type}`).join(', ')}): ${t.description}`
+  ).join('\n');
+
+  const mapped = messages.map((m) => {
+    if (m.role === 'system') {
+      return {
+        role: 'system',
+        content: `${m.content}\n\nYou have tools:\n${toolsDesc}\n\nTo call a tool respond EXACTLY:\nTOOL_CALL: tool_name\nARGS: {"key": "value"}\n\nTo give a final answer respond:\nFINAL: your answer`,
+      };
+    }
+    if (m.role === 'tool') return { role: 'user', content: `Tool ${m.toolName} returned: ${m.content}` };
+    return { role: m.role, content: m.content ?? '' };
+  });
+
   const response = await fetch('http://localhost:11434/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: model || 'llama3.2',
-      messages: messages.map((m) => ({ role: m.role, content: m.content })),
-      stream: false,
-    }),
+    body: JSON.stringify({ model: model || 'llama3.2', messages: mapped, stream: false }),
   });
 
-  if (!response.ok) throw new Error('Ollama not running. Start it at localhost:11434');
+  if (!response.ok) throw new Error('Ollama not running');
   const data = await response.json();
-  return data.message?.content ?? '';
+  const text = data.message?.content ?? '';
+
+  // Parse text-based tool calls
+  const toolMatch = text.match(/TOOL_CALL:\s*(\w[\w-]*)/i);
+  const argsMatch = text.match(/ARGS:\s*(\{[\s\S]*?\})/i);
+  if (toolMatch) {
+    let input: Record<string, unknown> = {};
+    if (argsMatch) try { input = JSON.parse(argsMatch[1]); } catch {}
+    return { text, toolCalls: [{ name: toolMatch[1], input }], stopReason: 'tool_use' };
+  }
+  return { text, toolCalls: [], stopReason: 'end' };
 }
 
-async function chatViaBuiltInAI(
-  messages: Array<{ role: string; content: string }>,
-): Promise<string> {
-  const g = globalThis as any;
-  const LM = g.LanguageModel ?? g.ai?.languageModel;
-  if (!LM?.create) throw new Error('Chrome Built-in AI not available.');
+// ── Public API ───────────────────────────────────────────────
 
-  const systemMsg = messages.find((m) => m.role === 'system');
-  const userMsgs = messages.filter((m) => m.role !== 'system');
-  const recent = userMsgs.slice(-6);
-  const prompt = recent.map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`).join('\n\n');
+export type LLMFn = (messages: Message[], tools: ToolDef[]) => Promise<LLMResponse>;
 
-  const session = await LM.create({
-    systemPrompt: (systemMsg?.content ?? '').slice(0, 4000),
-  });
-
-  const result = await session.prompt(prompt);
-  session.destroy?.();
-  return result;
-}
-
-/** Create an LLM function for the agent loop */
-export function createLLM(
-  config: LLMConfig,
-): (messages: Array<{ role: string; content: string }>) => Promise<string> {
-  return async (messages) => {
-    if (config.provider === 'built-in-ai') {
-      return chatViaBuiltInAI(messages);
-    }
-    if (config.provider === 'ollama') {
-      return chatViaOllama(messages, config.model);
-    }
-    return chatViaProxy(messages, config);
+export function createLLM(config: LLMConfig): LLMFn {
+  return async (messages, tools) => {
+    if (config.provider === 'ollama') return chatOllama(messages, tools, config.model);
+    if (config.provider === 'built-in-ai') throw new Error('Chrome Nano does not support tool calling. Select a different provider.');
+    return chatWithTools(messages, tools, config);
   };
 }
 
@@ -189,54 +376,21 @@ export interface DetectResult {
   message: string;
 }
 
-/** Detect what's available and return status */
 export async function detectProvider(): Promise<DetectResult> {
   const hasSession = !!getSession();
-
-  // Check Ollama
   let hasOllama = false;
   try {
     const r = await fetch('http://localhost:11434/api/tags', { signal: AbortSignal.timeout(2000) });
     hasOllama = r.ok;
   } catch {}
-
-  // Check Chrome Built-in AI
   const g = globalThis as any;
-  const LM = g.LanguageModel ?? g.ai?.languageModel;
-  const hasChromeAI = !!LM?.create;
+  const hasChromeAI = !!(g.LanguageModel ?? g.ai?.languageModel)?.create;
 
-  // Priority: proxy (needs session + key) > Ollama > Chrome AI
   if (hasSession) {
-    return {
-      config: { provider: 'openai', model: 'gpt-4o-mini' },
-      hasSession, hasOllama, hasChromeAI,
-      ready: true, // We assume they have a key — will fail with clear error if not
-      message: 'Using your API key via proxy',
-    };
+    return { config: { provider: 'openai', model: 'gpt-4o-mini' }, hasSession, hasOllama, hasChromeAI, ready: true, message: 'Using your API key via proxy' };
   }
-
   if (hasOllama) {
-    return {
-      config: { provider: 'ollama', model: 'llama3.2' },
-      hasSession, hasOllama, hasChromeAI,
-      ready: true,
-      message: 'Using Ollama (local)',
-    };
+    return { config: { provider: 'ollama', model: 'llama3.2' }, hasSession, hasOllama, hasChromeAI, ready: true, message: 'Using Ollama (local)' };
   }
-
-  if (hasChromeAI) {
-    return {
-      config: { provider: 'built-in-ai', model: 'gemini-nano' },
-      hasSession, hasOllama, hasChromeAI,
-      ready: true,
-      message: 'Using Chrome Nano — tool calling may be unreliable (1.8B model)',
-    };
-  }
-
-  return {
-    config: { provider: 'openai', model: 'gpt-4o-mini' },
-    hasSession, hasOllama, hasChromeAI,
-    ready: false,
-    message: 'No AI backend available',
-  };
+  return { config: { provider: 'openai', model: 'gpt-4o-mini' }, hasSession, hasOllama, hasChromeAI, ready: false, message: 'Sign in and add an API key to use autonomous agents' };
 }
