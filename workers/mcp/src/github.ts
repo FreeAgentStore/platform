@@ -146,4 +146,55 @@ export async function readRepoFile(org: string, repo: string, token: string | un
   return b64ToText(res.content);
 }
 
+/** Search for text across all files in a repo. Returns matching file paths + line previews. */
+export async function searchRepoFiles(
+  org: string,
+  repo: string,
+  query: string,
+  token?: string,
+): Promise<Array<{ path: string; matches: string[] }>> {
+  // GitHub Code Search API requires auth and has limitations.
+  // Instead: list all files, fetch text files, search locally.
+  const files = await listRepoFiles(org, repo, token);
+  const results: Array<{ path: string; matches: string[] }> = [];
+  const queryLower = query.toLowerCase();
+
+  for (const path of files) {
+    if (!TEXT_RE.test(path)) continue;
+    if (results.length >= 20) break;
+
+    const content = await readRepoFile(org, repo, token, path);
+    if (!content) continue;
+
+    const lines = content.split('\n');
+    const matches: string[] = [];
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].toLowerCase().includes(queryLower)) {
+        matches.push(`L${i + 1}: ${lines[i].trim().slice(0, 120)}`);
+        if (matches.length >= 5) break;
+      }
+    }
+    if (matches.length > 0) results.push({ path, matches });
+  }
+  return results;
+}
+
+/** Delete a file from a repo. */
+export async function deleteRepoFile(
+  org: string,
+  repo: string,
+  token: string,
+  path: string,
+  message: string,
+): Promise<void> {
+  const base = `https://api.github.com/repos/${org}/${repo}`;
+  const existing = await gh(token, `${base}/contents/${path.split('/').map(encodeURIComponent).join('/')}`);
+  if (!existing?.sha) throw new Error(`File not found: ${path}`);
+  const res = await gh(token, `${base}/contents/${path.split('/').map(encodeURIComponent).join('/')}`, 'DELETE', {
+    message,
+    sha: existing.sha,
+  });
+  if (res.__status) throw new Error(`Delete failed: ${res.message ?? res.__status}`);
+}
+
 export { textToB64, b64ToText };
