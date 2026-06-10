@@ -828,6 +828,16 @@ export async function handleApiRoute(request: Request, url: URL, env: Env): Prom
       return handleMcpProxy(request, url);
     }
 
+    // ── Web search — server-side DuckDuckGo HTML search for browser agents ──
+    if (path === '/v1/search' && request.method === 'GET') {
+      return handleSearch(url);
+    }
+
+    // ── Web fetch — server-side page fetch for browser agents (CORS bypass) ──
+    if (path === '/v1/fetch' && request.method === 'GET') {
+      return handleFetch(url);
+    }
+
     return jsonResponse({ error: 'Not found' }, 404);
   } catch (err) {
     if (err instanceof AuthError) {
@@ -1245,4 +1255,137 @@ async function handleMcpProxy(request: Request, url: URL): Promise<Response> {
     status: upstream.status,
     headers: respHeaders,
   });
+}
+
+// ── Web Search ────────────────────────────────────────────────────────────────
+
+async function handleSearch(url: URL): Promise<Response> {
+  const query = url.searchParams.get('q');
+  if (!query) return jsonResponse({ error: 'Missing ?q= parameter' }, 400);
+
+  try {
+    // Fetch DuckDuckGo HTML search results (no CORS issues from Workers)
+    const ddgUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
+    const res = await fetch(ddgUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; FreeAgentStore/1.0)',
+      },
+      signal: AbortSignal.timeout(10_000),
+    });
+
+    if (!res.ok) {
+      return jsonResponse({ error: `Search failed: ${res.status}` }, 502);
+    }
+
+    const html = await res.text();
+
+    // Parse results from DuckDuckGo HTML
+    // Results are in <div class="result"> with <a class="result__a"> and <a class="result__snippet">
+    const results: Array<{ title: string; url: string; snippet: string }> = [];
+    const resultPattern = /<a[^>]+class="result__a"[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?<a[^>]+class="result__snippet"[^>]*>([\s\S]*?)<\/a>/gi;
+
+    let match;
+    while ((match = resultPattern.exec(html)) !== null && results.length < 10) {
+      const rawUrl = match[1];
+      const title = match[2].replace(/<[^>]+>/g, '').trim();
+      const snippet = match[3].replace(/<[^>]+>/g, '').trim();
+
+      // DDG wraps URLs in a redirect — extract the actual URL
+      let actualUrl = rawUrl;
+      const uddgMatch = rawUrl.match(/uddg=([^&]+)/);
+      if (uddgMatch) actualUrl = decodeURIComponent(uddgMatch[1]);
+
+      if (title && actualUrl) {
+        results.push({ title, url: actualUrl, snippet });
+      }
+    }
+
+    const h = corsHeaders();
+    h.set('Content-Type', 'application/json; charset=utf-8');
+    h.set('Cache-Control', 'public, max-age=300');
+    return new Response(JSON.stringify({ query, results, count: results.length }), { headers: h });
+  } catch (err: any) {
+    return jsonResponse({ error: `Search error: ${err.message}` }, 500);
+  }
+}
+
+// ── Web Fetch ─────────────────────────────────────────────────────────────────
+
+const FETCH_MAX_SIZE = 512 * 1024; // 512KB text limit
+
+async function handleFetch(url: URL): Promise<Response> {
+  const targetUrl = url.searchParams.get('url');
+  if (!targetUrl) return jsonResponse({ error: 'Missing ?url= parameter' }, 400);
+
+  let parsed: URL;
+  try {
+    parsed = new URL(targetUrl);
+  } catch {
+    return jsonResponse({ error: 'Invalid URL' }, 400);
+  }
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    return jsonResponse({ error: 'URL must be http or https' }, 400);
+  }
+  if (isBlockedHost(parsed.hostname)) {
+    return jsonResponse({ error: 'Blocked host' }, 403);
+  }
+
+  try {
+    const res = await fetch(targetUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; FreeAgentStore/1.0)',
+        Accept: 'text/html, application/xhtml+xml, text/plain',
+      },
+      signal: AbortSignal.timeout(15_000),
+      redirect: 'follow',
+    });
+
+    if (!res.ok) {
+      return jsonResponse({ error: `Fetch failed: ${res.status}` }, 502);
+    }
+
+    const contentType = res.headers.get('Content-Type') ?? '';
+    if (!contentType.includes('text/') && !contentType.includes('html') && !contentType.includes('json') && !contentType.includes('xml')) {
+      return jsonResponse({ error: `Non-text content type: ${contentType}` }, 400);
+    }
+
+    const text = await res.text();
+    const truncated = text.slice(0, FETCH_MAX_SIZE);
+
+    // Strip HTML tags for cleaner text
+    let clean = truncated;
+    if (contentType.includes('html')) {
+      clean = truncated
+        .replace(/<script[\s\S]*?<\/script>/gi, '')
+        .replace(/<style[\s\S]*?<\/style>/gi, '')
+        .replace(/<nav[\s\S]*?<\/nav>/gi, '')
+        .replace(/<footer[\s\S]*?<\/footer>/gi, '')
+        .replace(/<header[\s\S]*?<\/header>/gi, '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&nbsp;/g, ' ')
+        .trim();
+    }
+
+    const title = truncated.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.trim() ?? '';
+
+    const h = corsHeaders();
+    h.set('Content-Type', 'application/json; charset=utf-8');
+    h.set('Cache-Control', 'public, max-age=300');
+    return new Response(JSON.stringify({
+      url: targetUrl,
+      title,
+      content: clean.slice(0, 8000),
+      length: clean.length,
+      truncated: clean.length > 8000,
+    }), { headers: h });
+  } catch (err: any) {
+    const msg = err.name === 'TimeoutError' ? 'Page timed out (15s)' : err.message;
+    return jsonResponse({ error: `Fetch error: ${msg}` }, 502);
+  }
 }
