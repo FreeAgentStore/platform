@@ -49,8 +49,8 @@ export class FagsMcpAgent extends McpAgent<Env, unknown, McpProps> {
       "SELECT owner_id FROM routes WHERE slug = ? AND zone = 'freeagentstore.online'",
     ).bind(agentId).first<{ owner_id: string | null }>();
     if (!row) return false;
-    // If no owner set (legacy agents), allow any authed user but don't claim ownership
-    if (!row.owner_id) return true;
+    // Legacy agents without owner_id: deny writes (must be backfilled by admin)
+    if (!row.owner_id) return false;
     return row.owner_id === uid;
   }
 

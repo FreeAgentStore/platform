@@ -705,7 +705,7 @@ describe('/v1/fetch', () => {
   it('returns 403 for blocked host localhost', async () => {
     const res = await handleApiRoute(
       makeRequest('GET', '/v1/fetch'),
-      new URL('https://freeagentstore.online/v1/fetch?url=http%3A%2F%2Flocalhost%2Fsecret'),
+      new URL('https://freeagentstore.online/v1/fetch?url=https%3A%2F%2Flocalhost%2Fsecret'),
       mockEnv(),
     );
     expect(res.status).toBe(403);
@@ -716,7 +716,7 @@ describe('/v1/fetch', () => {
   it('returns 403 for blocked host 127.0.0.1', async () => {
     const res = await handleApiRoute(
       makeRequest('GET', '/v1/fetch'),
-      new URL('https://freeagentstore.online/v1/fetch?url=http%3A%2F%2F127.0.0.1%2Fpath'),
+      new URL('https://freeagentstore.online/v1/fetch?url=https%3A%2F%2F127.0.0.1%2Fpath'),
       mockEnv(),
     );
     expect(res.status).toBe(403);
@@ -725,7 +725,7 @@ describe('/v1/fetch', () => {
   it('returns 403 for blocked host 10.x.x.x', async () => {
     const res = await handleApiRoute(
       makeRequest('GET', '/v1/fetch'),
-      new URL('https://freeagentstore.online/v1/fetch?url=http%3A%2F%2F10.0.0.1%2Fpath'),
+      new URL('https://freeagentstore.online/v1/fetch?url=https%3A%2F%2F10.0.0.1%2Fpath'),
       mockEnv(),
     );
     expect(res.status).toBe(403);
@@ -734,7 +734,7 @@ describe('/v1/fetch', () => {
   it('returns 403 for blocked host 169.254.169.254', async () => {
     const res = await handleApiRoute(
       makeRequest('GET', '/v1/fetch'),
-      new URL('https://freeagentstore.online/v1/fetch?url=http%3A%2F%2F169.254.169.254%2Flatest%2Fmeta-data'),
+      new URL('https://freeagentstore.online/v1/fetch?url=https%3A%2F%2F169.254.169.254%2Flatest%2Fmeta-data'),
       mockEnv(),
     );
     expect(res.status).toBe(403);

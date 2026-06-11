@@ -19,7 +19,6 @@
 import { handleApiRoute } from './api';
 import { injectMirror } from './mirror-inject';
 import { classifyRequest } from './bot-detect';
-import { handleDashboard } from './dashboard';
 
 export { MirrorRoom } from './mirror-do';
 
@@ -77,12 +76,7 @@ export default {
     const url = new URL(request.url);
     const host = request.headers.get('Host')?.toLowerCase().replace(/:\d+$/, '') ?? '';
 
-    // Dashboard — server-rendered analytics page
-    if (url.pathname === '/v1/dashboard') {
-      return handleDashboard(url, env);
-    }
-
-    // API routes (key vault + proxy) — handle before R2 serving
+    // API routes (key vault + proxy + dashboard) — handle before R2 serving
     if (url.pathname.startsWith('/v1/')) {
       return handleApiRoute(request, url, env);
     }

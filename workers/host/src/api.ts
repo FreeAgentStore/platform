@@ -485,6 +485,14 @@ export async function handleApiRoute(request: Request, url: URL, env: Env): Prom
   cleanupIpCounts();
 
   try {
+    // ── Dashboard (auth required) ─────────────────────────────────────
+    if (path === '/v1/dashboard' && request.method === 'GET') {
+      const uid = await verifySession(request, env);
+      if (!uid) return jsonResponse({ error: 'Sign in to view dashboard' }, 401);
+      const { handleDashboard } = await import('./dashboard');
+      return handleDashboard(url, env);
+    }
+
     // ── Health check (public, no auth) ────────────────────────────────
     if (path === '/v1/health' && request.method === 'GET') {
       const dbOk = await env.DB.prepare('SELECT 1')
@@ -611,8 +619,8 @@ export async function handleApiRoute(request: Request, url: URL, env: Env): Prom
       const returnTo = returnMatch ? decodeURIComponent(returnMatch[1]) : '/';
       const safeReturn = returnTo.startsWith('/') ? returnTo : '/';
 
-      // Set cookie + redirect with token in fragment for JS
-      const h = new Headers({ Location: `${safeReturn}?login=success#session=${sessionToken}` });
+      // Set cookie + redirect (token only in httpOnly cookie, not in URL)
+      const h = new Headers({ Location: `${safeReturn}?login=success` });
       h.append(
         'Set-Cookie',
         `fags_session=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`,
@@ -830,11 +838,13 @@ export async function handleApiRoute(request: Request, url: URL, env: Env): Prom
 
     // ── Web search — server-side DuckDuckGo HTML search for browser agents ──
     if (path === '/v1/search' && request.method === 'GET') {
+      if (!checkWebRateLimit(request)) return jsonResponse({ error: 'Rate limit exceeded' }, 429);
       return handleSearch(url);
     }
 
     // ── Web fetch — server-side page fetch for browser agents (CORS bypass) ──
     if (path === '/v1/fetch' && request.method === 'GET') {
+      if (!checkWebRateLimit(request)) return jsonResponse({ error: 'Rate limit exceeded' }, 429);
       return handleFetch(url);
     }
 
@@ -1157,25 +1167,70 @@ async function handleUsage(db: D1Database, userId: string): Promise<Response> {
 
 // ── MCP Proxy ─────────────────────────────────────────────────────────────────
 
+// ── Rate limiting for /v1/search and /v1/fetch ───────────────────────────────
+
+const WEB_RATE_WINDOW = 60_000;
+const WEB_RATE_MAX = 30; // 30 requests/minute/IP
+const webRateCounts = new Map<string, { count: number; resetAt: number }>();
+
+function checkWebRateLimit(request: Request): boolean {
+  const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
+  const now = Date.now();
+  const entry = webRateCounts.get(ip);
+  if (entry && now < entry.resetAt) {
+    if (entry.count >= WEB_RATE_MAX) return false;
+    entry.count++;
+  } else {
+    webRateCounts.set(ip, { count: 1, resetAt: now + WEB_RATE_WINDOW });
+  }
+  return true;
+}
+
 const MCP_PROXY_ALLOWED_METHODS = new Set(['initialize', 'notifications/initialized', 'tools/list', 'tools/call', 'ping']);
 const MCP_PROXY_MAX_BODY = 256 * 1024; // 256 KB
 const MCP_PROXY_RATE_WINDOW = 60_000;
 const MCP_PROXY_RATE_MAX = 60; // 60 requests/minute/IP
 const mcpRateCounts = new Map<string, { count: number; resetAt: number }>();
 
-// Block internal/private IPs (SSRF protection)
+// Block internal/private IPs (SSRF protection) — covers all IP representations
 function isBlockedHost(hostname: string): boolean {
-  // Block localhost, private IPs, link-local, metadata endpoints
-  const blocked = [
-    'localhost', '127.0.0.1', '0.0.0.0', '[::1]', '[::]',
+  const h = hostname.toLowerCase().replace(/^\[/, '').replace(/\]$/, '');
+
+  // Exact matches: localhost, metadata, known dangerous hosts
+  const blocked = new Set([
+    'localhost', '127.0.0.1', '0.0.0.0', '::1', '::', '0',
     'metadata.google.internal', '169.254.169.254',
     'metadata.google', 'metadata',
-  ];
-  if (blocked.includes(hostname.toLowerCase())) return true;
-  // Block 10.x, 172.16-31.x, 192.168.x
-  if (/^10\./.test(hostname)) return true;
-  if (/^172\.(1[6-9]|2\d|3[01])\./.test(hostname)) return true;
-  if (/^192\.168\./.test(hostname)) return true;
+  ]);
+  if (blocked.has(h)) return true;
+
+  // IPv6-mapped IPv4: ::ffff:127.0.0.1, ::ffff:10.0.0.1, etc.
+  if (h.startsWith('::ffff:')) {
+    const mapped = h.slice(7);
+    if (isBlockedHost(mapped)) return true;
+  }
+
+  // Hex IP: 0x7f000001, 0x7f.0.0.1
+  if (/^0x[0-9a-f]+$/i.test(h)) return true;
+
+  // Octal IP: 0177.0.0.1, 0177.0.1
+  if (/^0\d/.test(h) && /^[0-7.]+$/.test(h)) return true;
+
+  // Decimal IP: 2130706433 (= 127.0.0.1)
+  if (/^\d+$/.test(h) && parseInt(h, 10) > 0) return true;
+
+  // Short forms: 127.1, 127.0.1
+  if (/^127\./.test(h)) return true;
+
+  // Standard private ranges
+  if (/^10\./.test(h)) return true;
+  if (/^172\.(1[6-9]|2\d|3[01])\./.test(h)) return true;
+  if (/^192\.168\./.test(h)) return true;
+
+  // Link-local
+  if (/^169\.254\./.test(h)) return true;
+  if (h.startsWith('fe80:')) return true;
+
   return false;
 }
 
@@ -1323,8 +1378,8 @@ async function handleFetch(url: URL): Promise<Response> {
   } catch {
     return jsonResponse({ error: 'Invalid URL' }, 400);
   }
-  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
-    return jsonResponse({ error: 'URL must be http or https' }, 400);
+  if (parsed.protocol !== 'https:') {
+    return jsonResponse({ error: 'URL must use https' }, 400);
   }
   if (isBlockedHost(parsed.hostname)) {
     return jsonResponse({ error: 'Blocked host' }, 403);
@@ -1337,7 +1392,7 @@ async function handleFetch(url: URL): Promise<Response> {
         Accept: 'text/html, application/xhtml+xml, text/plain',
       },
       signal: AbortSignal.timeout(15_000),
-      redirect: 'follow',
+      redirect: 'manual',
     });
 
     if (!res.ok) {
