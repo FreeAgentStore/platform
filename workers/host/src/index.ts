@@ -17,8 +17,8 @@
  */
 
 import { handleApiRoute } from './api';
-import { injectMirror } from './mirror-inject';
 import { classifyRequest } from './bot-detect';
+import { injectMirror } from './mirror-inject';
 
 export { MirrorRoom } from './mirror-do';
 
@@ -46,7 +46,7 @@ function logPageView(request: Request, env: Env, pathname: string): void {
   const referer = request.headers.get('Referer') ?? null;
 
   crypto.subtle
-    .digest('SHA-256', new TextEncoder().encode(ip + ':fags-salt'))
+    .digest('SHA-256', new TextEncoder().encode(`${ip}:fags-salt`))
     .then((hash) => {
       const ipHash = Array.from(new Uint8Array(hash).slice(0, 8))
         .map((b) => b.toString(16).padStart(2, '0'))
@@ -113,7 +113,25 @@ export default {
 
     // ── Analytics: log page views (skip static assets) ───────
     const ext = pathname.split('.').pop()?.toLowerCase();
-    const isAsset = ext && ['js','mjs','css','png','jpg','jpeg','webp','gif','svg','ico','woff','woff2','wasm','map','onnx'].includes(ext);
+    const isAsset =
+      ext &&
+      [
+        'js',
+        'mjs',
+        'css',
+        'png',
+        'jpg',
+        'jpeg',
+        'webp',
+        'gif',
+        'svg',
+        'ico',
+        'woff',
+        'woff2',
+        'wasm',
+        'map',
+        'onnx',
+      ].includes(ext);
     if (!isAsset && !pathname.startsWith('/pkg/')) {
       logPageView(request, env, pathname);
     }

@@ -4,7 +4,12 @@
 const UA = 'freeagentstore-mcp';
 const TEXT_RE = /\.(ts|tsx|js|jsx|mjs|cjs|json|html|css|md|txt|svg|yml|yaml|toml)$/i;
 
-async function gh(token: string | undefined, url: string, method = 'GET', body?: unknown): Promise<any> {
+async function gh(
+  token: string | undefined,
+  url: string,
+  method = 'GET',
+  body?: unknown,
+): Promise<any> {
   const res = await fetch(url, {
     method,
     headers: {
@@ -18,7 +23,11 @@ async function gh(token: string | undefined, url: string, method = 'GET', body?:
   });
   const text = await res.text();
   let json: any = {};
-  try { json = text ? JSON.parse(text) : {}; } catch { json = { raw: text }; }
+  try {
+    json = text ? JSON.parse(text) : {};
+  } catch {
+    json = { raw: text };
+  }
   if (!res.ok) json.__status = res.status;
   return json;
 }
@@ -52,9 +61,11 @@ export async function fetchTemplateFiles(
   const base = `https://api.github.com/repos/${org}/${templateRepo}`;
   const ref = await gh(token, `${base}/git/ref/heads/main`);
   const headSha = ref?.object?.sha;
-  if (!headSha) throw new Error(`template ${templateRepo}: no main ref (${ref.message ?? ref.__status})`);
+  if (!headSha)
+    throw new Error(`template ${templateRepo}: no main ref (${ref.message ?? ref.__status})`);
   const tree = await gh(token, `${base}/git/trees/${headSha}?recursive=1`);
-  if (!Array.isArray(tree?.tree)) throw new Error(`template tree fetch failed (${tree.message ?? tree.__status})`);
+  if (!Array.isArray(tree?.tree))
+    throw new Error(`template tree fetch failed (${tree.message ?? tree.__status})`);
 
   const files = new Map<string, RepoFile>();
   const prefix = templatePath ? `${templatePath}/` : '';
@@ -100,7 +111,8 @@ export async function pushFiles(
     baseTree = parent?.tree?.sha;
   } else {
     const seed = await gh(token, `${base}/contents/.gitkeep`, 'PUT', {
-      message: 'seed', content: textToB64(''),
+      message: 'seed',
+      content: textToB64(''),
     });
     if (!seed?.commit?.sha) throw new Error(`repo seed failed: ${seed.message ?? seed.__status}`);
     parentSha = seed.commit.sha;
@@ -110,16 +122,25 @@ export async function pushFiles(
 
   const treeItems: Array<{ path: string; mode: string; type: string; sha: string }> = [];
   for (const [path, f] of files) {
-    const blob = await gh(token, `${base}/git/blobs`, 'POST', { content: f.content, encoding: f.encoding });
-    if (!blob?.sha) throw new Error(`blob create failed for ${path}: ${blob.message ?? blob.__status}`);
+    const blob = await gh(token, `${base}/git/blobs`, 'POST', {
+      content: f.content,
+      encoding: f.encoding,
+    });
+    if (!blob?.sha)
+      throw new Error(`blob create failed for ${path}: ${blob.message ?? blob.__status}`);
     treeItems.push({ path, mode: '100644', type: 'blob', sha: blob.sha });
   }
 
-  const tree = await gh(token, `${base}/git/trees`, 'POST', { base_tree: baseTree, tree: treeItems });
+  const tree = await gh(token, `${base}/git/trees`, 'POST', {
+    base_tree: baseTree,
+    tree: treeItems,
+  });
   if (!tree?.sha) throw new Error(`tree create failed: ${tree.message ?? tree.__status}`);
 
   const commit = await gh(token, `${base}/git/commits`, 'POST', {
-    message, tree: tree.sha, parents: parentSha ? [parentSha] : [],
+    message,
+    tree: tree.sha,
+    parents: parentSha ? [parentSha] : [],
   });
   if (!commit?.sha) throw new Error(`commit create failed: ${commit.message ?? commit.__status}`);
 
@@ -135,13 +156,23 @@ export async function listRepoFiles(org: string, repo: string, token?: string): 
   if (!ref?.object?.sha) return [];
   const tree = await gh(token, `${base}/git/trees/${ref.object.sha}?recursive=1`);
   if (!Array.isArray(tree?.tree)) return [];
-  return tree.tree.filter((i: any) => i.type === 'blob' && !i.path.startsWith('.git/')).map((i: any) => i.path);
+  return tree.tree
+    .filter((i: any) => i.type === 'blob' && !i.path.startsWith('.git/'))
+    .map((i: any) => i.path);
 }
 
 /** Read one file's text content. */
-export async function readRepoFile(org: string, repo: string, token: string | undefined, path: string): Promise<string | null> {
+export async function readRepoFile(
+  org: string,
+  repo: string,
+  token: string | undefined,
+  path: string,
+): Promise<string | null> {
   const base = `https://api.github.com/repos/${org}/${repo}`;
-  const res = await gh(token, `${base}/contents/${path.split('/').map(encodeURIComponent).join('/')}`);
+  const res = await gh(
+    token,
+    `${base}/contents/${path.split('/').map(encodeURIComponent).join('/')}`,
+  );
   if (typeof res?.content !== 'string') return null;
   return b64ToText(res.content);
 }
@@ -188,13 +219,21 @@ export async function deleteRepoFile(
   message: string,
 ): Promise<void> {
   const base = `https://api.github.com/repos/${org}/${repo}`;
-  const existing = await gh(token, `${base}/contents/${path.split('/').map(encodeURIComponent).join('/')}`);
+  const existing = await gh(
+    token,
+    `${base}/contents/${path.split('/').map(encodeURIComponent).join('/')}`,
+  );
   if (!existing?.sha) throw new Error(`File not found: ${path}`);
-  const res = await gh(token, `${base}/contents/${path.split('/').map(encodeURIComponent).join('/')}`, 'DELETE', {
-    message,
-    sha: existing.sha,
-  });
+  const res = await gh(
+    token,
+    `${base}/contents/${path.split('/').map(encodeURIComponent).join('/')}`,
+    'DELETE',
+    {
+      message,
+      sha: existing.sha,
+    },
+  );
   if (res.__status) throw new Error(`Delete failed: ${res.message ?? res.__status}`);
 }
 
-export { textToB64, b64ToText };
+export { b64ToText, textToB64 };

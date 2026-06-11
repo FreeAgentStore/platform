@@ -1186,7 +1186,13 @@ function checkWebRateLimit(request: Request): boolean {
   return true;
 }
 
-const MCP_PROXY_ALLOWED_METHODS = new Set(['initialize', 'notifications/initialized', 'tools/list', 'tools/call', 'ping']);
+const MCP_PROXY_ALLOWED_METHODS = new Set([
+  'initialize',
+  'notifications/initialized',
+  'tools/list',
+  'tools/call',
+  'ping',
+]);
 const MCP_PROXY_MAX_BODY = 256 * 1024; // 256 KB
 const MCP_PROXY_RATE_WINDOW = 60_000;
 const MCP_PROXY_RATE_MAX = 60; // 60 requests/minute/IP
@@ -1198,9 +1204,16 @@ function isBlockedHost(hostname: string): boolean {
 
   // Exact matches: localhost, metadata, known dangerous hosts
   const blocked = new Set([
-    'localhost', '127.0.0.1', '0.0.0.0', '::1', '::', '0',
-    'metadata.google.internal', '169.254.169.254',
-    'metadata.google', 'metadata',
+    'localhost',
+    '127.0.0.1',
+    '0.0.0.0',
+    '::1',
+    '::',
+    '0',
+    'metadata.google.internal',
+    '169.254.169.254',
+    'metadata.google',
+    'metadata',
   ]);
   if (blocked.has(h)) return true;
 
@@ -1298,7 +1311,10 @@ async function handleMcpProxy(request: Request, url: URL): Promise<Response> {
       signal: AbortSignal.timeout(30_000),
     });
   } catch (err: any) {
-    const msg = err.name === 'TimeoutError' ? 'MCP server timed out (30s)' : `MCP server unreachable: ${err.message}`;
+    const msg =
+      err.name === 'TimeoutError'
+        ? 'MCP server timed out (30s)'
+        : `MCP server unreachable: ${err.message}`;
     return jsonResponse({ error: msg }, 502);
   }
 
@@ -1337,9 +1353,11 @@ async function handleSearch(url: URL): Promise<Response> {
     // Parse results from DuckDuckGo HTML
     // Results are in <div class="result"> with <a class="result__a"> and <a class="result__snippet">
     const results: Array<{ title: string; url: string; snippet: string }> = [];
-    const resultPattern = /<a[^>]+class="result__a"[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?<a[^>]+class="result__snippet"[^>]*>([\s\S]*?)<\/a>/gi;
+    const resultPattern =
+      /<a[^>]+class="result__a"[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?<a[^>]+class="result__snippet"[^>]*>([\s\S]*?)<\/a>/gi;
 
-    let match;
+    let match: RegExpExecArray | null;
+    // biome-ignore lint/suspicious/noAssignInExpressions: standard regex exec loop
     while ((match = resultPattern.exec(html)) !== null && results.length < 10) {
       const rawUrl = match[1];
       const title = match[2].replace(/<[^>]+>/g, '').trim();
@@ -1400,7 +1418,12 @@ async function handleFetch(url: URL): Promise<Response> {
     }
 
     const contentType = res.headers.get('Content-Type') ?? '';
-    if (!contentType.includes('text/') && !contentType.includes('html') && !contentType.includes('json') && !contentType.includes('xml')) {
+    if (
+      !contentType.includes('text/') &&
+      !contentType.includes('html') &&
+      !contentType.includes('json') &&
+      !contentType.includes('xml')
+    ) {
       return jsonResponse({ error: `Non-text content type: ${contentType}` }, 400);
     }
 
@@ -1432,13 +1455,16 @@ async function handleFetch(url: URL): Promise<Response> {
     const h = corsHeaders();
     h.set('Content-Type', 'application/json; charset=utf-8');
     h.set('Cache-Control', 'public, max-age=300');
-    return new Response(JSON.stringify({
-      url: targetUrl,
-      title,
-      content: clean.slice(0, 8000),
-      length: clean.length,
-      truncated: clean.length > 8000,
-    }), { headers: h });
+    return new Response(
+      JSON.stringify({
+        url: targetUrl,
+        title,
+        content: clean.slice(0, 8000),
+        length: clean.length,
+        truncated: clean.length > 8000,
+      }),
+      { headers: h },
+    );
   } catch (err: any) {
     const msg = err.name === 'TimeoutError' ? 'Page timed out (15s)' : err.message;
     return jsonResponse({ error: `Fetch error: ${msg}` }, 502);

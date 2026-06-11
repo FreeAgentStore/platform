@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { classifyRequest } from './bot-detect';
 
-function makeRequest(
-  pathname: string,
-  headers: Record<string, string> = {},
-): Request {
+function makeRequest(pathname: string, headers: Record<string, string> = {}): Request {
   return new Request(`https://freeagentstore.online${pathname}`, {
     headers,
   });
@@ -22,7 +19,8 @@ describe('classifyRequest', () => {
     const result = classifyRequest(
       makeRequest('/', {
         ...BROWSER_HEADERS,
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
       }),
       '/',
     );
@@ -34,7 +32,8 @@ describe('classifyRequest', () => {
     const result = classifyRequest(
       makeRequest('/', {
         ...BROWSER_HEADERS,
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15',
+        'User-Agent':
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15',
       }),
       '/',
     );
@@ -58,7 +57,8 @@ describe('classifyRequest', () => {
     const result = classifyRequest(
       makeRequest('/', {
         ...BROWSER_HEADERS,
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0',
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0',
       }),
       '/',
     );
@@ -81,10 +81,7 @@ describe('classifyRequest', () => {
   });
 
   it('empty user agent -> isHuman: false, botReason: no-user-agent', () => {
-    const result = classifyRequest(
-      makeRequest('/', { Accept: 'text/html' }),
-      '/',
-    );
+    const result = classifyRequest(makeRequest('/', { Accept: 'text/html' }), '/');
     expect(result.isHuman).toBe(false);
     expect(result.botReason).toBe('no-user-agent');
   });
@@ -131,7 +128,8 @@ describe('classifyRequest', () => {
     const result = classifyRequest(
       makeRequest('/.git/config', {
         ...BROWSER_HEADERS,
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36',
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36',
       }),
       '/.git/config',
     );
@@ -143,7 +141,8 @@ describe('classifyRequest', () => {
     const result = classifyRequest(
       makeRequest('/wp-admin', {
         ...BROWSER_HEADERS,
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36',
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36',
       }),
       '/wp-admin',
     );
@@ -157,7 +156,8 @@ describe('classifyRequest', () => {
     const result = classifyRequest(
       makeRequest('/robots.txt', {
         ...BROWSER_HEADERS,
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36',
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36',
       }),
       '/robots.txt',
     );
@@ -169,7 +169,8 @@ describe('classifyRequest', () => {
     const result = classifyRequest(
       makeRequest('/favicon.ico', {
         ...BROWSER_HEADERS,
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36',
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36',
       }),
       '/favicon.ico',
     );
@@ -182,7 +183,8 @@ describe('classifyRequest', () => {
   it('missing Accept: text/html -> isHuman: false, botReason: no-accept-html', () => {
     const result = classifyRequest(
       makeRequest('/', {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36',
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36',
         Accept: 'application/json',
       }),
       '/',
@@ -197,7 +199,8 @@ describe('classifyRequest', () => {
     const result = classifyRequest(
       makeRequest('/', {
         ...BROWSER_HEADERS,
-        'User-Agent': 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36',
+        'User-Agent':
+          'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36',
       }),
       '/',
     );
@@ -209,7 +212,8 @@ describe('classifyRequest', () => {
     const result = classifyRequest(
       makeRequest('/', {
         ...BROWSER_HEADERS,
-        'User-Agent': 'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15',
+        'User-Agent':
+          'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15',
       }),
       '/',
     );
@@ -221,7 +225,8 @@ describe('classifyRequest', () => {
     const result = classifyRequest(
       makeRequest('/', {
         ...BROWSER_HEADERS,
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+        'User-Agent':
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
       }),
       '/',
     );

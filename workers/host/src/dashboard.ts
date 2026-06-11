@@ -5,14 +5,7 @@
 
 import type { Env } from './index';
 
-interface Row {
-  [key: string]: unknown;
-}
-
-export async function handleDashboard(
-  url: URL,
-  env: Env,
-): Promise<Response> {
+export async function handleDashboard(url: URL, env: Env): Promise<Response> {
   const range = url.searchParams.get('range') ?? '7d';
   const showBots = url.searchParams.get('bots') === '1';
 
@@ -121,7 +114,9 @@ export async function handleDashboard(
         )
           .bind(since)
           .all<{ path: string; bot_reason: string; created_at: number }>()
-      : Promise.resolve({ results: [] as { path: string; bot_reason: string; created_at: number }[] }),
+      : Promise.resolve({
+          results: [] as { path: string; bot_reason: string; created_at: number }[],
+        }),
   ]);
 
   const summary = summaryRow ?? { views: 0, visitors: 0 };
@@ -141,7 +136,11 @@ export async function handleDashboard(
     countries: countryRows.results ?? [],
     devices: deviceRows.results ?? [],
     topBotReasons: topBotReasonsRows.results ?? [],
-    recentBots: (recentBotsRows.results ?? []) as { path: string; bot_reason: string; created_at: number }[],
+    recentBots: (recentBotsRows.results ?? []) as {
+      path: string;
+      bot_reason: string;
+      created_at: number;
+    }[],
   });
 
   return new Response(html, {
@@ -166,7 +165,11 @@ function renderDashboard(data: {
   topBotReasons: { bot_reason: string; hits: number }[];
   recentBots: { path: string; bot_reason: string; created_at: number }[];
 }): string {
-  const rangeLabel: Record<string, string> = { '24h': 'Last 24 hours', '7d': 'Last 7 days', '30d': 'Last 30 days' };
+  const rangeLabel: Record<string, string> = {
+    '24h': 'Last 24 hours',
+    '7d': 'Last 7 days',
+    '30d': 'Last 30 days',
+  };
 
   // Build sparkline SVG from hourly data
   const sparkline = buildSparkline(data.hourly);
@@ -335,13 +338,17 @@ ${data.topBotReasons.length === 0 ? '          <tr><td colspan="2" style="color:
       <div style="margin-top:1rem">
         <a class="toggle" href="/v1/dashboard?range=${data.range}&bots=${data.showBots ? '0' : '1'}">${data.showBots ? 'Hide' : 'Show'} recent bot hits</a>
       </div>
-${data.showBots && data.recentBots.length > 0 ? `
+${
+  data.showBots && data.recentBots.length > 0
+    ? `
       <table style="margin-top:1rem">
         <thead><tr><th>Path</th><th>Reason</th><th class="num">When</th></tr></thead>
         <tbody>
 ${data.recentBots.map((b) => `          <tr><td class="path" style="max-width:180px" title="${esc(b.path)}">${esc(b.path)}</td><td style="font-size:0.78rem">${esc(b.bot_reason)}</td><td class="num" style="font-size:0.78rem">${timeAgo(b.created_at)}</td></tr>`).join('\n')}
         </tbody>
-      </table>` : ''}
+      </table>`
+    : ''
+}
     </div>
   </div>
 
@@ -358,7 +365,11 @@ function fmtNum(n: number): string {
 }
 
 function esc(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 function timeAgo(epoch: number): string {
@@ -370,7 +381,8 @@ function timeAgo(epoch: number): string {
 }
 
 function renderBars(items: { label: string; value: number }[]): string {
-  if (items.length === 0) return '<div style="color:var(--muted);font-size:0.85rem">No data yet</div>';
+  if (items.length === 0)
+    return '<div style="color:var(--muted);font-size:0.85rem">No data yet</div>';
   const max = Math.max(...items.map((i) => i.value), 1);
   return items
     .map(
@@ -396,29 +408,36 @@ function buildSparkline(data: { bucket: number; views: number; visitors: number 
 
   const points = data.map((d, i) => {
     const x = pad + (i / Math.max(data.length - 1, 1)) * (W - pad * 2);
-    const y = H - pad - ((d.views / maxViews) * (H - pad * 2));
+    const y = H - pad - (d.views / maxViews) * (H - pad * 2);
     return { x, y, views: d.views, visitors: d.visitors, ts: d.bucket };
   });
 
-  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  const linePath = points
+    .map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`)
+    .join(' ');
   const areaPath = `${linePath} L${points[points.length - 1].x.toFixed(1)},${H - pad} L${points[0].x.toFixed(1)},${H - pad} Z`;
 
   // Y-axis labels
-  const yLabels = [0, Math.round(maxViews / 2), maxViews].map((v) => {
-    const y = H - pad - ((v / maxViews) * (H - pad * 2));
-    return `<text x="${pad - 5}" y="${y + 4}" fill="#737373" font-size="11" text-anchor="end">${v}</text>`;
-  }).join('');
+  const yLabels = [0, Math.round(maxViews / 2), maxViews]
+    .map((v) => {
+      const y = H - pad - (v / maxViews) * (H - pad * 2);
+      return `<text x="${pad - 5}" y="${y + 4}" fill="#737373" font-size="11" text-anchor="end">${v}</text>`;
+    })
+    .join('');
 
   // X-axis labels (first, middle, last)
-  const xIndices = [0, Math.floor(points.length / 2), points.length - 1].filter((v, i, a) => a.indexOf(v) === i);
-  const xLabels = xIndices.map((i) => {
-    const p = points[i];
-    const d = new Date(p.ts * 1000);
-    const label = data.length <= 24
-      ? `${d.getUTCHours()}:00`
-      : `${d.getUTCMonth() + 1}/${d.getUTCDate()}`;
-    return `<text x="${p.x}" y="${H - 8}" fill="#737373" font-size="11" text-anchor="middle">${label}</text>`;
-  }).join('');
+  const xIndices = [0, Math.floor(points.length / 2), points.length - 1].filter(
+    (v, i, a) => a.indexOf(v) === i,
+  );
+  const xLabels = xIndices
+    .map((i) => {
+      const p = points[i];
+      const d = new Date(p.ts * 1000);
+      const label =
+        data.length <= 24 ? `${d.getUTCHours()}:00` : `${d.getUTCMonth() + 1}/${d.getUTCDate()}`;
+      return `<text x="${p.x}" y="${H - 8}" fill="#737373" font-size="11" text-anchor="middle">${label}</text>`;
+    })
+    .join('');
 
   return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="font-family:var(--font-body)">
     <defs>
