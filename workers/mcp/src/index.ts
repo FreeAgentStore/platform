@@ -12,6 +12,7 @@ import {
   textToB64,
 } from './github.js';
 import { handleOAuthRoute, resolveOAuthToken } from './oauth-provider.js';
+import { verifySession } from './session.js';
 
 interface Env {
   GITHUB_ORG: string;
@@ -28,16 +29,6 @@ export interface McpProps extends Record<string, unknown> {
 }
 
 const txt = (text: string) => ({ content: [{ type: 'text' as const, text }] });
-
-function decodeUid(token: string): string | undefined {
-  try {
-    const b64 = token.split('.')[0].replace(/-/g, '+').replace(/_/g, '/');
-    const json = JSON.parse(atob(b64.padEnd(b64.length + ((4 - (b64.length % 4)) % 4), '=')));
-    return typeof json.uid === 'string' ? json.uid : undefined;
-  } catch {
-    return undefined;
-  }
-}
 
 export class FagsMcpAgent extends McpAgent<Env, unknown, McpProps> {
   server = new McpServer({ name: 'FreeAgentStore', version: '0.3.0' });
@@ -586,7 +577,15 @@ async function authenticateRequest(request: Request, env: Env): Promise<McpProps
     const session = await resolveOAuthToken(token, env.OAUTH_KV);
     if (session) token = session;
   }
-  return { userId: decodeUid(token), token };
+  // SECURITY: verify the HMAC signature — never trust a decoded uid. Without
+  // this, a forged `Bearer base64({"uid":"<victim>"}).x` would set
+  // userId=<victim> and pass the ownsAgent gates (update_files / delete_agent /
+  // publish_to_store) for any user's agent. Fail closed on bad/expired tokens
+  // and when the signing key isn't configured.
+  if (!env.SESSION_SIGNING_KEY) return {};
+  const claims = await verifySession(token, env.SESSION_SIGNING_KEY);
+  if (!claims) return {};
+  return { userId: claims.uid, token };
 }
 
 export default {
