@@ -1,4 +1,4 @@
-// FAS session token verification — vendored from fas/platform/packages/backend/src/lib/session.ts.
+// FAGS session token verification — vendored from fags/platform/packages/backend/src/lib/session.ts.
 // Tokens are HMAC-SHA256 signed: base64url(payload) + "." + base64url(hmac).
 
 export interface SessionPayload {

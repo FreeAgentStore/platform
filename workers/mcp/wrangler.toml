@@ -6,6 +6,7 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 API_BASE = "https://api.freeagentstore.online"
 GITHUB_ORG = "FreeAgentStore"
+FAGS_AUTH_START = "https://freeagentstore.online/v1/auth/github"
 
 [[routes]]
 pattern = "mcp.freeagentstore.online/*"

@@ -1,21 +1,43 @@
 /**
- * OAuth 2.1 provider for MCP servers — vendorable, self-contained.
+ * OAuth 2.1 provider for FAGS MCP servers — vendorable, self-contained.
  * Vendor this + session.ts into each MCP worker.
- * Needs: OAUTH_KV binding, SESSION_SIGNING_KEY, FAS_AUTH_START var.
+ * Needs: OAUTH_KV binding, SESSION_SIGNING_KEY, FAGS_AUTH_START var.
+ *
+ * Browser-bound flow (no session token ever rides in a URL):
+ *   1. GET  /oauth/authorize — validate, store the auth request in KV under a
+ *      single-use nonce, set a short-lived HttpOnly `__mcp_nonce` cookie, and
+ *      redirect to the FAGS GitHub login.
+ *   2. FAGS authenticates and redirects back to /oauth/callback with a one-time
+ *      session code (`?session_code=`).
+ *   3. GET  /oauth/callback — read the nonce from the cookie (never the URL),
+ *      match it to the stored auth request, verify the session code, then
+ *      exchange it for a single-use OAuth authorization code. Clears the cookie.
+ *   4. POST /oauth/token — verify PKCE (S256) and mint an opaque access token.
  */
 
 import { verifySession } from './session.js';
 
+const NONCE_COOKIE = '__mcp_nonce';
+/** Auth-request / nonce lifetime and cookie Max-Age (seconds). */
+const NONCE_TTL = 600;
+
 export interface OAuthConfig {
-  /** Base URL of this MCP server (e.g. "https://mcp.freeappstore.online") */
+  /** Base URL of this MCP server (e.g. "https://mcp.freeagentstore.online") */
   issuer: string;
-  /** FAS auth start URL (e.g. "https://api.freeappstore.online/v1/auth/github/start") */
-  fasAuthStart: string;
+  /** FAGS auth start URL (e.g. "https://freeagentstore.online/v1/auth/github") */
+  fagsAuthStart: string;
   /** Workers KV namespace for OAuth state */
   kv: KVNamespace;
-  /** HMAC signing key (shared with FAS backend) for session verification */
+  /** HMAC signing key (shared with FAGS backend) for session verification */
   sessionSigningKey: string;
 }
+
+const OAUTH_PATHS = new Set([
+  '/oauth/register',
+  '/oauth/authorize',
+  '/oauth/callback',
+  '/oauth/token',
+]);
 
 /** Try to handle an OAuth-related request. Returns null if not an OAuth path. */
 export async function handleOAuthRoute(
@@ -27,13 +49,7 @@ export async function handleOAuthRoute(
 
   // CORS preflight for OAuth endpoints
   if (request.method === 'OPTIONS') {
-    if (
-      path.startsWith('/.well-known/') ||
-      path === '/register' ||
-      path === '/authorize' ||
-      path === '/oauth/callback' ||
-      path === '/token'
-    ) {
+    if (path.startsWith('/.well-known/') || OAUTH_PATHS.has(path)) {
       return new Response(null, {
         headers: {
           'Access-Control-Allow-Origin': '*',
@@ -56,25 +72,25 @@ export async function handleOAuthRoute(
   if (path === '/.well-known/oauth-authorization-server') {
     return json({
       issuer: config.issuer,
-      authorization_endpoint: `${config.issuer}/authorize`,
-      token_endpoint: `${config.issuer}/token`,
-      registration_endpoint: `${config.issuer}/register`,
+      authorization_endpoint: `${config.issuer}/oauth/authorize`,
+      token_endpoint: `${config.issuer}/oauth/token`,
+      registration_endpoint: `${config.issuer}/oauth/register`,
       response_types_supported: ['code'],
       grant_types_supported: ['authorization_code'],
       code_challenge_methods_supported: ['S256'],
       token_endpoint_auth_methods_supported: ['none'],
     });
   }
-  if (path === '/register' && request.method === 'POST') {
+  if (path === '/oauth/register' && request.method === 'POST') {
     return register(request, config);
   }
-  if (path === '/authorize' && request.method === 'GET') {
+  if (path === '/oauth/authorize' && request.method === 'GET') {
     return authorize(request, config);
   }
   if (path === '/oauth/callback' && request.method === 'GET') {
     return oauthCallback(request, config);
   }
-  if (path === '/token' && request.method === 'POST') {
+  if (path === '/oauth/token' && request.method === 'POST') {
     return tokenExchange(request, config);
   }
   return null;
@@ -82,7 +98,7 @@ export async function handleOAuthRoute(
 
 /**
  * Resolve a Bearer token that might be an OAuth access token.
- * Returns the underlying FAS session string, or null if not found in KV.
+ * Returns the underlying FAGS session string, or null if not found in KV.
  */
 export async function resolveOAuthToken(bearer: string, kv: KVNamespace): Promise<string | null> {
   return kv.get(`token:${bearer}`);
@@ -100,7 +116,38 @@ function json(data: unknown, status = 200): Response {
   });
 }
 
-/** POST /register — dynamic client registration (required by mcp-remote) */
+/** Build a 302 redirect that can also carry Set-Cookie (Response.redirect can't). */
+function redirect(location: string, extraHeaders: Record<string, string> = {}): Response {
+  return new Response(null, {
+    status: 302,
+    headers: { Location: location, ...extraHeaders },
+  });
+}
+
+/** Serialize the nonce cookie: HttpOnly + Secure + SameSite=Lax so it survives
+ *  the top-level login redirect but is unreadable to scripts and other sites. */
+function setNonceCookie(nonce: string): string {
+  return `${NONCE_COOKIE}=${nonce}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${NONCE_TTL}`;
+}
+
+/** Expire the nonce cookie once the callback has consumed (or rejected) it. */
+function clearNonceCookie(): string {
+  return `${NONCE_COOKIE}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`;
+}
+
+/** Read a single cookie value from the request's Cookie header. */
+function readCookie(request: Request, name: string): string | null {
+  const header = request.headers.get('Cookie');
+  if (!header) return null;
+  for (const part of header.split(';')) {
+    const eq = part.indexOf('=');
+    if (eq < 0) continue;
+    if (part.slice(0, eq).trim() === name) return part.slice(eq + 1).trim();
+  }
+  return null;
+}
+
+/** POST /oauth/register — dynamic client registration (required by mcp-remote) */
 async function register(request: Request, config: OAuthConfig): Promise<Response> {
   // Rate limit: 20 registrations/hour/IP
   const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
@@ -140,7 +187,7 @@ async function register(request: Request, config: OAuthConfig): Promise<Response
   return json(client, 201);
 }
 
-/** GET /authorize — validate request, store auth state, redirect to FAS login */
+/** GET /oauth/authorize — validate request, store auth state, set nonce cookie, redirect to FAGS login */
 async function authorize(request: Request, config: OAuthConfig): Promise<Response> {
   const url = new URL(request.url);
   const responseType = url.searchParams.get('response_type');
@@ -170,46 +217,52 @@ async function authorize(request: Request, config: OAuthConfig): Promise<Respons
     return new Response('redirect_uri not registered', { status: 400 });
   }
 
-  // Store auth request (10-min TTL, single-use nonce)
+  // Store auth request (single-use nonce, short TTL). The nonce lives in a
+  // browser-bound cookie — it is NOT placed in the callback URL.
   const nonce = crypto.randomUUID();
   await config.kv.put(
     `authreq:${nonce}`,
     JSON.stringify({ clientId, redirectUri, codeChallenge, state }),
-    { expirationTtl: 600 },
+    { expirationTtl: NONCE_TTL },
   );
 
-  // Redirect to FAS GitHub login with response_mode=query
-  const fasUrl = new URL(config.fasAuthStart);
-  fasUrl.searchParams.set('response_mode', 'query');
-  fasUrl.searchParams.set('app_id', 'mcp');
-  const callbackUrl = new URL('/oauth/callback', config.issuer);
-  callbackUrl.searchParams.set('nonce', nonce);
-  fasUrl.searchParams.set('return_to', callbackUrl.toString());
+  // Redirect to FAGS GitHub login. FAGS returns to /oauth/callback with a
+  // one-time session code; the nonce comes back via the cookie, not the URL.
+  const fagsUrl = new URL(config.fagsAuthStart);
+  fagsUrl.searchParams.set('response_mode', 'query');
+  fagsUrl.searchParams.set('app_id', 'mcp');
+  fagsUrl.searchParams.set('return_to', new URL('/oauth/callback', config.issuer).toString());
 
-  return Response.redirect(fasUrl.toString(), 302);
+  return redirect(fagsUrl.toString(), { 'Set-Cookie': setNonceCookie(nonce) });
 }
 
-/** GET /oauth/callback — receives fas_session from FAS, issues auth code */
+/** GET /oauth/callback — nonce from cookie + one-time session code from FAGS, issues auth code */
 async function oauthCallback(request: Request, config: OAuthConfig): Promise<Response> {
   const url = new URL(request.url);
-  const nonce = url.searchParams.get('nonce');
-  const fasSession = url.searchParams.get('fas_session');
+  const nonce = readCookie(request, NONCE_COOKIE);
+  const sessionCode = url.searchParams.get('session_code');
 
-  if (!nonce || !fasSession) {
-    return new Response('missing nonce or fas_session', { status: 400 });
+  if (!nonce || !sessionCode) {
+    return new Response('missing nonce cookie or session code', { status: 400 });
   }
 
-  // Retrieve and consume auth request (single-use)
+  // Retrieve and consume the auth request bound to this browser's nonce (single-use)
   const reqRaw = await config.kv.get(`authreq:${nonce}`);
   if (!reqRaw) {
-    return new Response('invalid or expired nonce', { status: 400 });
+    return new Response('invalid or expired nonce', {
+      status: 400,
+      headers: { 'Set-Cookie': clearNonceCookie() },
+    });
   }
   await config.kv.delete(`authreq:${nonce}`);
 
-  // Verify the FAS session is valid
-  const payload = await verifySession(fasSession, config.sessionSigningKey);
+  // Verify the FAGS session code is valid
+  const payload = await verifySession(sessionCode, config.sessionSigningKey);
   if (!payload) {
-    return new Response('invalid session', { status: 400 });
+    return new Response('invalid session', {
+      status: 400,
+      headers: { 'Set-Cookie': clearNonceCookie() },
+    });
   }
 
   const authReq = JSON.parse(reqRaw) as {
@@ -219,29 +272,29 @@ async function oauthCallback(request: Request, config: OAuthConfig): Promise<Res
     state: string | null;
   };
 
-  // Generate single-use auth code (10-min TTL)
+  // Generate single-use auth code (short TTL)
   const code = crypto.randomUUID();
   await config.kv.put(
     `code:${code}`,
     JSON.stringify({
-      fasSession,
+      fagsSession: sessionCode,
       codeChallenge: authReq.codeChallenge,
       redirectUri: authReq.redirectUri,
       clientId: authReq.clientId,
     }),
-    { expirationTtl: 600 },
+    { expirationTtl: NONCE_TTL },
   );
 
-  // Redirect to client's redirect_uri with auth code
-  const redirect = new URL(authReq.redirectUri);
-  redirect.searchParams.set('code', code);
+  // Redirect to client's redirect_uri with auth code; clear the nonce cookie
+  const redirectTo = new URL(authReq.redirectUri);
+  redirectTo.searchParams.set('code', code);
   if (authReq.state) {
-    redirect.searchParams.set('state', authReq.state);
+    redirectTo.searchParams.set('state', authReq.state);
   }
-  return Response.redirect(redirect.toString(), 302);
+  return redirect(redirectTo.toString(), { 'Set-Cookie': clearNonceCookie() });
 }
 
-/** POST /token — exchange auth code for access token (PKCE S256 verified) */
+/** POST /oauth/token — exchange auth code for access token (PKCE S256 verified) */
 async function tokenExchange(request: Request, config: OAuthConfig): Promise<Response> {
   let body: URLSearchParams;
   try {
@@ -271,7 +324,7 @@ async function tokenExchange(request: Request, config: OAuthConfig): Promise<Res
   await config.kv.delete(`code:${code}`);
 
   const codeData = JSON.parse(codeRaw) as {
-    fasSession: string;
+    fagsSession: string;
     codeChallenge: string;
     redirectUri: string;
     clientId: string;
@@ -292,9 +345,9 @@ async function tokenExchange(request: Request, config: OAuthConfig): Promise<Res
     return json({ error: 'invalid_grant', error_description: 'PKCE verification failed' }, 400);
   }
 
-  // Issue opaque access token → maps to FAS session in KV (24h TTL)
+  // Issue opaque access token → maps to FAGS session in KV (24h TTL)
   const accessToken = crypto.randomUUID();
-  await config.kv.put(`token:${accessToken}`, codeData.fasSession, {
+  await config.kv.put(`token:${accessToken}`, codeData.fagsSession, {
     expirationTtl: 86_400,
   });
 

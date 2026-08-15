@@ -1,0 +1,295 @@
+import { describe, it, expect } from 'vitest';
+import { handleOAuthRoute, resolveOAuthToken, type OAuthConfig } from './oauth-provider.js';
+
+// ── Test doubles ───────────────────────────────────────────────
+
+/** In-memory KV standing in for the Workers KV binding (TTL ignored). */
+function makeKV() {
+  const store = new Map<string, string>();
+  const kv = {
+    async get(key: string): Promise<string | null> {
+      const v = store.get(key);
+      return v === undefined ? null : v;
+    },
+    async put(key: string, value: string): Promise<void> {
+      store.set(key, value);
+    },
+    async delete(key: string): Promise<void> {
+      store.delete(key);
+    },
+    _store: store,
+  };
+  return kv as unknown as KVNamespace & { _store: Map<string, string> };
+}
+
+const ISSUER = 'https://mcp.test';
+const FAGS_AUTH_START = 'https://freeagentstore.online/v1/auth/github';
+const SIGNING_KEY = 'test-signing-key';
+const REDIRECT_URI = 'https://client.example/callback';
+
+function makeConfig(kv: KVNamespace): OAuthConfig {
+  return { issuer: ISSUER, fagsAuthStart: FAGS_AUTH_START, kv, sessionSigningKey: SIGNING_KEY };
+}
+
+// ── Session signing (mirrors src/session.ts) ───────────────────
+
+function b64urlBytes(bytes: Uint8Array): string {
+  let bin = '';
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function b64urlString(s: string): string {
+  return b64urlBytes(new TextEncoder().encode(s));
+}
+
+async function hmac(data: string, keyMaterial: string): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(keyMaterial),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(data));
+  return b64urlBytes(new Uint8Array(sig));
+}
+
+/** Produce a validly-signed FAGS session code for the happy paths. */
+async function signSession(key = SIGNING_KEY): Promise<string> {
+  const payload = {
+    uid: 'user-123',
+    iat: Math.floor(Date.now() / 1000),
+    exp: Math.floor(Date.now() / 1000) + 3600,
+  };
+  const body = b64urlString(JSON.stringify(payload));
+  const sig = await hmac(body, key);
+  return `${body}.${sig}`;
+}
+
+// ── PKCE helper ────────────────────────────────────────────────
+
+async function makePkce() {
+  const verifier = 'abcdef0123456789-abcdef0123456789-verifier';
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
+  const challenge = b64urlBytes(new Uint8Array(digest));
+  return { verifier, challenge };
+}
+
+// ── Flow helpers ───────────────────────────────────────────────
+
+async function registerClient(config: OAuthConfig): Promise<string> {
+  const res = await handleOAuthRoute(
+    new Request(`${ISSUER}/oauth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ redirect_uris: [REDIRECT_URI], client_name: 'test-client' }),
+    }),
+    config,
+  );
+  const body = (await res!.json()) as { client_id: string };
+  return body.client_id;
+}
+
+function nonceFromSetCookie(setCookie: string | null): string | null {
+  if (!setCookie) return null;
+  const m = /__mcp_nonce=([^;]*)/.exec(setCookie);
+  return m ? m[1] : null;
+}
+
+/** Run /oauth/authorize; return the response plus the nonce it set. */
+async function doAuthorize(config: OAuthConfig, clientId: string, challenge: string, state?: string) {
+  const url = new URL(`${ISSUER}/oauth/authorize`);
+  url.searchParams.set('response_type', 'code');
+  url.searchParams.set('client_id', clientId);
+  url.searchParams.set('redirect_uri', REDIRECT_URI);
+  url.searchParams.set('code_challenge', challenge);
+  url.searchParams.set('code_challenge_method', 'S256');
+  if (state) url.searchParams.set('state', state);
+  const res = await handleOAuthRoute(new Request(url.toString()), config);
+  const nonce = nonceFromSetCookie(res!.headers.get('set-cookie'));
+  return { res: res!, nonce };
+}
+
+// ── Tests ──────────────────────────────────────────────────────
+
+describe('oauth-provider', () => {
+  it('serves authorization-server metadata pointing at /oauth/* endpoints', async () => {
+    const config = makeConfig(makeKV());
+    const res = await handleOAuthRoute(
+      new Request(`${ISSUER}/.well-known/oauth-authorization-server`),
+      config,
+    );
+    expect(res).not.toBeNull();
+    const meta = (await res!.json()) as Record<string, unknown>;
+    expect(meta.issuer).toBe(ISSUER);
+    expect(meta.authorization_endpoint).toBe(`${ISSUER}/oauth/authorize`);
+    expect(meta.token_endpoint).toBe(`${ISSUER}/oauth/token`);
+    expect(meta.registration_endpoint).toBe(`${ISSUER}/oauth/register`);
+    expect(meta.code_challenge_methods_supported).toEqual(['S256']);
+  });
+
+  it('registers a dynamic client and returns a client_id', async () => {
+    const config = makeConfig(makeKV());
+    const res = await handleOAuthRoute(
+      new Request(`${ISSUER}/oauth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ redirect_uris: [REDIRECT_URI] }),
+      }),
+      config,
+    );
+    expect(res!.status).toBe(201);
+    const body = (await res!.json()) as { client_id: string; redirect_uris: string[] };
+    expect(typeof body.client_id).toBe('string');
+    expect(body.client_id.length).toBeGreaterThan(0);
+    expect(body.redirect_uris).toEqual([REDIRECT_URI]);
+  });
+
+  it('authorize sets an HttpOnly __mcp_nonce cookie and redirects to FAGS auth', async () => {
+    const config = makeConfig(makeKV());
+    const clientId = await registerClient(config);
+    const { challenge } = await makePkce();
+    const { res, nonce } = await doAuthorize(config, clientId, challenge);
+
+    expect(res.status).toBe(302);
+    const location = res.headers.get('location') ?? '';
+    expect(location.startsWith(FAGS_AUTH_START)).toBe(true);
+
+    const setCookie = res.headers.get('set-cookie') ?? '';
+    expect(setCookie).toContain('__mcp_nonce=');
+    expect(setCookie).toContain('HttpOnly');
+    expect(setCookie).toContain('SameSite=Lax');
+    expect(nonce).toBeTruthy();
+
+    // The nonce must NOT be leaked into the redirect URL.
+    expect(location).not.toContain(nonce as string);
+    expect(location).not.toContain('nonce=');
+  });
+
+  it('callback with no nonce cookie returns 400 "missing nonce cookie or session code"', async () => {
+    const config = makeConfig(makeKV());
+    const url = new URL(`${ISSUER}/oauth/callback`);
+    url.searchParams.set('session_code', 'anything');
+    const res = await handleOAuthRoute(new Request(url.toString()), config);
+    expect(res!.status).toBe(400);
+    expect(await res!.text()).toBe('missing nonce cookie or session code');
+  });
+
+  it('callback with a mismatched/expired nonce returns 400', async () => {
+    const config = makeConfig(makeKV());
+    const url = new URL(`${ISSUER}/oauth/callback`);
+    url.searchParams.set('session_code', await signSession());
+    const res = await handleOAuthRoute(
+      new Request(url.toString(), { headers: { Cookie: '__mcp_nonce=does-not-exist' } }),
+      config,
+    );
+    expect(res!.status).toBe(400);
+    expect(await res!.text()).toBe('invalid or expired nonce');
+  });
+
+  it('callback with valid nonce + session_code issues an auth code and redirects', async () => {
+    const config = makeConfig(makeKV());
+    const clientId = await registerClient(config);
+    const { challenge } = await makePkce();
+    const { nonce } = await doAuthorize(config, clientId, challenge, 'client-state-xyz');
+
+    const url = new URL(`${ISSUER}/oauth/callback`);
+    url.searchParams.set('session_code', await signSession());
+    const res = await handleOAuthRoute(
+      new Request(url.toString(), { headers: { Cookie: `__mcp_nonce=${nonce}` } }),
+      config,
+    );
+
+    expect(res!.status).toBe(302);
+    const location = new URL(res!.headers.get('location') ?? '');
+    expect(`${location.origin}${location.pathname}`).toBe(REDIRECT_URI);
+    expect(location.searchParams.get('code')).toBeTruthy();
+    expect(location.searchParams.get('state')).toBe('client-state-xyz');
+
+    // Nonce cookie is cleared on the way out.
+    expect(res!.headers.get('set-cookie') ?? '').toContain('Max-Age=0');
+  });
+
+  it('token exchange with a bad code returns 400 invalid_grant', async () => {
+    const config = makeConfig(makeKV());
+    const { verifier } = await makePkce();
+    const res = await handleOAuthRoute(
+      new Request(`${ISSUER}/oauth/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          code: 'nonexistent-code',
+          redirect_uri: REDIRECT_URI,
+          client_id: 'some-client',
+          code_verifier: verifier,
+        }).toString(),
+      }),
+      config,
+    );
+    expect(res!.status).toBe(400);
+    expect((await res!.json()) as { error: string }).toMatchObject({ error: 'invalid_grant' });
+  });
+
+  it('full flow: register → authorize → callback → token yields an access_token', async () => {
+    const config = makeConfig(makeKV());
+    const clientId = await registerClient(config);
+    const { verifier, challenge } = await makePkce();
+
+    // authorize
+    const { nonce } = await doAuthorize(config, clientId, challenge);
+
+    // callback → auth code
+    const cbUrl = new URL(`${ISSUER}/oauth/callback`);
+    cbUrl.searchParams.set('session_code', await signSession());
+    const cbRes = await handleOAuthRoute(
+      new Request(cbUrl.toString(), { headers: { Cookie: `__mcp_nonce=${nonce}` } }),
+      config,
+    );
+    const code = new URL(cbRes!.headers.get('location') ?? '').searchParams.get('code')!;
+    expect(code).toBeTruthy();
+
+    // token exchange
+    const tokRes = await handleOAuthRoute(
+      new Request(`${ISSUER}/oauth/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          code,
+          redirect_uri: REDIRECT_URI,
+          client_id: clientId,
+          code_verifier: verifier,
+        }).toString(),
+      }),
+      config,
+    );
+    expect(tokRes!.status).toBe(200);
+    const token = (await tokRes!.json()) as { access_token: string; token_type: string };
+    expect(token.token_type).toBe('bearer');
+    expect(typeof token.access_token).toBe('string');
+
+    // the opaque token resolves back to the underlying FAGS session
+    const session = await resolveOAuthToken(token.access_token, config.kv);
+    expect(session).not.toBeNull();
+  });
+
+  it('never leaks a fas_session param in any redirect it generates', async () => {
+    const config = makeConfig(makeKV());
+    const clientId = await registerClient(config);
+    const { challenge } = await makePkce();
+
+    const { res: authRes, nonce } = await doAuthorize(config, clientId, challenge);
+    expect(authRes.headers.get('location') ?? '').not.toContain('fas_session');
+    expect(authRes.headers.get('set-cookie') ?? '').not.toContain('fas_session');
+
+    const cbUrl = new URL(`${ISSUER}/oauth/callback`);
+    cbUrl.searchParams.set('session_code', await signSession());
+    const cbRes = await handleOAuthRoute(
+      new Request(cbUrl.toString(), { headers: { Cookie: `__mcp_nonce=${nonce}` } }),
+      config,
+    );
+    expect(cbRes!.headers.get('location') ?? '').not.toContain('fas_session');
+  });
+});

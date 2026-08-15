@@ -18,6 +18,7 @@ interface Env {
   GITHUB_ORG: string;
   GITHUB_TOKEN?: string;
   SESSION_SIGNING_KEY?: string;
+  FAGS_AUTH_START?: string;
   OAUTH_KV?: KVNamespace;
   DB?: D1Database;
   MCP_OBJECT: DurableObjectNamespace;
@@ -595,7 +596,7 @@ export default {
     if (env.OAUTH_KV && env.SESSION_SIGNING_KEY) {
       const oauthRes = await handleOAuthRoute(request, {
         issuer: `${url.protocol}//${url.host}`,
-        fasAuthStart: 'https://freeagentstore.online/v1/auth/github',
+        fagsAuthStart: env.FAGS_AUTH_START ?? 'https://freeagentstore.online/v1/auth/github',
         kv: env.OAUTH_KV,
         sessionSigningKey: env.SESSION_SIGNING_KEY,
       });
