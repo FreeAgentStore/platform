@@ -30,6 +30,8 @@ export interface Env {
   SESSION_SIGNING_KEY: string;
   GITHUB_CLIENT_ID?: string;
   GITHUB_CLIENT_SECRET?: string;
+  // Shared with the MCP worker; holds one-time MCP login codes (mcpcode:*).
+  OAUTH_KV?: KVNamespace;
 }
 
 /** Fire-and-forget: log a page view to D1. Only logs humans; samples bots at 10%. */

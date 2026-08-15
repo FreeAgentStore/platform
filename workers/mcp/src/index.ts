@@ -596,7 +596,7 @@ export default {
     if (env.OAUTH_KV && env.SESSION_SIGNING_KEY) {
       const oauthRes = await handleOAuthRoute(request, {
         issuer: `${url.protocol}//${url.host}`,
-        fagsAuthStart: env.FAGS_AUTH_START ?? 'https://freeagentstore.online/v1/auth/github',
+        fagsAuthStart: env.FAGS_AUTH_START ?? 'https://freeagentstore.online/v1/auth/github/start',
         kv: env.OAUTH_KV,
         sessionSigningKey: env.SESSION_SIGNING_KEY,
       });

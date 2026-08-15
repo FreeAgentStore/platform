@@ -8,10 +8,11 @@
  *      single-use nonce, set a short-lived HttpOnly `__mcp_nonce` cookie, and
  *      redirect to the FAGS GitHub login.
  *   2. FAGS authenticates and redirects back to /oauth/callback with a one-time
- *      session code (`?session_code=`).
+ *      login code (`?code=`) — an opaque handle, never the session itself.
  *   3. GET  /oauth/callback — read the nonce from the cookie (never the URL),
- *      match it to the stored auth request, verify the session code, then
- *      exchange it for a single-use OAuth authorization code. Clears the cookie.
+ *      match it to the stored auth request, redeem the one-time code with FAGS
+ *      server-to-server (POST /v1/auth/mcp/exchange) for the session, verify it,
+ *      then issue a single-use OAuth authorization code. Clears the cookie.
  *   4. POST /oauth/token — verify PKCE (S256) and mint an opaque access token.
  */
 
@@ -227,7 +228,7 @@ async function authorize(request: Request, config: OAuthConfig): Promise<Respons
   );
 
   // Redirect to FAGS GitHub login. FAGS returns to /oauth/callback with a
-  // one-time session code; the nonce comes back via the cookie, not the URL.
+  // one-time login code; the nonce comes back via the cookie, not the URL.
   const fagsUrl = new URL(config.fagsAuthStart);
   fagsUrl.searchParams.set('response_mode', 'query');
   fagsUrl.searchParams.set('app_id', 'mcp');
@@ -236,14 +237,15 @@ async function authorize(request: Request, config: OAuthConfig): Promise<Respons
   return redirect(fagsUrl.toString(), { 'Set-Cookie': setNonceCookie(nonce) });
 }
 
-/** GET /oauth/callback — nonce from cookie + one-time session code from FAGS, issues auth code */
+/** GET /oauth/callback — nonce from cookie + one-time login code from FAGS,
+ *  redeemed server-to-server for the session, then issues the OAuth auth code. */
 async function oauthCallback(request: Request, config: OAuthConfig): Promise<Response> {
   const url = new URL(request.url);
   const nonce = readCookie(request, NONCE_COOKIE);
-  const sessionCode = url.searchParams.get('session_code');
+  const loginCode = url.searchParams.get('code');
 
-  if (!nonce || !sessionCode) {
-    return new Response('missing nonce cookie or session code', { status: 400 });
+  if (!nonce || !loginCode) {
+    return new Response('missing nonce cookie or code', { status: 400 });
   }
 
   // Retrieve and consume the auth request bound to this browser's nonce (single-use)
@@ -256,8 +258,18 @@ async function oauthCallback(request: Request, config: OAuthConfig): Promise<Res
   }
   await config.kv.delete(`authreq:${nonce}`);
 
-  // Verify the FAGS session code is valid
-  const payload = await verifySession(sessionCode, config.sessionSigningKey);
+  // Redeem the one-time login code for the FAGS session — server-to-server POST,
+  // so the session token never rides in a URL. Single-use + short TTL at FAGS.
+  const fagsSession = await exchangeLoginCode(config, loginCode);
+  if (!fagsSession) {
+    return new Response('invalid or expired code', {
+      status: 400,
+      headers: { 'Set-Cookie': clearNonceCookie() },
+    });
+  }
+
+  // Defense in depth: the redeemed session must be a valid, unexpired FAGS session.
+  const payload = await verifySession(fagsSession, config.sessionSigningKey);
   if (!payload) {
     return new Response('invalid session', {
       status: 400,
@@ -273,11 +285,11 @@ async function oauthCallback(request: Request, config: OAuthConfig): Promise<Res
   };
 
   // Generate single-use auth code (short TTL)
-  const code = crypto.randomUUID();
+  const authCode = crypto.randomUUID();
   await config.kv.put(
-    `code:${code}`,
+    `code:${authCode}`,
     JSON.stringify({
-      fagsSession: sessionCode,
+      fagsSession,
       codeChallenge: authReq.codeChallenge,
       redirectUri: authReq.redirectUri,
       clientId: authReq.clientId,
@@ -287,11 +299,32 @@ async function oauthCallback(request: Request, config: OAuthConfig): Promise<Res
 
   // Redirect to client's redirect_uri with auth code; clear the nonce cookie
   const redirectTo = new URL(authReq.redirectUri);
-  redirectTo.searchParams.set('code', code);
+  redirectTo.searchParams.set('code', authCode);
   if (authReq.state) {
     redirectTo.searchParams.set('state', authReq.state);
   }
   return redirect(redirectTo.toString(), { 'Set-Cookie': clearNonceCookie() });
+}
+
+/**
+ * Redeem a one-time login code with the FAGS backend for the underlying session.
+ * POST /v1/auth/mcp/exchange {code} → {fags_session}. The exchange endpoint lives
+ * at the FAGS auth origin; derive it from fagsAuthStart. Returns null on any failure.
+ */
+async function exchangeLoginCode(config: OAuthConfig, code: string): Promise<string | null> {
+  const exchangeUrl = new URL('/v1/auth/mcp/exchange', config.fagsAuthStart).toString();
+  try {
+    const res = await fetch(exchangeUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code }),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { fags_session?: string };
+    return data.fags_session ?? null;
+  } catch {
+    return null;
+  }
 }
 
 /** POST /oauth/token — exchange auth code for access token (PKCE S256 verified) */

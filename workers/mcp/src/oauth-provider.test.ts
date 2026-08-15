@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { handleOAuthRoute, resolveOAuthToken, type OAuthConfig } from './oauth-provider.js';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { handleOAuthRoute, type OAuthConfig, resolveOAuthToken } from './oauth-provider.js';
 
 // ── Test doubles ───────────────────────────────────────────────
 
@@ -31,19 +31,9 @@ function makeConfig(kv: KVNamespace): OAuthConfig {
   return { issuer: ISSUER, fagsAuthStart: FAGS_AUTH_START, kv, sessionSigningKey: SIGNING_KEY };
 }
 
-// ── Session signing (mirrors src/session.ts) ───────────────────
+// ── Session signing (mirrors src/session.ts: base64(payload) + "." + hex(hmac)) ──
 
-function b64urlBytes(bytes: Uint8Array): string {
-  let bin = '';
-  for (const b of bytes) bin += String.fromCharCode(b);
-  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-function b64urlString(s: string): string {
-  return b64urlBytes(new TextEncoder().encode(s));
-}
-
-async function hmac(data: string, keyMaterial: string): Promise<string> {
+async function hmacHex(data: string, keyMaterial: string): Promise<string> {
   const key = await crypto.subtle.importKey(
     'raw',
     new TextEncoder().encode(keyMaterial),
@@ -52,27 +42,54 @@ async function hmac(data: string, keyMaterial: string): Promise<string> {
     ['sign'],
   );
   const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(data));
-  return b64urlBytes(new Uint8Array(sig));
+  return Array.from(new Uint8Array(sig))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
-/** Produce a validly-signed FAGS session code for the happy paths. */
+/** Produce a validly-signed FAGS session token in the host's format. */
 async function signSession(key = SIGNING_KEY): Promise<string> {
   const payload = {
     uid: 'user-123',
-    iat: Math.floor(Date.now() / 1000),
+    login: 'test-user',
     exp: Math.floor(Date.now() / 1000) + 3600,
   };
-  const body = b64urlString(JSON.stringify(payload));
-  const sig = await hmac(body, key);
+  const body = btoa(JSON.stringify(payload));
+  const sig = await hmacHex(body, key);
   return `${body}.${sig}`;
 }
+
+/**
+ * Stub the server-to-server exchange the callback performs. When `session` is a
+ * string, FAGS responds 200 {fags_session}; when null, it refuses (400) so
+ * exchangeLoginCode() returns null. Cleared by afterEach.
+ */
+function stubExchange(session: string | null): void {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () =>
+      session === null
+        ? new Response(JSON.stringify({ error: 'invalid or expired code' }), { status: 400 })
+        : new Response(JSON.stringify({ fags_session: session }), { status: 200 }),
+    ),
+  );
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 // ── PKCE helper ────────────────────────────────────────────────
 
 async function makePkce() {
   const verifier = 'abcdef0123456789-abcdef0123456789-verifier';
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
-  const challenge = b64urlBytes(new Uint8Array(digest));
+  const b64url = (bytes: Uint8Array) => {
+    let bin = '';
+    for (const b of bytes) bin += String.fromCharCode(b);
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  };
+  const challenge = b64url(new Uint8Array(digest));
   return { verifier, challenge };
 }
 
@@ -98,7 +115,12 @@ function nonceFromSetCookie(setCookie: string | null): string | null {
 }
 
 /** Run /oauth/authorize; return the response plus the nonce it set. */
-async function doAuthorize(config: OAuthConfig, clientId: string, challenge: string, state?: string) {
+async function doAuthorize(
+  config: OAuthConfig,
+  clientId: string,
+  challenge: string,
+  state?: string,
+) {
   const url = new URL(`${ISSUER}/oauth/authorize`);
   url.searchParams.set('response_type', 'code');
   url.searchParams.set('client_id', clientId);
@@ -167,19 +189,19 @@ describe('oauth-provider', () => {
     expect(location).not.toContain('nonce=');
   });
 
-  it('callback with no nonce cookie returns 400 "missing nonce cookie or session code"', async () => {
+  it('callback with no nonce cookie returns 400 "missing nonce cookie or code"', async () => {
     const config = makeConfig(makeKV());
     const url = new URL(`${ISSUER}/oauth/callback`);
-    url.searchParams.set('session_code', 'anything');
+    url.searchParams.set('code', 'anything');
     const res = await handleOAuthRoute(new Request(url.toString()), config);
     expect(res!.status).toBe(400);
-    expect(await res!.text()).toBe('missing nonce cookie or session code');
+    expect(await res!.text()).toBe('missing nonce cookie or code');
   });
 
   it('callback with a mismatched/expired nonce returns 400', async () => {
     const config = makeConfig(makeKV());
     const url = new URL(`${ISSUER}/oauth/callback`);
-    url.searchParams.set('session_code', await signSession());
+    url.searchParams.set('code', 'one-time-code');
     const res = await handleOAuthRoute(
       new Request(url.toString(), { headers: { Cookie: '__mcp_nonce=does-not-exist' } }),
       config,
@@ -188,14 +210,32 @@ describe('oauth-provider', () => {
     expect(await res!.text()).toBe('invalid or expired nonce');
   });
 
-  it('callback with valid nonce + session_code issues an auth code and redirects', async () => {
+  it('callback rejects a code the backend refuses (exchange fails)', async () => {
+    const config = makeConfig(makeKV());
+    const clientId = await registerClient(config);
+    const { challenge } = await makePkce();
+    const { nonce } = await doAuthorize(config, clientId, challenge);
+
+    stubExchange(null); // FAGS says the code is invalid/expired
+    const url = new URL(`${ISSUER}/oauth/callback`);
+    url.searchParams.set('code', 'bad-or-used-code');
+    const res = await handleOAuthRoute(
+      new Request(url.toString(), { headers: { Cookie: `__mcp_nonce=${nonce}` } }),
+      config,
+    );
+    expect(res!.status).toBe(400);
+    expect(await res!.text()).toBe('invalid or expired code');
+  });
+
+  it('callback with valid nonce + code exchanges server-to-server and issues an auth code', async () => {
     const config = makeConfig(makeKV());
     const clientId = await registerClient(config);
     const { challenge } = await makePkce();
     const { nonce } = await doAuthorize(config, clientId, challenge, 'client-state-xyz');
 
+    stubExchange(await signSession());
     const url = new URL(`${ISSUER}/oauth/callback`);
-    url.searchParams.set('session_code', await signSession());
+    url.searchParams.set('code', 'one-time-login-code');
     const res = await handleOAuthRoute(
       new Request(url.toString(), { headers: { Cookie: `__mcp_nonce=${nonce}` } }),
       config,
@@ -240,9 +280,10 @@ describe('oauth-provider', () => {
     // authorize
     const { nonce } = await doAuthorize(config, clientId, challenge);
 
-    // callback → auth code
+    // callback → auth code (session redeemed via server-to-server exchange)
+    stubExchange(await signSession());
     const cbUrl = new URL(`${ISSUER}/oauth/callback`);
-    cbUrl.searchParams.set('session_code', await signSession());
+    cbUrl.searchParams.set('code', 'one-time-login-code');
     const cbRes = await handleOAuthRoute(
       new Request(cbUrl.toString(), { headers: { Cookie: `__mcp_nonce=${nonce}` } }),
       config,
@@ -275,21 +316,28 @@ describe('oauth-provider', () => {
     expect(session).not.toBeNull();
   });
 
-  it('never leaks a fas_session param in any redirect it generates', async () => {
+  it('never leaks a session token in any redirect it generates', async () => {
     const config = makeConfig(makeKV());
     const clientId = await registerClient(config);
     const { challenge } = await makePkce();
 
     const { res: authRes, nonce } = await doAuthorize(config, clientId, challenge);
     expect(authRes.headers.get('location') ?? '').not.toContain('fas_session');
-    expect(authRes.headers.get('set-cookie') ?? '').not.toContain('fas_session');
+    expect(authRes.headers.get('location') ?? '').not.toContain('fags_session');
+    expect(authRes.headers.get('location') ?? '').not.toContain('session_code');
+    expect(authRes.headers.get('set-cookie') ?? '').not.toContain('fags_session');
 
+    const signed = await signSession();
+    stubExchange(signed);
     const cbUrl = new URL(`${ISSUER}/oauth/callback`);
-    cbUrl.searchParams.set('session_code', await signSession());
+    cbUrl.searchParams.set('code', 'one-time-login-code');
     const cbRes = await handleOAuthRoute(
       new Request(cbUrl.toString(), { headers: { Cookie: `__mcp_nonce=${nonce}` } }),
       config,
     );
-    expect(cbRes!.headers.get('location') ?? '').not.toContain('fas_session');
+    const cbLocation = cbRes!.headers.get('location') ?? '';
+    expect(cbLocation).not.toContain('fags_session');
+    expect(cbLocation).not.toContain('session_code');
+    expect(cbLocation).not.toContain(signed);
   });
 });

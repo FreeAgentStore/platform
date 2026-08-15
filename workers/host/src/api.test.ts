@@ -960,3 +960,145 @@ describe('/v1/mcp-proxy', () => {
     fetchSpy.mockRestore();
   });
 });
+
+// ── MCP OAuth: /v1/auth/github/start + /v1/auth/mcp/exchange ──────────────────
+
+/** In-memory KV double that honors expirationTtl against Date.now(). */
+function makeKV() {
+  const store = new Map<string, { value: string; expiresAt: number }>();
+  return {
+    async get(key: string) {
+      const e = store.get(key);
+      if (!e) return null;
+      if (Date.now() > e.expiresAt) {
+        store.delete(key);
+        return null;
+      }
+      return e.value;
+    },
+    async put(key: string, value: string, opts?: { expirationTtl?: number }) {
+      store.set(key, { value, expiresAt: Date.now() + (opts?.expirationTtl ?? 86_400) * 1000 });
+    },
+    async delete(key: string) {
+      store.delete(key);
+    },
+  } as unknown as KVNamespace;
+}
+
+const ALLOWED_RETURN_TO = 'https://mcp.freeagentstore.online/oauth/callback';
+
+describe('MCP OAuth start + exchange', () => {
+  it('GET /v1/auth/github/start rejects a return_to outside the MCP origin', async () => {
+    const res = await handleApiRoute(
+      makeRequest('GET', '/v1/auth/github/start', { headers: { 'CF-Connecting-IP': 'mcp-1' } }),
+      new URL(
+        'https://freeagentstore.online/v1/auth/github/start?return_to=https://evil.example/oauth/callback',
+      ),
+      mockEnv({ GITHUB_CLIENT_ID: 'test-id' } as unknown as Env),
+    );
+    expect(res.status).toBe(400);
+    expect(await res.text()).toBe('return_to not allowed');
+  });
+
+  it('GET /v1/auth/github/start rejects a missing return_to', async () => {
+    const res = await handleApiRoute(
+      makeRequest('GET', '/v1/auth/github/start', { headers: { 'CF-Connecting-IP': 'mcp-2' } }),
+      new URL('https://freeagentstore.online/v1/auth/github/start'),
+      mockEnv({ GITHUB_CLIENT_ID: 'test-id' } as unknown as Env),
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it('GET /v1/auth/github/start with an allowed return_to redirects and sets the mcp code cookie', async () => {
+    const res = await handleApiRoute(
+      makeRequest('GET', '/v1/auth/github/start', { headers: { 'CF-Connecting-IP': 'mcp-3' } }),
+      new URL(
+        `https://freeagentstore.online/v1/auth/github/start?return_to=${encodeURIComponent(ALLOWED_RETURN_TO)}`,
+      ),
+      mockEnv({ GITHUB_CLIENT_ID: 'test-id' } as unknown as Env),
+    );
+    expect(res.status).toBe(302);
+    expect(res.headers.get('Location') ?? '').toContain('github.com/login/oauth/authorize');
+    const setCookie = res.headers.get('Set-Cookie') ?? '';
+    expect(setCookie).toContain('fags_mcp_code=');
+    expect(setCookie).toContain('fags_return_to=');
+    expect(setCookie).toContain('HttpOnly');
+  });
+
+  it('POST /v1/auth/mcp/exchange returns the session, then rejects the reused code (single-use)', async () => {
+    const kv = makeKV();
+    await kv.put('mcpcode:code-abc', 'the-session-token', { expirationTtl: 300 });
+    const env = mockEnv({ OAUTH_KV: kv } as unknown as Env);
+
+    const first = await handleApiRoute(
+      makeRequest('POST', '/v1/auth/mcp/exchange', {
+        headers: { 'CF-Connecting-IP': 'mcp-4', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: 'code-abc' }),
+      }),
+      new URL('https://freeagentstore.online/v1/auth/mcp/exchange'),
+      env,
+    );
+    expect(first.status).toBe(200);
+    expect((await first.json()) as { fags_session: string }).toEqual({
+      fags_session: 'the-session-token',
+    });
+
+    const second = await handleApiRoute(
+      makeRequest('POST', '/v1/auth/mcp/exchange', {
+        headers: { 'CF-Connecting-IP': 'mcp-4', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: 'code-abc' }),
+      }),
+      new URL('https://freeagentstore.online/v1/auth/mcp/exchange'),
+      env,
+    );
+    expect(second.status).toBe(400);
+    expect((await second.json()) as { error: string }).toMatchObject({
+      error: 'invalid or expired code',
+    });
+  });
+
+  it('POST /v1/auth/mcp/exchange rejects an unknown code', async () => {
+    const res = await handleApiRoute(
+      makeRequest('POST', '/v1/auth/mcp/exchange', {
+        headers: { 'CF-Connecting-IP': 'mcp-5', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: 'never-issued' }),
+      }),
+      new URL('https://freeagentstore.online/v1/auth/mcp/exchange'),
+      mockEnv({ OAUTH_KV: makeKV() } as unknown as Env),
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it('POST /v1/auth/mcp/exchange rejects a request with no code', async () => {
+    const res = await handleApiRoute(
+      makeRequest('POST', '/v1/auth/mcp/exchange', {
+        headers: { 'CF-Connecting-IP': 'mcp-6', 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      }),
+      new URL('https://freeagentstore.online/v1/auth/mcp/exchange'),
+      mockEnv({ OAUTH_KV: makeKV() } as unknown as Env),
+    );
+    expect(res.status).toBe(400);
+    expect((await res.json()) as { error: string }).toMatchObject({ error: 'code required' });
+  });
+
+  it('POST /v1/auth/mcp/exchange rejects a code after its TTL expires', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-01-01T00:00:00Z'));
+    const kv = makeKV();
+    await kv.put('mcpcode:ttl-code', 'sess', { expirationTtl: 300 });
+
+    // Advance past the 5-minute TTL.
+    vi.setSystemTime(new Date('2026-01-01T00:06:00Z'));
+    const res = await handleApiRoute(
+      makeRequest('POST', '/v1/auth/mcp/exchange', {
+        headers: { 'CF-Connecting-IP': 'mcp-7', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: 'ttl-code' }),
+      }),
+      new URL('https://freeagentstore.online/v1/auth/mcp/exchange'),
+      mockEnv({ OAUTH_KV: kv } as unknown as Env),
+    );
+    vi.useRealTimers();
+    expect(res.status).toBe(400);
+  });
+});

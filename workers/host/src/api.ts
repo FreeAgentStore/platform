@@ -138,6 +138,21 @@ function jsonResponse(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), { status, headers: h });
 }
 
+/**
+ * MCP OAuth return_to allowlist. The one-time-code flow redirects cross-origin to
+ * the MCP worker's callback, so it must be pinned to exactly that origin + path —
+ * an open redirect here would hand attacker-controlled URLs a fresh login code.
+ */
+function isAllowedMcpReturnTo(value: string | null): boolean {
+  if (!value) return false;
+  try {
+    const u = new URL(value);
+    return u.origin === 'https://mcp.freeagentstore.online' && u.pathname === '/oauth/callback';
+  } catch {
+    return false;
+  }
+}
+
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
 interface SessionPayload {
@@ -538,6 +553,40 @@ export async function handleApiRoute(request: Request, url: URL, env: Env): Prom
       return new Response(null, { status: 302, headers: h });
     }
 
+    // GET /v1/auth/github/start — Start GitHub OAuth for the MCP worker.
+    // Unlike /v1/auth/github (which ends by setting a browser session cookie),
+    // this flow mints a one-time login code at callback time and hands it to an
+    // allowlisted cross-origin return_to; the MCP worker then redeems the code
+    // server-to-server at /v1/auth/mcp/exchange. The session never rides in a URL.
+    if (path === '/v1/auth/github/start' && request.method === 'GET') {
+      if (!env.GITHUB_CLIENT_ID) {
+        return jsonResponse({ error: 'GitHub OAuth not configured.' }, 503);
+      }
+      const returnTo = url.searchParams.get('return_to');
+      if (!isAllowedMcpReturnTo(returnTo)) {
+        return new Response('return_to not allowed', { status: 400 });
+      }
+      const state = crypto.randomUUID();
+      const codeKey = crypto.randomUUID();
+      const redirectUri = `${url.origin}/v1/auth/callback`;
+      const ghUrl = `https://github.com/login/oauth/authorize?client_id=${env.GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read:user&state=${state}`;
+      const h = new Headers({ Location: ghUrl });
+      h.append(
+        'Set-Cookie',
+        `fags_oauth_state=${state}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600`,
+      );
+      h.append(
+        'Set-Cookie',
+        `fags_return_to=${encodeURIComponent(returnTo as string)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600`,
+      );
+      // Presence of this cookie at /v1/auth/callback marks the MCP one-time-code flow.
+      h.append(
+        'Set-Cookie',
+        `fags_mcp_code=${codeKey}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600`,
+      );
+      return new Response(null, { status: 302, headers: h });
+    }
+
     // GET /v1/auth/callback — Handle GitHub callback
     if (path === '/v1/auth/callback' && request.method === 'GET') {
       const code = url.searchParams.get('code');
@@ -614,6 +663,39 @@ export async function handleApiRoute(request: Request, url: URL, env: Env): Prom
         env.SESSION_SIGNING_KEY,
       );
 
+      // MCP one-time-code flow: hand the session back via a single-use code stored
+      // server-side (never in a URL). The MCP worker redeems it at /v1/auth/mcp/exchange.
+      const mcpCodeMatch = cookies.match(/(?:^|;\s*)fags_mcp_code=([^\s;]+)/);
+      if (mcpCodeMatch) {
+        const mcpReturnMatch = cookies.match(/(?:^|;\s*)fags_return_to=([^\s;]+)/);
+        const mcpReturnTo = mcpReturnMatch ? decodeURIComponent(mcpReturnMatch[1]) : '';
+        if (!isAllowedMcpReturnTo(mcpReturnTo)) {
+          return new Response('return_to not allowed', { status: 400 });
+        }
+        if (!env.OAUTH_KV) {
+          return new Response('OAuth KV not configured', { status: 503 });
+        }
+        const codeKey = mcpCodeMatch[1];
+        // Single-use handle, 5-min TTL; the value is the session the MCP worker will redeem.
+        await env.OAUTH_KV.put(`mcpcode:${codeKey}`, sessionToken, { expirationTtl: 300 });
+        const dest = new URL(mcpReturnTo);
+        dest.searchParams.set('code', codeKey);
+        const mh = new Headers({ Location: dest.toString() });
+        mh.append(
+          'Set-Cookie',
+          'fags_oauth_state=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0',
+        );
+        mh.append(
+          'Set-Cookie',
+          'fags_return_to=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0',
+        );
+        mh.append(
+          'Set-Cookie',
+          'fags_mcp_code=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0',
+        );
+        return new Response(null, { status: 302, headers: mh });
+      }
+
       // Read return_to cookie for post-login redirect
       const returnMatch = cookies.match(/(?:^|;\s*)fags_return_to=([^\s;]+)/);
       const returnTo = returnMatch ? decodeURIComponent(returnMatch[1]) : '/';
@@ -651,6 +733,20 @@ export async function handleApiRoute(request: Request, url: URL, env: Env): Prom
       h.set('Content-Type', 'application/json; charset=utf-8');
       h.append('Set-Cookie', 'fags_session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0');
       return new Response(JSON.stringify({ ok: true }), { headers: h });
+    }
+
+    // POST /v1/auth/mcp/exchange — redeem a one-time MCP login code for its
+    // session, server-to-server. Single-use (deleted on read) + 5-min TTL, so the
+    // session token never travels in a URL. Fails closed on any miss.
+    if (path === '/v1/auth/mcp/exchange' && request.method === 'POST') {
+      if (!env.OAUTH_KV) return jsonResponse({ error: 'OAuth KV not configured' }, 503);
+      const body = await request.json<{ code?: string }>().catch(() => ({}) as { code?: string });
+      const code = body.code;
+      if (!code || typeof code !== 'string') return jsonResponse({ error: 'code required' }, 400);
+      const session = await env.OAUTH_KV.get(`mcpcode:${code}`);
+      if (!session) return jsonResponse({ error: 'invalid or expired code' }, 400);
+      await env.OAUTH_KV.delete(`mcpcode:${code}`);
+      return jsonResponse({ fags_session: session });
     }
 
     // ── Key vault routes ──────────────────────────────────────────────
