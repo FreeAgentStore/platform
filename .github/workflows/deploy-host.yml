@@ -4,6 +4,8 @@ on:
     branches: [main]
     paths:
       - 'workers/host/**'
+      - 'pnpm-lock.yaml'
+  workflow_dispatch:
 
 permissions:
   contents: read
