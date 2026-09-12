@@ -7,6 +7,10 @@ compatibility_flags = ["nodejs_compat"]
 API_BASE = "https://api.freeagentstore.online"
 GITHUB_ORG = "FreeAgentStore"
 FAGS_AUTH_START = "https://freeagentstore.online/v1/auth/github"
+# Set MCP_READ_ONLY = "1" to disable every write tool (create_agent, update_files,
+# delete_file, delete_agent, publish_to_store). Reads and dry-runs still work;
+# whoami.readOnly reflects the current state.
+# MCP_READ_ONLY = "1"
 
 [[routes]]
 pattern = "mcp.freeagentstore.online/*"

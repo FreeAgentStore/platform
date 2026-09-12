@@ -5,7 +5,7 @@
 ## AI Agent Integration
 
 - [SKILLS.md](https://freeagentstore.online/skills.md): Complete platform guide for AI agents. Agent types, SDK reference, CLI commands, deploy flow, compliance rules, template scaffolding.
-- [MCP Server](https://mcp.freeagentstore.online/mcp): Remote MCP server. 11 tools: list_agents, agent_info, deploy_status, create_agent, delete_agent, write_file, read_file, list_files, upload_to_r2, platform_guide, sdk_reference. Connect with `npx mcp-remote https://mcp.freeagentstore.online/mcp`.
+- [MCP Server](https://mcp.freeagentstore.online/mcp): Remote MCP server. 15 tools: list_agents, agent_info, deploy_status, list_files, read_file, search_files, create_agent, update_files, delete_file, delete_agent, publish_to_store, whoami, mcp_audit_log, platform_guide, sdk_reference. Write tools support dry_run; delete_file and delete_agent require confirm. Connect with `npx mcp-remote https://mcp.freeagentstore.online/mcp`.
 - [Registry](https://freeagentstore.online/pkg/): ESM packages for all library agents. Import directly: `import { analyzeSentiment } from 'https://freeagentstore.online/pkg/sentiment/index.js'`.
 
 ## Agent Types

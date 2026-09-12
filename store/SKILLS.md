@@ -142,7 +142,9 @@ Connect to the platform from any MCP client:
 npx mcp-remote https://mcp.freeagentstore.online/mcp
 ```
 
-Tools: list_agents, agent_info, deploy_status, create_agent, delete_agent, write_file, read_file, list_files, upload_to_r2, platform_guide, sdk_reference.
+Tools (15): list_agents, agent_info, deploy_status, list_files, read_file, search_files, create_agent, update_files, delete_file, delete_agent, publish_to_store, whoami, mcp_audit_log, platform_guide, sdk_reference.
+
+Write tools (create_agent, update_files, delete_file, delete_agent, publish_to_store) require OAuth sign-in and ownership, and accept `dry_run: true`. `delete_file` requires `confirm=<path>`; `delete_agent` requires `confirm=<agent_id>`. Failed calls return `isError: true`. Use `mcp_audit_log` to review your own actions.
 
 ## Deploy
 

@@ -29,7 +29,7 @@ platform/
 │   └── quality/        Quality reporter (placeholder)
 ├── workers/
 │   ├── host/           *.freeagentstore.online → D1 → R2 host worker
-│   └── mcp/            MCP server (11 tools) at mcp.freeagentstore.online
+│   └── mcp/            MCP server (15 tools) at mcp.freeagentstore.online
 ├── agents/
 │   ├── tts/            Text to Speech (Kokoro 82M)
 │   ├── transcriber/    Speech to Text (Whisper Small)
@@ -83,14 +83,21 @@ Connect via `npx mcp-remote https://mcp.freeagentstore.online/mcp`
 | `list_agents` | Optional | List all or your agents |
 | `agent_info` | No | Status, URLs, links |
 | `deploy_status` | No | GitHub Actions history |
-| `create_agent` | Yes | Provision repo + R2 route |
-| `delete_agent` | Yes | Remove from store |
-| `write_file` | Yes | Commit to agent repo |
-| `read_file` | No | Read from agent repo |
 | `list_files` | No | Directory listing |
-| `upload_to_r2` | Yes | Trigger redeploy |
+| `read_file` | No | Read from agent repo |
+| `search_files` | No | Text search across agent repo |
+| `create_agent` | Yes | Provision repo + D1 route (dry_run) |
+| `update_files` | Yes | Commit files to agent repo (dry_run) |
+| `delete_file` | Yes | Delete a file (confirm=path, dry_run) |
+| `delete_agent` | Yes | Remove from store (confirm=agent_id, dry_run) |
+| `publish_to_store` | Yes | Add to registry + rebuild store (dry_run) |
+| `whoami` | No | Identity + read-only mode |
+| `mcp_audit_log` | Yes | Your write/dry-run/blocked/failed events |
 | `platform_guide` | No | Architecture guide |
 | `sdk_reference` | No | API reference |
+
+Write tools accept `dry_run: true`. Deploy with `MCP_READ_ONLY=1` to disable all writes.
+See [`workers/mcp/README.md`](./workers/mcp/README.md).
 
 ## Infrastructure
 

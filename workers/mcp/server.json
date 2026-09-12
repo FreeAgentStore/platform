@@ -1,0 +1,33 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.freeagentstore/mcp",
+  "description": "AI agent tools for FreeAgentStore: browse the store, scaffold and edit browser-based AI agents in their GitHub repos, publish them to the store, and read the platform guide and SDK reference. Read tools are open; write tools require an authenticated owner.",
+  "repository": {
+    "url": "https://github.com/FreeAgentStore/platform",
+    "source": "github"
+  },
+  "version": "0.3.0",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.freeagentstore.online/mcp"
+    }
+  ],
+  "tools": [
+    { "name": "list_agents", "description": "List all published agents, or just yours if authenticated" },
+    { "name": "agent_info", "description": "Get info about an agent — live URL, repo, status" },
+    { "name": "deploy_status", "description": "Check deploy status (last 5 GitHub Actions runs)" },
+    { "name": "list_files", "description": "List all files in an agent's repo" },
+    { "name": "read_file", "description": "Read a file from an agent's repo" },
+    { "name": "search_files", "description": "Search for text across all files in an agent's repo" },
+    { "name": "create_agent", "description": "Provision a new agent: GitHub repo, template scaffold, D1 route with ownership (supports dry_run)" },
+    { "name": "update_files", "description": "Write/overwrite files in an owned agent's repo as one commit; auto-deploys (supports dry_run)" },
+    { "name": "delete_file", "description": "Delete a file from an owned agent's repo — requires confirm=<path> (supports dry_run)" },
+    { "name": "delete_agent", "description": "Remove an owned agent from the store — irreversible, requires confirm=<agent_id> (supports dry_run)" },
+    { "name": "publish_to_store", "description": "Add an owned agent to registry.json and trigger a store rebuild (supports dry_run)" },
+    { "name": "whoami", "description": "Show the authenticated identity and whether the server is in read-only mode" },
+    { "name": "mcp_audit_log", "description": "Read your recent MCP audit events (writes, dry-runs, blocked, failed), newest first" },
+    { "name": "platform_guide", "description": "How to build autonomous browser agents on FreeAgentStore" },
+    { "name": "sdk_reference", "description": "Reference for agent tools, inference, MCP, search, fetch, and config" }
+  ]
+}
