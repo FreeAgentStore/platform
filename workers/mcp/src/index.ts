@@ -12,6 +12,17 @@ import {
   textToB64,
 } from './github.js';
 import { handleOAuthRoute, resolveOAuthToken } from './oauth-provider.js';
+import {
+  audit,
+  dryRun,
+  errText,
+  isReadOnly,
+  listAuditEvents,
+  requireConfirmation,
+  requireWritable,
+  type SafetyContext,
+  txt,
+} from './safety.js';
 import { verifySession } from './session.js';
 
 interface Env {
@@ -19,6 +30,7 @@ interface Env {
   GITHUB_TOKEN?: string;
   SESSION_SIGNING_KEY?: string;
   FAGS_AUTH_START?: string;
+  MCP_READ_ONLY?: string;
   OAUTH_KV?: KVNamespace;
   DB?: D1Database;
   MCP_OBJECT: DurableObjectNamespace;
@@ -28,8 +40,6 @@ export interface McpProps extends Record<string, unknown> {
   userId?: string;
   token?: string;
 }
-
-const txt = (text: string) => ({ content: [{ type: 'text' as const, text }] });
 
 export class FagsMcpAgent extends McpAgent<Env, unknown, McpProps> {
   server = new McpServer({ name: 'FreeAgentStore', version: '0.3.0' });
@@ -58,6 +68,22 @@ export class FagsMcpAgent extends McpAgent<Env, unknown, McpProps> {
     return row.owner_id === uid;
   }
 
+  /** Safety context for the current caller: env for the read-only flag + audit
+   *  KV, and the user id the audit trail is keyed on. */
+  private safety(): SafetyContext {
+    return { env: this.env, subject: this.props?.userId ?? '' };
+  }
+
+  /** Read-only guard for write tools; records the refused attempt when blocked. */
+  private async guardWrite(
+    tool: string,
+    input: Record<string, unknown>,
+  ): Promise<ReturnType<typeof requireWritable>> {
+    const blocked = requireWritable(this.safety());
+    if (blocked) await audit(this.safety(), { tool, action: 'blocked', input });
+    return blocked;
+  }
+
   async init() {
     const org = this.env.GITHUB_ORG;
 
@@ -67,7 +93,7 @@ export class FagsMcpAgent extends McpAgent<Env, unknown, McpProps> {
       'List all published agents, or just yours if authenticated.',
       { mine: z.boolean().optional().describe('If true, list only your agents') },
       async ({ mine }) => {
-        if (!this.env.DB) return txt('D1 not configured.');
+        if (!this.env.DB) return errText('D1 not configured.');
         const uid = this.props.userId;
         let rows: D1Result<{ slug: string; created_at: number }>;
         if (mine && uid) {
@@ -132,7 +158,7 @@ export class FagsMcpAgent extends McpAgent<Env, unknown, McpProps> {
             },
           },
         );
-        if (!res.ok) return txt(`GitHub API error: ${res.status}`);
+        if (!res.ok) return errText(`GitHub API error: ${res.status}`);
         const data = (await res.json()) as {
           workflow_runs?: Array<{
             name: string;
@@ -156,7 +182,7 @@ export class FagsMcpAgent extends McpAgent<Env, unknown, McpProps> {
     // ── create_agent ───────────────────────────────────────────
     this.server.tool(
       'create_agent',
-      'Create a new autonomous browser agent. Provisions GitHub repo, scaffolds from template, registers D1 route with ownership, pushes code. Live at freeagentstore.online/a/{id}/ after deploy (~1-2 min).',
+      'Create a new autonomous browser agent. Provisions GitHub repo, scaffolds from template, registers D1 route with ownership, pushes code. Live at freeagentstore.online/a/{id}/ after deploy (~1-2 min). Supports dry_run.',
       {
         agent_id: z
           .string()
@@ -164,13 +190,17 @@ export class FagsMcpAgent extends McpAgent<Env, unknown, McpProps> {
           .describe('Agent slug (lowercase, hyphens)'),
         name: z.string().describe('Display name'),
         description: z.string().describe('What the agent does'),
+        dry_run: z.boolean().optional().describe('Preview without creating anything'),
       },
-      async ({ agent_id, name, description }) => {
+      async ({ agent_id, name, description, dry_run }) => {
+        const ctx = this.safety();
+        const blocked = await this.guardWrite('create_agent', { agent_id, name });
+        if (blocked) return blocked;
         const uid = this.props.userId;
         const token = this.props.token;
-        if (!token || !uid) return txt('Not authenticated. Connect via OAuth first.');
-        if (!this.env.GITHUB_TOKEN) return txt('GITHUB_TOKEN not configured.');
-        if (!this.env.DB) return txt('D1 not configured.');
+        if (!token || !uid) return errText('Not authenticated. Connect via OAuth first.');
+        if (!this.env.GITHUB_TOKEN) return errText('GITHUB_TOKEN not configured.');
+        if (!this.env.DB) return errText('D1 not configured.');
 
         const existing = await this.env.DB.prepare(
           "SELECT slug FROM routes WHERE slug = ? AND zone = 'freeagentstore.online'",
@@ -178,9 +208,21 @@ export class FagsMcpAgent extends McpAgent<Env, unknown, McpProps> {
           .bind(agent_id)
           .first();
         if (existing)
-          return txt(
+          return errText(
             `Agent **${agent_id}** already exists at https://freeagentstore.online/a/${agent_id}/`,
           );
+
+        if (dry_run) {
+          const input = {
+            agent_id,
+            name,
+            description,
+            repo: `https://github.com/${org}/${agent_id}`,
+            live: `https://freeagentstore.online/a/${agent_id}/`,
+          };
+          await audit(ctx, { tool: 'create_agent', action: 'dry_run', input });
+          return dryRun('create_agent', input);
+        }
 
         // Create repo
         const repoRes = await fetch(`https://api.github.com/orgs/${org}/repos`, {
@@ -198,8 +240,16 @@ export class FagsMcpAgent extends McpAgent<Env, unknown, McpProps> {
             visibility: 'public',
           }),
         });
-        if (!repoRes.ok)
-          return txt(`Failed to create repo: ${(await repoRes.text()).slice(0, 200)}`);
+        if (!repoRes.ok) {
+          const reason = (await repoRes.text()).slice(0, 200);
+          await audit(ctx, {
+            tool: 'create_agent',
+            action: 'failed',
+            input: { agent_id, name },
+            result: `repo create failed: ${reason}`,
+          });
+          return errText(`Failed to create repo: ${reason}`);
+        }
 
         // Register route with owner
         await this.env.DB.prepare(
@@ -224,11 +274,23 @@ export class FagsMcpAgent extends McpAgent<Env, unknown, McpProps> {
             files,
             `Scaffold ${agent_id} via MCP`,
           );
+          await audit(ctx, {
+            tool: 'create_agent',
+            action: 'success',
+            input: { agent_id, name },
+            result: `${files.size} files scaffolded`,
+          });
           return txt(
             `Created **${agent_id}** (${files.size} files).\nRepo: https://github.com/${org}/${agent_id}\nLive (after deploy): https://freeagentstore.online/a/${agent_id}/\n\nNext: \`read_file\` to inspect, \`update_files\` to customize tools.ts and config.ts.`,
           );
         } catch (e) {
-          return txt(
+          await audit(ctx, {
+            tool: 'create_agent',
+            action: 'failed',
+            input: { agent_id, name },
+            result: `repo + route created, scaffold failed: ${String(e).slice(0, 200)}`,
+          });
+          return errText(
             `Repo + route created, but scaffold failed: ${String(e)}\nUse \`update_files\` to push code.`,
           );
         }
@@ -259,7 +321,7 @@ export class FagsMcpAgent extends McpAgent<Env, unknown, McpProps> {
       },
       async ({ agent_id, path }) => {
         const content = await readRepoFile(org, agent_id, this.env.GITHUB_TOKEN, path);
-        if (content === null) return txt(`File not found: ${path}`);
+        if (content === null) return errText(`File not found: ${path}`);
         return txt(`\`\`\`\n${content}\n\`\`\``);
       },
     );
@@ -285,20 +347,30 @@ export class FagsMcpAgent extends McpAgent<Env, unknown, McpProps> {
     // ── update_files (ownership-gated) ─────────────────────────
     this.server.tool(
       'update_files',
-      "Write/overwrite files in an agent's repo as one commit. Auto-deploys ~30-60s. Requires ownership.",
+      "Write/overwrite files in an agent's repo as one commit. Auto-deploys ~30-60s. Requires ownership. Supports dry_run.",
       {
         agent_id: z.string().describe('Agent ID'),
         files: z
           .array(z.object({ path: z.string(), content: z.string() }))
           .describe('Files to write (full content each)'),
         message: z.string().optional().describe('Commit message'),
+        dry_run: z.boolean().optional().describe('Preview without pushing'),
       },
-      async ({ agent_id, files, message }) => {
-        if (!this.props.token) return txt('Not authenticated.');
-        if (!this.env.GITHUB_TOKEN) return txt('GITHUB_TOKEN not configured.');
-        if (!files?.length) return txt('No files provided.');
+      async ({ agent_id, files, message, dry_run }) => {
+        const ctx = this.safety();
+        const paths = (files ?? []).map((f) => f.path);
+        const blocked = await this.guardWrite('update_files', { agent_id, paths });
+        if (blocked) return blocked;
+        if (!this.props.token) return errText('Not authenticated.');
+        if (!this.env.GITHUB_TOKEN) return errText('GITHUB_TOKEN not configured.');
+        if (!files?.length) return errText('No files provided.');
         if (!(await this.ownsAgent(agent_id)))
-          return txt(`You don't own "${agent_id}". Only the creator can update it.`);
+          return errText(`You don't own "${agent_id}". Only the creator can update it.`);
+        if (dry_run) {
+          const input = { agent_id, paths, message: message || `Update ${agent_id} via MCP` };
+          await audit(ctx, { tool: 'update_files', action: 'dry_run', input });
+          return dryRun('update_files', input);
+        }
 
         const map = new Map<string, RepoFile>(
           files.map((f) => [
@@ -314,11 +386,23 @@ export class FagsMcpAgent extends McpAgent<Env, unknown, McpProps> {
             map,
             message || `Update ${agent_id} via MCP`,
           );
+          await audit(ctx, {
+            tool: 'update_files',
+            action: 'success',
+            input: { agent_id, paths, message },
+            result: sha,
+          });
           return txt(
             `Pushed ${files.length} file(s) to **${agent_id}** (${sha.slice(0, 7)}). Deploying to https://freeagentstore.online/a/${agent_id}/`,
           );
         } catch (e) {
-          return txt(`Push failed: ${String(e)}`);
+          await audit(ctx, {
+            tool: 'update_files',
+            action: 'failed',
+            input: { agent_id, paths },
+            result: String(e).slice(0, 200),
+          });
+          return errText(`Push failed: ${String(e)}`);
         }
       },
     );
@@ -326,16 +410,36 @@ export class FagsMcpAgent extends McpAgent<Env, unknown, McpProps> {
     // ── delete_file (ownership-gated) ──────────────────────────
     this.server.tool(
       'delete_file',
-      "Delete a file from an agent's repo. Requires ownership.",
+      "Delete a file from an agent's repo. Requires ownership. Destructive: requires confirm=<path>. Supports dry_run.",
       {
         agent_id: z.string().describe('Agent ID'),
         path: z.string().describe('File path to delete'),
         message: z.string().optional().describe('Commit message'),
+        dry_run: z.boolean().optional().describe('Preview without deleting'),
+        confirm: z.string().optional().describe('Must equal `path` to proceed'),
       },
-      async ({ agent_id, path, message }) => {
-        if (!this.props.token) return txt('Not authenticated.');
-        if (!this.env.GITHUB_TOKEN) return txt('GITHUB_TOKEN not configured.');
-        if (!(await this.ownsAgent(agent_id))) return txt(`You don't own "${agent_id}".`);
+      async ({ agent_id, path, message, dry_run, confirm }) => {
+        const ctx = this.safety();
+        const blocked = await this.guardWrite('delete_file', { agent_id, path });
+        if (blocked) return blocked;
+        if (!this.props.token) return errText('Not authenticated.');
+        if (!this.env.GITHUB_TOKEN) return errText('GITHUB_TOKEN not configured.');
+        if (!(await this.ownsAgent(agent_id))) return errText(`You don't own "${agent_id}".`);
+        if (dry_run) {
+          const input = { agent_id, path, message: message || `Delete ${path} via MCP` };
+          await audit(ctx, { tool: 'delete_file', action: 'dry_run', input });
+          return dryRun('delete_file', input);
+        }
+        const unconfirmed = requireConfirmation(ctx, 'delete_file', confirm, path);
+        if (unconfirmed) {
+          await audit(ctx, {
+            tool: 'delete_file',
+            action: 'blocked',
+            input: { agent_id, path },
+            result: 'missing confirmation',
+          });
+          return unconfirmed;
+        }
         try {
           await deleteRepoFile(
             org,
@@ -344,9 +448,16 @@ export class FagsMcpAgent extends McpAgent<Env, unknown, McpProps> {
             path,
             message || `Delete ${path} via MCP`,
           );
+          await audit(ctx, { tool: 'delete_file', action: 'success', input: { agent_id, path } });
           return txt(`Deleted **${path}** from ${agent_id}.`);
         } catch (e) {
-          return txt(`Delete failed: ${String(e)}`);
+          await audit(ctx, {
+            tool: 'delete_file',
+            action: 'failed',
+            input: { agent_id, path },
+            result: String(e).slice(0, 200),
+          });
+          return errText(`Delete failed: ${String(e)}`);
         }
       },
     );
@@ -354,15 +465,35 @@ export class FagsMcpAgent extends McpAgent<Env, unknown, McpProps> {
     // ── delete_agent (ownership-gated) ─────────────────────────
     this.server.tool(
       'delete_agent',
-      'Remove an agent from the store. Requires ownership.',
+      'Remove an agent from the store. Requires ownership. Destructive: requires confirm=<agent_id>. Supports dry_run.',
       {
         agent_id: z.string().describe('Agent ID'),
         archive_repo: z.boolean().optional().describe('Archive the GitHub repo'),
+        dry_run: z.boolean().optional().describe('Preview without removing'),
+        confirm: z.string().optional().describe('Must equal `agent_id` to proceed'),
       },
-      async ({ agent_id, archive_repo }) => {
-        if (!this.props.token) return txt('Not authenticated.');
-        if (!this.env.DB) return txt('D1 not configured.');
-        if (!(await this.ownsAgent(agent_id))) return txt(`You don't own "${agent_id}".`);
+      async ({ agent_id, archive_repo, dry_run, confirm }) => {
+        const ctx = this.safety();
+        const blocked = await this.guardWrite('delete_agent', { agent_id, archive_repo });
+        if (blocked) return blocked;
+        if (!this.props.token) return errText('Not authenticated.');
+        if (!this.env.DB) return errText('D1 not configured.');
+        if (!(await this.ownsAgent(agent_id))) return errText(`You don't own "${agent_id}".`);
+        if (dry_run) {
+          const input = { agent_id, archive_repo: Boolean(archive_repo) };
+          await audit(ctx, { tool: 'delete_agent', action: 'dry_run', input });
+          return dryRun('delete_agent', input);
+        }
+        const unconfirmed = requireConfirmation(ctx, 'delete_agent', confirm, agent_id);
+        if (unconfirmed) {
+          await audit(ctx, {
+            tool: 'delete_agent',
+            action: 'blocked',
+            input: { agent_id },
+            result: 'missing confirmation',
+          });
+          return unconfirmed;
+        }
 
         await this.env.DB.prepare(
           "DELETE FROM routes WHERE slug = ? AND zone = 'freeagentstore.online'",
@@ -382,6 +513,11 @@ export class FagsMcpAgent extends McpAgent<Env, unknown, McpProps> {
             body: JSON.stringify({ archived: true }),
           });
         }
+        await audit(ctx, {
+          tool: 'delete_agent',
+          action: 'success',
+          input: { agent_id, archive_repo: Boolean(archive_repo) },
+        });
         return txt(`Agent **${agent_id}** removed.${archive_repo ? ' Repo archived.' : ''}`);
       },
     );
@@ -389,7 +525,7 @@ export class FagsMcpAgent extends McpAgent<Env, unknown, McpProps> {
     // ── publish_to_store ───────────────────────────────────────
     this.server.tool(
       'publish_to_store',
-      'Add an agent to the store registry so it appears on freeagentstore.online. Updates registry.json in the platform repo and triggers a store rebuild. Requires ownership.',
+      'Add an agent to the store registry so it appears on freeagentstore.online. Updates registry.json in the platform repo and triggers a store rebuild. Requires ownership. Supports dry_run.',
       {
         agent_id: z.string().describe('Agent ID (must already be created)'),
         name: z.string().describe('Display name'),
@@ -410,11 +546,15 @@ export class FagsMcpAgent extends McpAgent<Env, unknown, McpProps> {
             'web-analysis',
           ])
           .describe('Store category'),
+        dry_run: z.boolean().optional().describe('Preview the registry entry without pushing'),
       },
-      async ({ agent_id, name, description, icon, icon_bg, category }) => {
-        if (!this.props.token) return txt('Not authenticated.');
-        if (!this.env.GITHUB_TOKEN) return txt('GITHUB_TOKEN not configured.');
-        if (!(await this.ownsAgent(agent_id))) return txt(`You don't own "${agent_id}".`);
+      async ({ agent_id, name, description, icon, icon_bg, category, dry_run }) => {
+        const ctx = this.safety();
+        const blocked = await this.guardWrite('publish_to_store', { agent_id, category });
+        if (blocked) return blocked;
+        if (!this.props.token) return errText('Not authenticated.');
+        if (!this.env.GITHUB_TOKEN) return errText('GITHUB_TOKEN not configured.');
+        if (!(await this.ownsAgent(agent_id))) return errText(`You don't own "${agent_id}".`);
 
         // Read current registry.json from platform repo
         const registryContent = await readRepoFile(
@@ -423,13 +563,14 @@ export class FagsMcpAgent extends McpAgent<Env, unknown, McpProps> {
           this.env.GITHUB_TOKEN,
           'store/registry.json',
         );
-        if (!registryContent) return txt('Could not read store/registry.json from platform repo.');
+        if (!registryContent)
+          return errText('Could not read store/registry.json from platform repo.');
 
         let registry: { agents: Array<Record<string, unknown>> };
         try {
           registry = JSON.parse(registryContent);
         } catch {
-          return txt('Failed to parse registry.json.');
+          return errText('Failed to parse registry.json.');
         }
 
         // Check if already in registry
@@ -448,6 +589,12 @@ export class FagsMcpAgent extends McpAgent<Env, unknown, McpProps> {
           agentUrl: `https://freeagentstore.online/a/${agent_id}/`,
           noEsm: true,
         };
+
+        if (dry_run) {
+          const input = { agent_id, action: existingIdx >= 0 ? 'update' : 'add', entry };
+          await audit(ctx, { tool: 'publish_to_store', action: 'dry_run', input });
+          return dryRun('publish_to_store', input);
+        }
 
         if (existingIdx >= 0) {
           registry.agents[existingIdx] = entry;
@@ -470,12 +617,65 @@ export class FagsMcpAgent extends McpAgent<Env, unknown, McpProps> {
             map,
             `Add ${agent_id} to store registry via MCP`,
           );
+          await audit(ctx, {
+            tool: 'publish_to_store',
+            action: 'success',
+            input: { agent_id, category },
+            result: existingIdx >= 0 ? 'updated' : 'added',
+          });
           return txt(
             `Published **${agent_id}** to store registry (${registry.agents.length} total agents). Store will rebuild on next deploy-store workflow run.`,
           );
         } catch (e) {
-          return txt(`Failed to update registry: ${String(e)}`);
+          await audit(ctx, {
+            tool: 'publish_to_store',
+            action: 'failed',
+            input: { agent_id, category },
+            result: String(e).slice(0, 200),
+          });
+          return errText(`Failed to update registry: ${String(e)}`);
         }
+      },
+    );
+
+    // ── whoami ─────────────────────────────────────────────────
+    this.server.tool(
+      'whoami',
+      'Show the authenticated identity for this MCP session and whether the server is in read-only mode.',
+      {},
+      async () => {
+        const uid = this.props?.userId;
+        return txt(
+          JSON.stringify(
+            {
+              authenticated: Boolean(uid),
+              userId: uid ?? 'anonymous',
+              readOnly: isReadOnly(this.safety()),
+            },
+            null,
+            2,
+          ),
+        );
+      },
+    );
+
+    // ── mcp_audit_log ──────────────────────────────────────────
+    this.server.tool(
+      'mcp_audit_log',
+      'Read your recent MCP audit events — every write, dry-run, blocked, and failed tool action for your account, newest first. Requires authentication.',
+      {
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(200)
+          .optional()
+          .describe('Max events to return (default 50)'),
+      },
+      async ({ limit }) => {
+        if (!this.props?.userId) return errText('Not authenticated. Connect via OAuth first.');
+        const events = await listAuditEvents(this.safety(), limit ?? 50);
+        return txt(JSON.stringify(events, null, 2));
       },
     );
 
@@ -614,6 +814,7 @@ export default {
           'Build:    create_agent, update_files, delete_file, search_files, list_files, read_file',
           'Publish:  publish_to_store',
           'Manage:   delete_agent, deploy_status, agent_info, list_agents',
+          'Account:  whoami, mcp_audit_log',
           'Docs:     platform_guide, sdk_reference',
           '',
           'Auth: OAuth 2.1 (automatic via mcp-remote)',
