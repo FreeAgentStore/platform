@@ -153,9 +153,13 @@ export async function pushFiles(
 export async function listRepoFiles(org: string, repo: string, token?: string): Promise<string[]> {
   const base = `https://api.github.com/repos/${org}/${repo}`;
   const ref = await gh(token, `${base}/git/ref/heads/main`);
-  if (!ref?.object?.sha) return [];
+  if (ref.__status)
+    throw new Error(`GitHub ${ref.__status} listing ${repo}: ${ref.message ?? 'ref fetch failed'}`);
   const tree = await gh(token, `${base}/git/trees/${ref.object.sha}?recursive=1`);
-  if (!Array.isArray(tree?.tree)) return [];
+  if (tree.__status)
+    throw new Error(
+      `GitHub ${tree.__status} listing ${repo}: ${tree.message ?? 'tree fetch failed'}`,
+    );
   return tree.tree
     .filter((i: any) => i.type === 'blob' && !i.path.startsWith('.git/'))
     .map((i: any) => i.path);
@@ -173,7 +177,10 @@ export async function readRepoFile(
     token,
     `${base}/contents/${path.split('/').map(encodeURIComponent).join('/')}`,
   );
-  if (typeof res?.content !== 'string') return null;
+  if (res.__status === 404) return null;
+  if (res.__status)
+    throw new Error(`GitHub ${res.__status} reading ${path}: ${res.message ?? 'fetch failed'}`);
+  if (typeof res.content !== 'string') return null;
   return b64ToText(res.content);
 }
 

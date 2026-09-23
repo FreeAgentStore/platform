@@ -303,7 +303,12 @@ export class FagsMcpAgent extends McpAgent<Env, unknown, McpProps> {
       "List all files in an agent's repo.",
       { agent_id: z.string().describe('Agent ID') },
       async ({ agent_id }) => {
-        const files = await listRepoFiles(org, agent_id, this.env.GITHUB_TOKEN);
+        let files: string[];
+        try {
+          files = await listRepoFiles(org, agent_id, this.env.GITHUB_TOKEN);
+        } catch (e) {
+          return errText(`Failed to list files for ${agent_id}: ${(e as Error).message}`);
+        }
         if (files.length === 0) return txt(`No files found for ${agent_id}.`);
         return txt(
           `**${agent_id}** — ${files.length} files:\n\n${files.map((f) => `- ${f}`).join('\n')}`,
@@ -320,7 +325,12 @@ export class FagsMcpAgent extends McpAgent<Env, unknown, McpProps> {
         path: z.string().describe("File path (e.g. 'web/src/tools.ts')"),
       },
       async ({ agent_id, path }) => {
-        const content = await readRepoFile(org, agent_id, this.env.GITHUB_TOKEN, path);
+        let content: string | null;
+        try {
+          content = await readRepoFile(org, agent_id, this.env.GITHUB_TOKEN, path);
+        } catch (e) {
+          return errText(`Failed to read ${path}: ${(e as Error).message}`);
+        }
         if (content === null) return errText(`File not found: ${path}`);
         return txt(`\`\`\`\n${content}\n\`\`\``);
       },
@@ -335,7 +345,12 @@ export class FagsMcpAgent extends McpAgent<Env, unknown, McpProps> {
         query: z.string().describe('Text to search for (case-insensitive)'),
       },
       async ({ agent_id, query }) => {
-        const results = await searchRepoFiles(org, agent_id, query, this.env.GITHUB_TOKEN);
+        let results: Awaited<ReturnType<typeof searchRepoFiles>>;
+        try {
+          results = await searchRepoFiles(org, agent_id, query, this.env.GITHUB_TOKEN);
+        } catch (e) {
+          return errText(`Search failed for ${agent_id}: ${(e as Error).message}`);
+        }
         if (results.length === 0) return txt(`No matches for "${query}" in ${agent_id}.`);
         const lines = results.map(
           (r) => `**${r.path}**\n${r.matches.map((m) => `  ${m}`).join('\n')}`,
