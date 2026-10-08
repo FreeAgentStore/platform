@@ -6,3 +6,8 @@ dist/
 *.tsbuildinfo
 package-lock.json
 pnpm-lock.yaml
+
+# generated test / audit output
+.vibe-check/
+playwright-report/
+test-results/
