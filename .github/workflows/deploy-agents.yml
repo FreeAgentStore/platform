@@ -5,6 +5,11 @@ on:
     paths:
       - 'agents/**'
   workflow_dispatch:
+    inputs:
+      slugs:
+        description: 'Existing agent slugs to rebuild (space-separated); empty uses changed agents'
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -24,27 +29,39 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
+          package-manager-cache: false
 
       - name: Detect changed agents
         id: changed
+        env:
+          REQUESTED_SLUGS: ${{ inputs.slugs }}
         run: |
-          SLUGS=$(git diff --name-only HEAD~1 -- agents/ \
-            | grep '^agents/' \
-            | cut -d/ -f2 \
-            | sort -u \
-            | tr '\n' ' ')
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && [ -n "$REQUESTED_SLUGS" ]; then
+            SLUGS="$REQUESTED_SLUGS"
+          else
+            SLUGS=$(git diff --name-only HEAD~1 -- agents/ \
+              | awk -F/ '/^agents\// {print $2}' \
+              | sort -u \
+              | tr '\n' ' ')
+          fi
+          for SLUG in $SLUGS; do
+            [[ "$SLUG" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]] || { echo 'Invalid agent slug'; exit 1; }
+            [ -d "agents/$SLUG" ] || { echo 'Unknown agent slug'; exit 1; }
+          done
+          SLUGS=$(printf '%s\n' $SLUGS | sort -u | tr '\n' ' ')
           echo "slugs=$SLUGS" >> "$GITHUB_OUTPUT"
           echo "Changed agents: $SLUGS"
 
       - name: Build and upload agents
         if: steps.changed.outputs.slugs != ''
         env:
+          AGENT_SLUGS: ${{ steps.changed.outputs.slugs }}
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          for SLUG in ${{ steps.changed.outputs.slugs }}; do
+          for SLUG in $AGENT_SLUGS; do
             echo "--- Building $SLUG ---"
             if [ ! -d "agents/$SLUG/web" ]; then
               echo "No web/ directory for $SLUG, skipping"
