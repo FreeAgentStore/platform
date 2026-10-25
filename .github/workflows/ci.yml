@@ -24,3 +24,4 @@ jobs:
       - run: pnpm lint
       - run: pnpm -r typecheck
       - run: pnpm test
+      - run: node --test store/build-sitemap.test.js

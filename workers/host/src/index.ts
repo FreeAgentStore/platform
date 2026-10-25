@@ -250,21 +250,21 @@ async function respondWithMirror(
 }
 
 function respond(request: Request, object: R2ObjectBody, mime: string): Response {
-  // 304 Not Modified
-  const ifNoneMatch = request.headers.get('If-None-Match');
-  if (ifNoneMatch && object.httpEtag && etagsMatch(ifNoneMatch, object.httpEtag)) {
-    return new Response(null, { status: 304, headers: securityHeaders() });
-  }
-
   const headers = securityHeaders();
   headers.set('Content-Type', mime);
   headers.set('ETag', object.httpEtag);
   headers.set(
     'Cache-Control',
-    mime.startsWith('text/html')
+    mime.startsWith('text/html') || mime.startsWith('text/plain') || mime === 'application/xml'
       ? 'public, max-age=60, must-revalidate'
       : 'public, max-age=31536000, immutable',
   );
+
+  // Conditional crawl-file responses must also replace old immutable cache policy.
+  const ifNoneMatch = request.headers.get('If-None-Match');
+  if (ifNoneMatch && object.httpEtag && etagsMatch(ifNoneMatch, object.httpEtag)) {
+    return new Response(null, { status: 304, headers });
+  }
 
   return new Response(object.body, { headers });
 }

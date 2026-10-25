@@ -32,6 +32,12 @@ jobs:
       - name: Build detail pages
         run: node store/build-details.js
 
+      - name: Validate and build public sitemap
+        run: |
+          node --test store/build-sitemap.test.js
+          node store/build-sitemap.js
+          test -s store/sitemap.xml
+
       - name: Upload store to R2
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
@@ -44,6 +50,8 @@ jobs:
             --exclude 'templates/*' \
             --exclude 'build-index.js' \
             --exclude 'build-details.js' \
+            --exclude 'build-sitemap.js' \
+            --exclude '*.test.js' \
             --exclude 'dist/*' \
             --exclude 'console/*' \
             --delete
