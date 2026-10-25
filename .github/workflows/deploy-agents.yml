@@ -56,6 +56,9 @@ jobs:
             npm run build
             cd ../../..
 
+            # Use the approved catalogue identity and validate the actual upload artifact.
+            node store/runtime-metadata.js "$SLUG" "agents/$SLUG/web/dist/index.html"
+
             echo "--- Uploading $SLUG to R2 ---"
             aws s3 sync agents/$SLUG/web/dist/ s3://fags-agents/agents/$SLUG/ \
               --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com \

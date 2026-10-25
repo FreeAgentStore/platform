@@ -54,6 +54,7 @@ jobs:
             --exclude 'build-details.js' \
             --exclude 'build-sitemap.js' \
             --exclude '*.test.js' \
+            --exclude 'runtime-metadata.js' \
             --exclude 'dist/*' \
             --exclude 'console/*' \
             --delete
