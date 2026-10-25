@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'store/**'
+      - '.github/workflows/deploy-store.yml'
   workflow_dispatch:
 
 permissions:
@@ -25,6 +26,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
+          package-manager-cache: false
 
       - name: Build index page
         run: node store/build-index.js
