@@ -193,18 +193,21 @@ export default {
     }
 
     // ── /console/ → serve console SPA from R2 ─────────────────
-    if (pathname.startsWith('/console')) {
+    if (pathname === '/console' || pathname.startsWith('/console/')) {
       const subpath = pathname.replace(/^\/console/, '') || '/';
       let consoleKey = `console${subpath}`;
       if (consoleKey.endsWith('/')) consoleKey += 'index.html';
       if (!consoleKey.split('/').pop()?.includes('.')) consoleKey += '/index.html';
 
       const object = await env.AGENTS.get(consoleKey);
-      if (object) return respond(request, object, contentType(consoleKey));
+      if (object) return respond(request, object, contentType(consoleKey), true);
       // SPA fallback
       const fallback = await env.AGENTS.get('console/index.html');
-      if (fallback) return respond(request, fallback, 'text/html; charset=utf-8');
-      return new Response('Console not deployed', { status: 503 });
+      if (fallback) return respond(request, fallback, 'text/html; charset=utf-8', true);
+      return new Response('Console not deployed', {
+        status: 503,
+        headers: { 'X-Robots-Tag': 'noindex, nofollow' },
+      });
     }
 
     // ── Everything else → store site from R2 ──────────────────
@@ -249,10 +252,11 @@ async function respondWithMirror(
   return new Response(injected, { headers });
 }
 
-function respond(request: Request, object: R2ObjectBody, mime: string): Response {
+function respond(request: Request, object: R2ObjectBody, mime: string, noindex = false): Response {
   const headers = securityHeaders();
   headers.set('Content-Type', mime);
   headers.set('ETag', object.httpEtag);
+  if (noindex) headers.set('X-Robots-Tag', 'noindex, nofollow');
   headers.set(
     'Cache-Control',
     mime.startsWith('text/html') || mime.startsWith('text/plain') || mime === 'application/xml'
