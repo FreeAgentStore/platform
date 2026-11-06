@@ -56,15 +56,22 @@ export default function App() {
 
   const isDark = theme === 'dark';
 
-  // On mount: check for fas_session in URL (OAuth callback) or localStorage
+  // On mount: check for #fas_session in the URL fragment (OAuth callback, same
+  // delivery as @freeappstore/sdk) or localStorage. FAS no longer sends the
+  // session in the query string (freeappstore-online/platform#495).
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const sessionFromUrl = params.get('fas_session');
-    if (sessionFromUrl) {
-      storeToken(sessionFromUrl);
+    const hash = window.location.hash;
+    let sessionFromUrl: string | null = null;
+    if (hash.startsWith('#fas_session=')) {
+      try {
+        sessionFromUrl = decodeURIComponent(hash.slice('#fas_session='.length)) || null;
+      } catch {
+        sessionFromUrl = null;
+      }
       // Clean URL
-      window.history.replaceState({}, '', window.location.pathname);
+      window.history.replaceState({}, '', window.location.pathname + window.location.search);
     }
+    if (sessionFromUrl) storeToken(sessionFromUrl);
 
     const token = sessionFromUrl ?? getStoredToken();
     if (token) {
@@ -74,8 +81,10 @@ export default function App() {
       })
         .then(r => r.ok ? r.json() : null)
         .then(data => {
-          if (data?.user) {
-            setUser(data.user);
+          // FAS /v1/auth/me returns the user object itself, not { user }.
+          const me = data?.user ?? (data?.id ? data : null);
+          if (me) {
+            setUser(me);
             storeToken(token);
           } else {
             storeToken(null);
@@ -117,9 +126,9 @@ export default function App() {
 
   const signIn = () => {
     // Redirect to FAS auth with return_to pointing back here
-    // FAS auth will redirect back with ?fas_session=TOKEN
+    // FAS auth will redirect back with #fas_session=TOKEN
     const returnTo = window.location.origin + window.location.pathname;
-    window.location.href = `${AUTH_API}/v1/auth/github/start?app_id=fags-console&response_mode=query&return_to=${encodeURIComponent(returnTo)}`;
+    window.location.href = `${AUTH_API}/v1/auth/github/start?app_id=fags-console&return_to=${encodeURIComponent(returnTo)}`;
   };
 
   const signOut = () => {
